@@ -17,6 +17,34 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
   const [showControls, setShowControls] = useState(true);
   const [showShare, setShowShare] = useState(false);
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const touchStartRef = useRef<number | null>(null);
+  const touchEndRef = useRef<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartRef.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndRef.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartRef.current || !touchEndRef.current) return;
+    
+    const distance = touchStartRef.current - touchEndRef.current;
+    const minSwipeDistance = 50;
+
+    if (Math.abs(distance) > minSwipeDistance) {
+      if (distance > 0) {
+        navigate('next');
+      } else {
+        navigate('prev');
+      }
+    }
+
+    touchStartRef.current = null;
+    touchEndRef.current = null;
+  };
 
   const currentSpecies = species[currentIndex];
 
@@ -82,8 +110,13 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
 
   return (
     <div className="fixed inset-0 z-50 bg-foreground">
-      {/* Full-screen image */}
-      <div className="absolute inset-0">
+      {/* Full-screen image with swipe support */}
+      <div 
+        className="absolute inset-0"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         <img
           src={currentSpecies.image}
           alt={currentSpecies.name}
