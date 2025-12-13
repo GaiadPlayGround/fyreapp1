@@ -27,6 +27,9 @@ const GalleryHeader = ({
           {displayOnchain}/{displayTotal}
         </span>
       </div>
+      <button className="mt-6 mb-2 bg-[#005ae0] hover:bg-[#0047b3] text-white font-semibold text-lg py-3 px-12 rounded-full transition-colors">
+        SLIDE UP
+      </button>
     </div>;
 };
 export default GalleryHeader;
