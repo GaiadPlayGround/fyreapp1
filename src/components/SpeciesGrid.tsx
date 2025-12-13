@@ -12,7 +12,7 @@ interface SpeciesGridProps {
   viewMode: ViewMode;
 }
 
-const ITEMS_PER_PAGE_GRID_MOBILE = 60; // 4 columns × 15 rows
+const ITEMS_PER_PAGE_GRID_MOBILE = 60; // 4 columns × 15 rows (keeping 60 for mobile grid)
 const ITEMS_PER_PAGE_LIST = 100;
 
 const SpeciesGrid = ({ species, onSpeciesClick, isFilterOpen, viewMode }: SpeciesGridProps) => {
@@ -155,7 +155,7 @@ const SpeciesGrid = ({ species, onSpeciesClick, isFilterOpen, viewMode }: Specie
               </div>
               <div className="text-right">
                 <p className="text-xs font-sans font-medium text-foreground">{s.votes.toLocaleString()}</p>
-                <p className="text-[10px] text-muted-foreground">votes</p>
+                <p className="text-[10px] text-muted-foreground">Base Squares</p>
               </div>
             </div>
           ))}

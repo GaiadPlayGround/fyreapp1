@@ -15,11 +15,10 @@ interface SpeciesSlideshowProps {
 const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowProps) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [showInfo, setShowInfo] = useState(false);
-  const [showControls, setShowControls] = useState(true);
   const [showArrows, setShowArrows] = useState(true);
   const [showShare, setShowShare] = useState(false);
-  const [isAutoPlay, setIsAutoPlay] = useState(true);
-  const [autoPlayInterval, setAutoPlayInterval] = useState(5);
+  const [autoPlayInterval, setAutoPlayInterval] = useState<number | null>(5);
+  const [voteKey, setVoteKey] = useState(0); // Key to reset VoteSquares
   const arrowHideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const autoPlayRef = useRef<NodeJS.Timeout | null>(null);
   const touchStartRef = useRef<number | null>(null);
@@ -71,6 +70,8 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
       }
       return prev === 0 ? species.length - 1 : prev - 1;
     });
+    // Reset vote pane for new image
+    setVoteKey((k) => k + 1);
     showArrowsTemporarily();
   }, [species.length, showArrowsTemporarily]);
 
@@ -82,7 +83,7 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
 
   // Auto-play effect
   useEffect(() => {
-    if (isAutoPlay) {
+    if (autoPlayInterval !== null) {
       autoPlayRef.current = setInterval(() => {
         navigate('next');
       }, autoPlayInterval * 1000);
@@ -93,7 +94,7 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
         clearInterval(autoPlayRef.current);
       }
     };
-  }, [isAutoPlay, autoPlayInterval, navigate]);
+  }, [autoPlayInterval, navigate]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -130,6 +131,11 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
     const words = text.split(' ');
     if (words.length <= maxWords) return text;
     return words.slice(0, maxWords).join(' ') + '...';
+  };
+
+  // Generate FCBC URL for this species
+  const getFcbcUrl = () => {
+    return `https://www.fcbc.fun/species/FCBC${currentSpecies.id}?code=9406/136251508`;
   };
 
   return (
@@ -169,9 +175,29 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
         </button>
       </div>
 
-      {/* Species info - shows when info toggled */}
+      {/* Navigation arrows - hide after 3 seconds */}
+      <button
+        onClick={() => navigate('prev')}
+        className={cn(
+          "absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-card/10 backdrop-blur-sm rounded-full hover:bg-card/20 transition-all duration-300",
+          showArrows ? "opacity-100" : "opacity-0 pointer-events-none"
+        )}
+      >
+        <ChevronLeft className="w-6 h-6 text-card" />
+      </button>
+      <button
+        onClick={() => navigate('next')}
+        className={cn(
+          "absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-card/10 backdrop-blur-sm rounded-full hover:bg-card/20 transition-all duration-300",
+          showArrows ? "opacity-100" : "opacity-0 pointer-events-none"
+        )}
+      >
+        <ChevronRight className="w-6 h-6 text-card" />
+      </button>
+
+      {/* Species info - shows at bottom when info toggled */}
       {showInfo && (
-        <div className="absolute top-16 left-4 right-4 z-10 animate-fade-in">
+        <div className="absolute bottom-32 left-4 right-4 z-10 animate-fade-in">
           <div className="p-4 bg-card/10 backdrop-blur-sm rounded-md">
             <h2 className="font-serif text-xl font-semibold text-card mb-1">
               {currentSpecies.name}
@@ -201,42 +227,21 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
               <span>Region: {currentSpecies.region}</span>
             </div>
             <a
-              href="https://fyre.club"
+              href={getFcbcUrl()}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-sans hover:bg-primary/90 transition-colors"
             >
               <ExternalLink className="w-4 h-4" />
-              View on FYRE Club
+              View PureBreed on FCBC
             </a>
           </div>
         </div>
       )}
 
-      {/* Navigation arrows - hide after 3 seconds */}
-      <button
-        onClick={() => navigate('prev')}
-        className={cn(
-          "absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-card/10 backdrop-blur-sm rounded-full hover:bg-card/20 transition-all duration-300",
-          showArrows ? "opacity-100" : "opacity-0 pointer-events-none"
-        )}
-      >
-        <ChevronLeft className="w-6 h-6 text-card" />
-      </button>
-      <button
-        onClick={() => navigate('next')}
-        className={cn(
-          "absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-card/10 backdrop-blur-sm rounded-full hover:bg-card/20 transition-all duration-300",
-          showArrows ? "opacity-100" : "opacity-0 pointer-events-none"
-        )}
-      >
-        <ChevronRight className="w-6 h-6 text-card" />
-      </button>
-
       {/* Bottom left - Slideshow timer */}
       <div className="absolute bottom-6 left-4 safe-area-bottom z-10">
         <SlideshowControls
-          isAutoPlay={isAutoPlay}
           interval={autoPlayInterval}
           onIntervalChange={setAutoPlayInterval}
         />
@@ -244,7 +249,11 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
 
       {/* Bottom center - Vote squares */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 safe-area-bottom z-10">
-        <VoteSquares speciesId={currentSpecies.id} initialVotes={currentSpecies.votes} />
+        <VoteSquares 
+          key={`${currentSpecies.id}-${voteKey}`}
+          speciesId={currentSpecies.id} 
+          initialVotes={currentSpecies.votes} 
+        />
       </div>
 
       {/* Bottom right - Share button */}

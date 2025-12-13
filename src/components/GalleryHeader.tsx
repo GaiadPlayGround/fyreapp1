@@ -7,13 +7,16 @@ const GalleryHeader = ({ onchain, total }: GalleryHeaderProps) => {
   return (
     <div className="text-center py-4 px-3">
       <h2 className="font-serif text-lg font-semibold text-foreground">
-        Fyre PureBreed Collectibles Navigator
+        PureBreed Explorer
       </h2>
+      <p className="text-[11px] font-sans text-muted-foreground mt-1 leading-relaxed">
+        Browse, Vote and Share Fyre Club's Tokenized Endangered Species Pre-Assets on Base L2
+      </p>
       <a 
         href="https://fcbc.fun" 
         target="_blank" 
         rel="noopener noreferrer"
-        className="text-xs font-sans text-muted-foreground hover:text-primary transition-colors"
+        className="text-xs font-sans text-muted-foreground hover:text-primary transition-colors inline-block mt-1"
       >
         a product of fcbc.fun
       </a>
