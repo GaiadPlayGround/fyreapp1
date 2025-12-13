@@ -18,8 +18,8 @@ const GalleryHeader = ({
         Tokenized Endangered PureBreeds  <br />
         on Base L2
       </p>
-      <a href="https://fcbc.fun" target="_blank" rel="noopener noreferrer" className="text-xs font-sans text-blue-500 hover:text-blue-600 transition-colors inline-block mt-2">
-        a product of fcbc.fun
+      <a href="https://fcbc.fun" target="_blank" rel="noopener noreferrer" className="font-sans text-blue-500 hover:text-blue-600 transition-colors inline-block mt-2 text-sm text-center">
+        (a product of fcbc.fun)
       </a>
       <div className="mt-2">
         <span className="text-xs font-sans text-muted-foreground">Total Onchain:</span>
