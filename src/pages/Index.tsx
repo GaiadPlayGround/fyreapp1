@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import Header from '@/components/Header';
-import FilterDrawer, { SortOption } from '@/components/FilterDrawer';
+import FilterDrawer, { SortOption, ViewMode } from '@/components/FilterDrawer';
 import SpeciesGrid from '@/components/SpeciesGrid';
 import SpeciesSlideshow from '@/components/SpeciesSlideshow';
 import { speciesData, Species, ConservationStatus } from '@/data/species';
@@ -10,6 +10,7 @@ const Index = () => {
   const [selectedStatus, setSelectedStatus] = useState<ConservationStatus | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>('trending');
   const [searchTicker, setSearchTicker] = useState('');
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [selectedSpecies, setSelectedSpecies] = useState<{ species: Species; index: number } | null>(null);
 
   // Filter and sort species
@@ -77,6 +78,8 @@ const Index = () => {
         onSortChange={setSortBy}
         searchTicker={searchTicker}
         onSearchChange={setSearchTicker}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
       />
 
       <div
@@ -89,6 +92,7 @@ const Index = () => {
             species={filteredSpecies}
             onSpeciesClick={handleSpeciesClick}
             isFilterOpen={isFilterOpen}
+            viewMode={viewMode}
           />
         </div>
       </div>

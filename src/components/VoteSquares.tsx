@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { useWallet } from '@/contexts/WalletContext';
+import { toast } from '@/hooks/use-toast';
 
 interface VoteSquaresProps {
   speciesId: string;
@@ -7,16 +9,42 @@ interface VoteSquaresProps {
 }
 
 const VoteSquares = ({ speciesId, initialVotes }: VoteSquaresProps) => {
+  const { isConnected, addVote, hasVoted, usdcBalance, connect } = useWallet();
   const [userVote, setUserVote] = useState<number>(0);
   const [totalVotes, setTotalVotes] = useState(initialVotes);
-  const [hasVoted, setHasVoted] = useState(false);
+  const voted = hasVoted(speciesId);
 
   const handleVote = (rating: number) => {
-    if (hasVoted) return;
-    
-    setUserVote(rating);
-    setTotalVotes((prev) => prev + 1);
-    setHasVoted(true);
+    if (!isConnected) {
+      toast({
+        title: "Wallet Required",
+        description: "Connect your wallet to vote. Voting costs 0.2 USDC.",
+        variant: "destructive",
+      });
+      connect();
+      return;
+    }
+
+    if (voted) return;
+
+    if (usdcBalance < 0.2) {
+      toast({
+        title: "Insufficient USDC",
+        description: "You need at least 0.2 USDC to vote.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const success = addVote(speciesId, rating);
+    if (success) {
+      setUserVote(rating);
+      setTotalVotes((prev) => prev + 1);
+      toast({
+        title: "Vote Submitted!",
+        description: "0.2 USDC has been deducted from your balance.",
+      });
+    }
   };
 
   return (
@@ -26,14 +54,15 @@ const VoteSquares = ({ speciesId, initialVotes }: VoteSquaresProps) => {
           <button
             key={rating}
             onClick={() => handleVote(rating)}
-            disabled={hasVoted}
+            disabled={voted}
             className={cn(
               "w-6 h-6 border-2 rounded-sm transition-all duration-200",
               rating <= userVote
                 ? "bg-primary border-primary"
                 : "border-card/50 hover:border-card",
-              hasVoted && "cursor-default",
-              !hasVoted && "hover:scale-110"
+              voted && "cursor-default",
+              !voted && !isConnected && "hover:scale-110 cursor-pointer",
+              !voted && isConnected && "hover:scale-110"
             )}
           >
             {rating <= userVote && (
@@ -52,9 +81,14 @@ const VoteSquares = ({ speciesId, initialVotes }: VoteSquaresProps) => {
           </button>
         ))}
       </div>
-      <span className="text-card/70 text-xs font-sans">
-        {totalVotes.toLocaleString()}
-      </span>
+      <div className="flex flex-col">
+        <span className="text-card/70 text-xs font-sans">
+          {totalVotes.toLocaleString()}
+        </span>
+        {!isConnected && (
+          <span className="text-card/50 text-[10px] font-sans">0.2 USDC</span>
+        )}
+      </div>
     </div>
   );
 };

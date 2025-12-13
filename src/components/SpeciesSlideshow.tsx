@@ -1,9 +1,10 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { ArrowLeft, Info, ChevronLeft, ChevronRight, X as XIcon, Share2 } from 'lucide-react';
+import { ArrowLeft, Info, ChevronLeft, ChevronRight, X as XIcon, Share2, ExternalLink } from 'lucide-react';
 import { Species, getStatusColor, getStatusLabel } from '@/data/species';
 import { cn } from '@/lib/utils';
 import VoteSquares from './VoteSquares';
 import ShareButtons from './ShareButtons';
+import SlideshowControls from './SlideshowControls';
 
 interface SpeciesSlideshowProps {
   species: Species[];
@@ -16,9 +17,14 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
   const [showInfo, setShowInfo] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [showShare, setShowShare] = useState(false);
+  const [isAutoPlay, setIsAutoPlay] = useState(false);
+  const [autoPlayInterval, setAutoPlayInterval] = useState(5);
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const autoPlayRef = useRef<NodeJS.Timeout | null>(null);
   const touchStartRef = useRef<number | null>(null);
   const touchEndRef = useRef<number | null>(null);
+
+  const currentSpecies = species[currentIndex];
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartRef.current = e.targetTouches[0].clientX;
@@ -46,8 +52,6 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
     touchEndRef.current = null;
   };
 
-  const currentSpecies = species[currentIndex];
-
   const navigate = useCallback((direction: 'prev' | 'next') => {
     setCurrentIndex((prev) => {
       if (direction === 'next') {
@@ -55,8 +59,31 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
       }
       return prev === 0 ? species.length - 1 : prev - 1;
     });
-    setShowInfo(false);
+    // Don't close info when navigating - keep it open
   }, [species.length]);
+
+  // Handle empty space click to close info
+  const handleBackgroundClick = (e: React.MouseEvent) => {
+    // Check if the click target is the background itself
+    if (e.target === e.currentTarget) {
+      setShowInfo(false);
+    }
+  };
+
+  // Auto-play effect
+  useEffect(() => {
+    if (isAutoPlay) {
+      autoPlayRef.current = setInterval(() => {
+        navigate('next');
+      }, autoPlayInterval * 1000);
+    }
+
+    return () => {
+      if (autoPlayRef.current) {
+        clearInterval(autoPlayRef.current);
+      }
+    };
+  }, [isAutoPlay, autoPlayInterval, navigate]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -108,6 +135,13 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
     };
   }, []);
 
+  // Truncate description to 50 words
+  const truncateDescription = (text: string, maxWords: number = 50) => {
+    const words = text.split(' ');
+    if (words.length <= maxWords) return text;
+    return words.slice(0, maxWords).join(' ') + '...';
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-foreground">
       {/* Full-screen image with swipe support */}
@@ -116,6 +150,7 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        onClick={handleBackgroundClick}
       >
         <img
           src={currentSpecies.image}
@@ -179,12 +214,21 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
                   {currentSpecies.scientificName}
                 </p>
                 <p className="font-sans text-sm text-card/80 mb-3">
-                  {currentSpecies.description}
+                  {truncateDescription(currentSpecies.description)}
                 </p>
-                <div className="flex gap-4 text-xs font-sans text-card/70">
+                <div className="flex gap-4 text-xs font-sans text-card/70 mb-4">
                   <span>Population: {currentSpecies.population}</span>
                   <span>Region: {currentSpecies.region}</span>
                 </div>
+                <a
+                  href="https://fyre.club"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-sans hover:bg-primary/90 transition-colors"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  View on FYRE Club
+                </a>
               </div>
             )}
           </div>
@@ -228,18 +272,14 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
           </div>
         )}
 
-        {/* Progress indicator */}
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-          {species.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrentIndex(i)}
-              className={cn(
-                "w-1.5 h-1.5 rounded-full transition-colors",
-                i === currentIndex ? "bg-card" : "bg-card/30"
-              )}
-            />
-          ))}
+        {/* Slideshow controls (replacing dots) */}
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2">
+          <SlideshowControls
+            isAutoPlay={isAutoPlay}
+            onToggleAutoPlay={() => setIsAutoPlay(!isAutoPlay)}
+            interval={autoPlayInterval}
+            onIntervalChange={setAutoPlayInterval}
+          />
         </div>
       </div>
     </div>
