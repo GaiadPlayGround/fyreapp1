@@ -82,19 +82,14 @@ const Index = () => {
         onViewModeChange={setViewMode}
       />
 
-      <div
-        className={`pt-20 pb-8 px-4 transition-all duration-300 ${
-          isFilterOpen ? 'ml-64' : 'ml-0'
-        }`}
-      >
-        <div className="container mx-auto">
-          <SpeciesGrid
-            species={filteredSpecies}
-            onSpeciesClick={handleSpeciesClick}
-            isFilterOpen={isFilterOpen}
-            viewMode={viewMode}
-          />
-        </div>
+      {/* Mobile-optimized container with safe areas */}
+      <div className="pt-14 pb-4 px-2">
+        <SpeciesGrid
+          species={filteredSpecies}
+          onSpeciesClick={handleSpeciesClick}
+          isFilterOpen={isFilterOpen}
+          viewMode={viewMode}
+        />
       </div>
 
       {selectedSpecies && (

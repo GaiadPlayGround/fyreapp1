@@ -171,4 +171,26 @@
   .gallery-transition {
     @apply transition-all duration-500 ease-out;
   }
+
+  /* Mobile safe areas */
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Touch feedback */
+  .touch-highlight {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Line clamp utility */
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
 }

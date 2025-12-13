@@ -12,7 +12,7 @@ interface SpeciesGridProps {
   viewMode: ViewMode;
 }
 
-const ITEMS_PER_PAGE_GRID = 75; // 3 rows × 25 columns on mobile (practical: 12-20 items visible)
+const ITEMS_PER_PAGE_GRID_MOBILE = 24; // 3 columns × 8 rows
 const ITEMS_PER_PAGE_LIST = 100;
 
 const SpeciesGrid = ({ species, onSpeciesClick, isFilterOpen, viewMode }: SpeciesGridProps) => {
@@ -22,7 +22,7 @@ const SpeciesGrid = ({ species, onSpeciesClick, isFilterOpen, viewMode }: Specie
   const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
   const autoSlideRef = useRef<NodeJS.Timeout | null>(null);
 
-  const itemsPerPage = viewMode === 'list' ? ITEMS_PER_PAGE_LIST : ITEMS_PER_PAGE_GRID;
+  const itemsPerPage = viewMode === 'list' ? ITEMS_PER_PAGE_LIST : ITEMS_PER_PAGE_GRID_MOBILE;
   const totalPages = Math.ceil(species.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedSpecies = species.slice(startIndex, startIndex + itemsPerPage);
@@ -40,7 +40,7 @@ const SpeciesGrid = ({ species, onSpeciesClick, isFilterOpen, viewMode }: Specie
 
     idleTimerRef.current = setTimeout(() => {
       setIsIdle(true);
-    }, 15000); // 15 seconds idle time
+    }, 15000);
   };
 
   // Start auto-slide when idle
@@ -93,31 +93,26 @@ const SpeciesGrid = ({ species, onSpeciesClick, isFilterOpen, viewMode }: Specie
   if (species.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
-        <p className="font-serif text-lg text-muted-foreground">No species found</p>
+        <p className="font-serif text-base text-muted-foreground">No species found</p>
       </div>
     );
   }
 
   return (
     <div className="relative">
-      {/* Grid View */}
+      {/* Grid View - Mobile optimized 3 columns */}
       {viewMode === 'grid' && (
-        <div
-          className={cn(
-            "grid gap-2 sm:gap-3 transition-all duration-300",
-            "grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5",
-            isFilterOpen && "md:grid-cols-3 lg:grid-cols-4"
-          )}
-        >
+        <div className="grid grid-cols-3 gap-1.5">
           {paginatedSpecies.map((s, index) => (
             <div
               key={s.id}
               className="animate-fade-in"
-              style={{ animationDelay: `${index * 30}ms` }}
+              style={{ animationDelay: `${Math.min(index * 20, 300)}ms` }}
             >
               <SpeciesCard
                 species={s}
                 onClick={() => onSpeciesClick(s, startIndex + index)}
+                compact
               />
             </div>
           ))}
@@ -126,64 +121,64 @@ const SpeciesGrid = ({ species, onSpeciesClick, isFilterOpen, viewMode }: Specie
 
       {/* List View */}
       {viewMode === 'list' && (
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {paginatedSpecies.map((s, index) => (
             <div
               key={s.id}
               onClick={() => onSpeciesClick(s, startIndex + index)}
-              className="flex items-center gap-4 p-3 bg-card rounded-lg border border-border hover:bg-muted/50 cursor-pointer transition-colors animate-fade-in"
-              style={{ animationDelay: `${index * 20}ms` }}
+              className="flex items-center gap-3 p-2.5 bg-card rounded-lg border border-border active:bg-muted/50 cursor-pointer transition-colors animate-fade-in"
+              style={{ animationDelay: `${Math.min(index * 15, 200)}ms` }}
             >
               <img
                 src={s.image}
                 alt={s.name}
-                className="w-16 h-16 object-cover rounded-md"
+                className="w-12 h-12 object-cover rounded-md"
               />
               <div className="flex-1 min-w-0">
-                <h3 className="font-serif text-base font-medium text-foreground truncate">
+                <h3 className="font-serif text-sm font-medium text-foreground truncate">
                   {s.name}
                 </h3>
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex items-center gap-1.5 mt-0.5">
                   <span
                     className={cn(
-                      "px-1.5 py-0.5 rounded-sm text-[10px] font-sans font-medium",
+                      "px-1 py-0.5 rounded-sm text-[8px] font-sans font-medium",
                       getStatusColor(s.status),
                       s.status === 'CR' ? 'text-card' : 'text-foreground'
                     )}
                   >
-                    {getStatusLabel(s.status)}
+                    {s.status}
                   </span>
-                  <span className="text-xs text-muted-foreground font-sans">
+                  <span className="text-[10px] text-muted-foreground font-sans">
                     {s.ticker}
                   </span>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-sm font-sans text-foreground">{s.votes.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground">votes</p>
+                <p className="text-xs font-sans font-medium text-foreground">{s.votes.toLocaleString()}</p>
+                <p className="text-[10px] text-muted-foreground">votes</p>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Pagination */}
+      {/* Pagination - Mobile optimized */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-4 mt-8 pb-4">
+        <div className="flex items-center justify-center gap-3 mt-6 pb-6 safe-area-bottom">
           <button
             onClick={() => navigatePage('prev')}
             disabled={currentPage === 1}
             className={cn(
               "p-2 rounded-full border border-border transition-colors",
               currentPage === 1
-                ? "opacity-50 cursor-not-allowed"
-                : "hover:bg-muted"
+                ? "opacity-40 cursor-not-allowed"
+                : "active:bg-muted"
             )}
           >
-            <ChevronLeft className="w-5 h-5 text-foreground" />
+            <ChevronLeft className="w-4 h-4 text-foreground" />
           </button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
               let pageNum: number;
               if (totalPages <= 5) {
@@ -201,10 +196,10 @@ const SpeciesGrid = ({ species, onSpeciesClick, isFilterOpen, viewMode }: Specie
                   key={pageNum}
                   onClick={() => setCurrentPage(pageNum)}
                   className={cn(
-                    "w-8 h-8 rounded-md text-sm font-sans transition-colors",
+                    "w-7 h-7 rounded-md text-xs font-sans transition-colors",
                     currentPage === pageNum
                       ? "bg-primary text-primary-foreground"
-                      : "hover:bg-muted text-foreground"
+                      : "active:bg-muted text-foreground"
                   )}
                 >
                   {pageNum}
@@ -219,11 +214,11 @@ const SpeciesGrid = ({ species, onSpeciesClick, isFilterOpen, viewMode }: Specie
             className={cn(
               "p-2 rounded-full border border-border transition-colors",
               currentPage === totalPages
-                ? "opacity-50 cursor-not-allowed"
-                : "hover:bg-muted"
+                ? "opacity-40 cursor-not-allowed"
+                : "active:bg-muted"
             )}
           >
-            <ChevronRight className="w-5 h-5 text-foreground" />
+            <ChevronRight className="w-4 h-4 text-foreground" />
           </button>
         </div>
       )}
