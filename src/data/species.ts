@@ -11,6 +11,7 @@ export interface Species {
   region: string;
   votes: number;
   description: string;
+  code?: string;
 }
 
 export const speciesData: Species[] = [

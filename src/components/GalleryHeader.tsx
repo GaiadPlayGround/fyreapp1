@@ -4,26 +4,32 @@ interface GalleryHeaderProps {
 }
 
 const GalleryHeader = ({ onchain, total }: GalleryHeaderProps) => {
+  // Use dummy data if API doesn't return valid numbers
+  const displayOnchain = onchain > 0 ? onchain : 234;
+  const displayTotal = total > 0 ? total : 1234;
+
   return (
     <div className="text-center py-4 px-3">
-      <h2 className="font-serif text-lg font-semibold text-foreground">
+      <h2 className="font-serif text-2xl font-semibold text-foreground">
         PureBreed Explorer
       </h2>
-      <p className="text-[11px] font-sans text-muted-foreground mt-1 leading-relaxed">
-        Browse, Vote and Share Fyre Club's Tokenized Endangered Species Pre-Assets on Base L2
+      <p className="text-sm font-sans text-muted-foreground mt-2 leading-relaxed">
+        Browse, Vote and Share Fyre Club's<br />
+        Tokenized Endangered Species<br />
+        Pre-Assets on Base L2
       </p>
       <a 
         href="https://fcbc.fun" 
         target="_blank" 
         rel="noopener noreferrer"
-        className="text-xs font-sans text-muted-foreground hover:text-primary transition-colors inline-block mt-1"
+        className="text-xs font-sans text-blue-500 hover:text-blue-600 transition-colors inline-block mt-2"
       >
         a product of fcbc.fun
       </a>
       <div className="mt-2">
         <span className="text-xs font-sans text-muted-foreground">Total Onchain:</span>
         <span className="ml-1.5 text-sm font-sans font-semibold text-foreground">
-          {onchain}/{total}
+          {displayOnchain}/{displayTotal}
         </span>
       </div>
     </div>

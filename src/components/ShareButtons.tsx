@@ -5,8 +5,20 @@ interface ShareButtonsProps {
 }
 
 const ShareButtons = ({ species }: ShareButtonsProps) => {
-  const shareText = `Check out the ${species.name} on PureBreed Explorer! ${species.ticker} #FCBC #Conservation`;
-  const shareUrl = `https://fcbc.fun/species/${species.id}`;
+  // Truncate description to ~100 chars
+  const truncatedDesc = species.description.length > 100 
+    ? species.description.substring(0, 100) + '...'
+    : species.description;
+  
+  const speciesUrl = `https://www.fcbc.fun/species/${species.id}?code=${(species as any).code || '0000/00000000'}`;
+  
+  const shareText = `Meet the ${species.name} - ${truncatedDesc}
+
+Now live on FCBC PureBreed Explorer.
+
+Vote, collect, or own onchain DNA ${species.ticker}.
+
+View: ${speciesUrl}`;
 
   const shareLinks = [
     {
@@ -16,7 +28,7 @@ const ShareButtons = ({ species }: ShareButtonsProps) => {
           <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
         </svg>
       ),
-      url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`,
+      url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`,
     },
     {
       name: 'Farcaster',
