@@ -1,26 +1,40 @@
-export type ConservationStatus = 'CR' | 'EN' | 'VU';
+export type ConservationStatus = 'CR' | 'EN' | 'VU' | 'NT' | 'LC' | 'DD' | 'NE' | 'EW' | 'EX';
 
 export interface Species {
-  id: string;
-  name: string;
+  // Identity & Token
+  id: string;           // FCBC ID (e.g. "FCBC #4")
+  name: string;         // Common name
+  symbol: string;       // FCBC ticker (e.g. "FCBC4")
+  code: string;         // Internal FCBC code
+  
+  // Conservation
+  status: ConservationStatus;     // Short IUCN code (CR, VU, etc.)
+  statusLabel: string;            // Human-readable IUCN status
+  rarity: string;                 // FCBC rarity tier
+  
+  // Media
+  image: string;        // High-res IPFS image URL
+  
+  // Legacy/Display fields
   scientificName: string;
-  status: ConservationStatus;
-  ticker: string;
-  image: string;
+  ticker: string;       // Display ticker with $ prefix
   population: string;
   region: string;
   votes: number;
   description: string;
-  code?: string;
 }
 
 export const speciesData: Species[] = [
   {
-    id: '001',
+    id: 'FCBC #1',
     name: 'Sumatran Tiger',
-    scientificName: 'Panthera tigris sumatrae',
+    symbol: 'FCBC1',
+    code: 'FCBC1',
     status: 'CR',
-    ticker: '$FCBC001',
+    statusLabel: 'Critically Endangered',
+    rarity: 'Legendary',
+    scientificName: 'Panthera tigris sumatrae',
+    ticker: '$FCBC1',
     image: 'https://images.unsplash.com/photo-1549480017-d76466a4b7e8?w=800&q=80',
     population: '< 400',
     region: 'Sumatra, Indonesia',
@@ -28,11 +42,15 @@ export const speciesData: Species[] = [
     description: 'The smallest surviving tiger subspecies, found only on the Indonesian island of Sumatra.'
   },
   {
-    id: '002',
+    id: 'FCBC #2',
     name: 'African Elephant',
-    scientificName: 'Loxodonta africana',
+    symbol: 'FCBC2',
+    code: 'FCBC2',
     status: 'EN',
-    ticker: '$FCBC002',
+    statusLabel: 'Endangered',
+    rarity: 'Epic',
+    scientificName: 'Loxodonta africana',
+    ticker: '$FCBC2',
     image: 'https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?w=800&q=80',
     population: '~ 415,000',
     region: 'Sub-Saharan Africa',
@@ -40,11 +58,15 @@ export const speciesData: Species[] = [
     description: 'The largest living land animal, threatened by poaching and habitat loss.'
   },
   {
-    id: '003',
+    id: 'FCBC #3',
     name: 'Mountain Gorilla',
-    scientificName: 'Gorilla beringei beringei',
+    symbol: 'FCBC3',
+    code: 'FCBC3',
     status: 'EN',
-    ticker: '$FCBC003',
+    statusLabel: 'Endangered',
+    rarity: 'Rare',
+    scientificName: 'Gorilla beringei beringei',
+    ticker: '$FCBC3',
     image: 'https://images.unsplash.com/photo-1548802673-380ab8ebc7b7?w=800&q=80',
     population: '~ 1,063',
     region: 'Central Africa',
@@ -52,11 +74,15 @@ export const speciesData: Species[] = [
     description: 'One of our closest relatives, living in the volcanic mountains of central Africa.'
   },
   {
-    id: '004',
+    id: 'FCBC #4',
     name: 'Amur Leopard',
-    scientificName: 'Panthera pardus orientalis',
+    symbol: 'FCBC4',
+    code: 'FCBC4',
     status: 'CR',
-    ticker: '$FCBC004',
+    statusLabel: 'Critically Endangered',
+    rarity: 'Legendary',
+    scientificName: 'Panthera pardus orientalis',
+    ticker: '$FCBC4',
     image: 'https://images.unsplash.com/photo-1456926631375-92c8ce872def?w=800&q=80',
     population: '< 100',
     region: 'Russian Far East',
@@ -64,11 +90,15 @@ export const speciesData: Species[] = [
     description: 'The world\'s rarest big cat, adapted to the cold forests of the Russian Far East.'
   },
   {
-    id: '005',
+    id: 'FCBC #5',
     name: 'Black Rhinoceros',
-    scientificName: 'Diceros bicornis',
+    symbol: 'FCBC5',
+    code: 'FCBC5',
     status: 'CR',
-    ticker: '$FCBC005',
+    statusLabel: 'Critically Endangered',
+    rarity: 'Epic',
+    scientificName: 'Diceros bicornis',
+    ticker: '$FCBC5',
     image: 'https://images.unsplash.com/photo-1598894000329-2f0d85edb68f?w=800&q=80',
     population: '~ 5,500',
     region: 'Eastern & Southern Africa',
@@ -76,11 +106,15 @@ export const speciesData: Species[] = [
     description: 'A critically endangered species that has been brought back from the brink of extinction.'
   },
   {
-    id: '006',
+    id: 'FCBC #6',
     name: 'Giant Panda',
-    scientificName: 'Ailuropoda melanoleuca',
+    symbol: 'FCBC6',
+    code: 'FCBC6',
     status: 'VU',
-    ticker: '$FCBC006',
+    statusLabel: 'Vulnerable',
+    rarity: 'Rare',
+    scientificName: 'Ailuropoda melanoleuca',
+    ticker: '$FCBC6',
     image: 'https://images.unsplash.com/photo-1564349683136-77e08dba1ef7?w=800&q=80',
     population: '~ 1,864',
     region: 'Central China',
@@ -88,11 +122,15 @@ export const speciesData: Species[] = [
     description: 'An iconic symbol of conservation, native to the bamboo forests of China.'
   },
   {
-    id: '007',
+    id: 'FCBC #7',
     name: 'Snow Leopard',
-    scientificName: 'Panthera uncia',
+    symbol: 'FCBC7',
+    code: 'FCBC7',
     status: 'VU',
-    ticker: '$FCBC007',
+    statusLabel: 'Vulnerable',
+    rarity: 'Uncommon',
+    scientificName: 'Panthera uncia',
+    ticker: '$FCBC7',
     image: 'https://images.unsplash.com/photo-1517824806704-9040b037703b?w=800&q=80',
     population: '~ 4,000',
     region: 'Central Asia',
@@ -100,11 +138,15 @@ export const speciesData: Species[] = [
     description: 'The "Ghost of the Mountains," elusive predator of the high Himalayan peaks.'
   },
   {
-    id: '008',
+    id: 'FCBC #8',
     name: 'Orangutan',
-    scientificName: 'Pongo pygmaeus',
+    symbol: 'FCBC8',
+    code: 'FCBC8',
     status: 'CR',
-    ticker: '$FCBC008',
+    statusLabel: 'Critically Endangered',
+    rarity: 'Common',
+    scientificName: 'Pongo pygmaeus',
+    ticker: '$FCBC8',
     image: 'https://images.unsplash.com/photo-1540573133985-87b6da6d54a9?w=800&q=80',
     population: '~ 104,000',
     region: 'Borneo & Sumatra',
@@ -112,11 +154,15 @@ export const speciesData: Species[] = [
     description: 'The only great ape found in Asia, known for exceptional intelligence.'
   },
   {
-    id: '009',
+    id: 'FCBC #9',
     name: 'Polar Bear',
-    scientificName: 'Ursus maritimus',
+    symbol: 'FCBC9',
+    code: 'FCBC9',
     status: 'VU',
-    ticker: '$FCBC009',
+    statusLabel: 'Vulnerable',
+    rarity: 'Legendary',
+    scientificName: 'Ursus maritimus',
+    ticker: '$FCBC9',
     image: 'https://images.unsplash.com/photo-1589656966895-2f33e7653819?w=800&q=80',
     population: '~ 26,000',
     region: 'Arctic Circle',
@@ -124,11 +170,15 @@ export const speciesData: Species[] = [
     description: 'The largest land carnivore, threatened by rapid Arctic ice loss.'
   },
   {
-    id: '010',
+    id: 'FCBC #10',
     name: 'Hawksbill Turtle',
-    scientificName: 'Eretmochelys imbricata',
+    symbol: 'FCBC10',
+    code: 'FCBC10',
     status: 'CR',
-    ticker: '$FCBC010',
+    statusLabel: 'Critically Endangered',
+    rarity: 'Epic',
+    scientificName: 'Eretmochelys imbricata',
+    ticker: '$FCBC10',
     image: 'https://images.unsplash.com/photo-1591025207163-942350e47db2?w=800&q=80',
     population: '< 23,000',
     region: 'Tropical Oceans',
@@ -136,11 +186,15 @@ export const speciesData: Species[] = [
     description: 'A critically endangered sea turtle essential to coral reef ecosystems.'
   },
   {
-    id: '011',
+    id: 'FCBC #11',
     name: 'Bengal Tiger',
-    scientificName: 'Panthera tigris tigris',
+    symbol: 'FCBC11',
+    code: 'FCBC11',
     status: 'EN',
-    ticker: '$FCBC011',
+    statusLabel: 'Endangered',
+    rarity: 'Rare',
+    scientificName: 'Panthera tigris tigris',
+    ticker: '$FCBC11',
     image: 'https://images.unsplash.com/photo-1561731216-c3a4d99437d5?w=800&q=80',
     population: '~ 2,500',
     region: 'Indian Subcontinent',
@@ -148,11 +202,15 @@ export const speciesData: Species[] = [
     description: 'The most numerous tiger subspecies, symbol of India\'s wilderness.'
   },
   {
-    id: '012',
+    id: 'FCBC #12',
     name: 'Red Panda',
-    scientificName: 'Ailurus fulgens',
+    symbol: 'FCBC12',
+    code: 'FCBC12',
     status: 'EN',
-    ticker: '$FCBC012',
+    statusLabel: 'Endangered',
+    rarity: 'Uncommon',
+    scientificName: 'Ailurus fulgens',
+    ticker: '$FCBC12',
     image: 'https://images.unsplash.com/photo-1527118732049-c88155f2107c?w=800&q=80',
     population: '< 10,000',
     region: 'Eastern Himalayas',
@@ -160,11 +218,15 @@ export const speciesData: Species[] = [
     description: 'A charming arboreal mammal, not actually related to the giant panda.'
   },
   {
-    id: '013',
+    id: 'FCBC #13',
     name: 'Cheetah',
-    scientificName: 'Acinonyx jubatus',
+    symbol: 'FCBC13',
+    code: 'FCBC13',
     status: 'VU',
-    ticker: '$FCBC013',
+    statusLabel: 'Vulnerable',
+    rarity: 'Common',
+    scientificName: 'Acinonyx jubatus',
+    ticker: '$FCBC13',
     image: 'https://images.unsplash.com/photo-1475359524104-d101d02a042b?w=800&q=80',
     population: '~ 7,000',
     region: 'Africa & Iran',
@@ -172,11 +234,15 @@ export const speciesData: Species[] = [
     description: 'The fastest land animal, capable of reaching speeds over 70 mph.'
   },
   {
-    id: '014',
+    id: 'FCBC #14',
     name: 'Whale Shark',
-    scientificName: 'Rhincodon typus',
+    symbol: 'FCBC14',
+    code: 'FCBC14',
     status: 'EN',
-    ticker: '$FCBC014',
+    statusLabel: 'Endangered',
+    rarity: 'Legendary',
+    scientificName: 'Rhincodon typus',
+    ticker: '$FCBC14',
     image: 'https://images.unsplash.com/photo-1560275619-4662e36fa65c?w=800&q=80',
     population: 'Unknown',
     region: 'Tropical Oceans',
@@ -184,11 +250,15 @@ export const speciesData: Species[] = [
     description: 'The largest fish in the world, a gentle giant of the seas.'
   },
   {
-    id: '015',
+    id: 'FCBC #15',
     name: 'Blue Whale',
-    scientificName: 'Balaenoptera musculus',
+    symbol: 'FCBC15',
+    code: 'FCBC15',
     status: 'EN',
-    ticker: '$FCBC015',
+    statusLabel: 'Endangered',
+    rarity: 'Epic',
+    scientificName: 'Balaenoptera musculus',
+    ticker: '$FCBC15',
     image: 'https://images.unsplash.com/photo-1568430462989-44163eb1752f?w=800&q=80',
     population: '~ 10,000',
     region: 'All Oceans',
@@ -196,11 +266,15 @@ export const speciesData: Species[] = [
     description: 'The largest animal ever known to exist, still recovering from whaling.'
   },
   {
-    id: '016',
+    id: 'FCBC #16',
     name: 'Koala',
-    scientificName: 'Phascolarctos cinereus',
+    symbol: 'FCBC16',
+    code: 'FCBC16',
     status: 'VU',
-    ticker: '$FCBC016',
+    statusLabel: 'Vulnerable',
+    rarity: 'Rare',
+    scientificName: 'Phascolarctos cinereus',
+    ticker: '$FCBC16',
     image: 'https://images.unsplash.com/photo-1459262838948-3e2de6c1ec80?w=800&q=80',
     population: '~ 80,000',
     region: 'Eastern Australia',
@@ -214,6 +288,13 @@ export const getStatusLabel = (status: ConservationStatus): string => {
     case 'CR': return 'Critically Endangered';
     case 'EN': return 'Endangered';
     case 'VU': return 'Vulnerable';
+    case 'NT': return 'Near Threatened';
+    case 'LC': return 'Least Concern';
+    case 'DD': return 'Data Deficient';
+    case 'NE': return 'Not Evaluated';
+    case 'EW': return 'Extinct in Wild';
+    case 'EX': return 'Extinct';
+    default: return 'Unknown';
   }
 };
 
@@ -222,5 +303,12 @@ export const getStatusColor = (status: ConservationStatus): string => {
     case 'CR': return 'bg-status-cr';
     case 'EN': return 'bg-status-en';
     case 'VU': return 'bg-status-vu';
+    case 'NT': return 'bg-amber-500';
+    case 'LC': return 'bg-green-500';
+    case 'DD': return 'bg-gray-500';
+    case 'NE': return 'bg-gray-400';
+    case 'EW': return 'bg-purple-600';
+    case 'EX': return 'bg-black';
+    default: return 'bg-gray-500';
   }
 };
