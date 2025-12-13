@@ -162,20 +162,20 @@ const SpeciesGrid = ({ species, onSpeciesClick, isFilterOpen, viewMode }: Specie
         </div>
       )}
 
-      {/* Pagination - Mobile optimized */}
+      {/* Pagination - Styled like reference */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-3 mt-6 pb-6 safe-area-bottom">
+        <div className="flex items-center justify-center gap-2 mt-6 pb-4">
           <button
             onClick={() => navigatePage('prev')}
             disabled={currentPage === 1}
             className={cn(
-              "p-2 rounded-full border border-border transition-colors",
+              "w-9 h-9 flex items-center justify-center rounded-lg border border-border bg-card transition-colors",
               currentPage === 1
                 ? "opacity-40 cursor-not-allowed"
-                : "active:bg-muted"
+                : "hover:bg-muted active:bg-muted"
             )}
           >
-            <ChevronLeft className="w-4 h-4 text-foreground" />
+            <ChevronLeft className="w-4 h-4 text-muted-foreground" />
           </button>
 
           <div className="flex items-center gap-1">
@@ -196,10 +196,10 @@ const SpeciesGrid = ({ species, onSpeciesClick, isFilterOpen, viewMode }: Specie
                   key={pageNum}
                   onClick={() => setCurrentPage(pageNum)}
                   className={cn(
-                    "w-7 h-7 rounded-md text-xs font-sans transition-colors",
+                    "w-9 h-9 rounded-lg text-sm font-sans transition-colors",
                     currentPage === pageNum
-                      ? "bg-primary text-primary-foreground"
-                      : "active:bg-muted text-foreground"
+                      ? "bg-blue-500 text-white"
+                      : "bg-card border border-border hover:bg-muted active:bg-muted text-foreground"
                   )}
                 >
                   {pageNum}
@@ -212,16 +212,23 @@ const SpeciesGrid = ({ species, onSpeciesClick, isFilterOpen, viewMode }: Specie
             onClick={() => navigatePage('next')}
             disabled={currentPage === totalPages}
             className={cn(
-              "p-2 rounded-full border border-border transition-colors",
+              "w-9 h-9 flex items-center justify-center rounded-lg border border-border bg-card transition-colors",
               currentPage === totalPages
                 ? "opacity-40 cursor-not-allowed"
-                : "active:bg-muted"
+                : "hover:bg-muted active:bg-muted"
             )}
           >
-            <ChevronRight className="w-4 h-4 text-foreground" />
+            <ChevronRight className="w-4 h-4 text-muted-foreground" />
           </button>
         </div>
       )}
+
+      {/* Footer */}
+      <footer className="text-center py-6 mt-4 border-t border-border">
+        <p className="text-sm text-muted-foreground">
+          © 2024 Fyre App 1 • <span className="text-foreground">Powered by FCBC</span>
+        </p>
+      </footer>
     </div>
   );
 };
