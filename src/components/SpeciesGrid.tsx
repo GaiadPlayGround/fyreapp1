@@ -12,7 +12,7 @@ interface SpeciesGridProps {
   viewMode: ViewMode;
 }
 
-const ITEMS_PER_PAGE_GRID_MOBILE = 24; // 3 columns × 8 rows
+const ITEMS_PER_PAGE_GRID_MOBILE = 60; // 4 columns × 15 rows
 const ITEMS_PER_PAGE_LIST = 100;
 
 const SpeciesGrid = ({ species, onSpeciesClick, isFilterOpen, viewMode }: SpeciesGridProps) => {
@@ -100,9 +100,9 @@ const SpeciesGrid = ({ species, onSpeciesClick, isFilterOpen, viewMode }: Specie
 
   return (
     <div className="relative">
-      {/* Grid View - Mobile optimized 3 columns */}
+      {/* Grid View - Mobile optimized 4 columns */}
       {viewMode === 'grid' && (
-        <div className="grid grid-cols-3 gap-1.5">
+        <div className="grid grid-cols-4 gap-1">
           {paginatedSpecies.map((s, index) => (
             <div
               key={s.id}
