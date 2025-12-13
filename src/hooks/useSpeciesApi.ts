@@ -1,23 +1,54 @@
 import { useState, useEffect } from 'react';
-import { Species, ConservationStatus } from '@/data/species';
+import { Species, ConservationStatus, getStatusLabel } from '@/data/species';
 
 interface ApiSpecies {
+  id?: string;
   name: string;
-  scientificName?: string;
-  status?: ConservationStatus;
-  code?: string;
   symbol?: string;
-  slug?: string;
+  code?: string;
+  status?: string;
+  iucnStatus?: ConservationStatus;
+  rarity?: string;
   image?: string;
+  scientificName?: string;
   population?: string;
   region?: string;
   description?: string;
   tokenId?: string;
+  slug?: string;
 }
 
 interface ApiResponse {
   data: ApiSpecies[];
 }
+
+// Map API status strings to IUCN codes
+const mapStatusToCode = (status?: string, iucnStatus?: ConservationStatus): ConservationStatus => {
+  if (iucnStatus) return iucnStatus;
+  if (!status) return 'VU';
+  
+  const statusLower = status.toLowerCase();
+  if (statusLower.includes('critically')) return 'CR';
+  if (statusLower.includes('endangered')) return 'EN';
+  if (statusLower.includes('vulnerable')) return 'VU';
+  if (statusLower.includes('near')) return 'NT';
+  if (statusLower.includes('least')) return 'LC';
+  if (statusLower.includes('data')) return 'DD';
+  if (statusLower.includes('extinct') && statusLower.includes('wild')) return 'EW';
+  if (statusLower.includes('extinct')) return 'EX';
+  return 'NE';
+};
+
+// Generate dummy description based on species name
+const generateDescription = (name: string): string => {
+  const descriptions = [
+    `The ${name} is a remarkable species that plays a vital role in its ecosystem.`,
+    `Known for its unique characteristics, the ${name} faces significant conservation challenges.`,
+    `The ${name} represents one of nature's most fascinating creatures, now protected under conservation efforts.`,
+    `A symbol of biodiversity, the ${name} continues to inspire conservation action worldwide.`,
+  ];
+  return descriptions[Math.floor(Math.random() * descriptions.length)];
+};
 
 export const useSpeciesApi = () => {
   const [species, setSpecies] = useState<Species[]>([]);
@@ -29,26 +60,43 @@ export const useSpeciesApi = () => {
   useEffect(() => {
     const fetchSpecies = async () => {
       try {
-        const response = await fetch('https://server.fcbc.fun/api/v1/zora/species?count=250');
+        const response = await fetch('https://server.fcbc.fun/api/v1/zora/species?count=150');
         const json: ApiResponse = await response.json();
         
         if (!json || !json.data) {
           throw new Error('Invalid FCBC API response');
         }
 
-        const mappedSpecies: Species[] = json.data.map((s, index) => ({
-          id: String(index + 1).padStart(3, '0'),
-          name: s.name,
-          scientificName: s.scientificName || 'Species name',
-          status: s.status || (['CR', 'EN', 'VU'] as ConservationStatus[])[index % 3],
-          ticker: `$FCBC${s.code || s.symbol || String(index + 1).padStart(3, '0')}`,
-          image: s.image || '',
-          population: s.population || 'Unknown',
-          region: s.region || 'Unknown',
-          votes: Math.floor(Math.random() * 3000),
-          description: s.description || 'A unique species in our collection.',
-          code: s.code || s.symbol,
-        }));
+        const mappedSpecies: Species[] = json.data.map((s, index) => {
+          const fcbcId = s.id || String(index + 1);
+          const symbol = s.symbol || `FCBC${fcbcId}`;
+          const code = s.code || symbol;
+          const iucnCode = mapStatusToCode(s.status, s.iucnStatus);
+          
+          return {
+            // Identity & Token
+            id: `FCBC #${fcbcId}`,
+            name: s.name,
+            symbol: symbol,
+            code: code,
+            
+            // Conservation
+            status: iucnCode,
+            statusLabel: s.status || getStatusLabel(iucnCode),
+            rarity: s.rarity || ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'][index % 5],
+            
+            // Media
+            image: s.image || '',
+            
+            // Legacy/Display fields
+            scientificName: s.scientificName || 'Species name',
+            ticker: `$${symbol}`,
+            population: s.population || 'Unknown',
+            region: s.region || 'Unknown',
+            votes: Math.floor(Math.random() * 3000),
+            description: s.description || generateDescription(s.name),
+          };
+        });
 
         setSpecies(mappedSpecies);
         setTotal(1234);
