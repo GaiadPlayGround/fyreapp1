@@ -71,11 +71,11 @@ const VoteSquares = ({ speciesId, initialVotes, onVoteSubmit }: VoteSquaresProps
           />
         ))}
       </div>
-      <div className="text-center">
+      <div className="flex flex-col items-center text-center">
         <span className="text-card text-xs font-sans">
           {totalVotes.toLocaleString()} Base Squares
         </span>
-        <span className="text-card/60 text-[10px] font-sans ml-2">
+        <span className="text-card/60 text-[10px] font-sans">
           0.2 USDC/vote
         </span>
       </div>
