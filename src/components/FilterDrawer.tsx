@@ -47,124 +47,144 @@ const FilterDrawer = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed top-16 left-0 w-64 h-[calc(100vh-4rem)] bg-card border-r border-border z-40 animate-slide-in-right overflow-y-auto">
-      <div className="p-4">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="font-serif text-lg font-medium text-foreground">Filters</h2>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-muted rounded-sm transition-colors"
-          >
-            <X className="w-4 h-4 text-muted-foreground" />
-          </button>
+    <>
+      {/* Backdrop for mobile */}
+      <div 
+        className="fixed inset-0 bg-foreground/50 z-40 md:hidden"
+        onClick={onClose}
+      />
+      
+      {/* Bottom sheet for mobile, sidebar for desktop */}
+      <div className={cn(
+        "fixed z-40 bg-card border-border overflow-y-auto animate-slide-in-right",
+        // Mobile: bottom sheet
+        "inset-x-0 bottom-0 top-auto max-h-[70vh] rounded-t-2xl border-t",
+        // Desktop: sidebar
+        "md:top-14 md:left-0 md:right-auto md:bottom-0 md:w-64 md:max-h-none md:rounded-none md:border-r md:border-t-0"
+      )}>
+        {/* Mobile drag handle */}
+        <div className="flex justify-center py-2 md:hidden">
+          <div className="w-10 h-1 bg-muted-foreground/30 rounded-full" />
         </div>
 
-        {/* View Mode Toggle */}
-        <div className="mb-6">
-          <label className="block text-xs font-sans text-muted-foreground mb-2">
-            View Mode
-          </label>
-          <div className="flex gap-1">
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-serif text-base font-medium text-foreground">Filters</h2>
             <button
-              onClick={() => onViewModeChange('grid')}
-              className={cn(
-                "flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-sans rounded-md transition-colors",
-                viewMode === 'grid'
-                  ? "bg-primary text-primary-foreground"
-                  : "text-foreground hover:bg-muted"
-              )}
+              onClick={onClose}
+              className="p-1.5 hover:bg-muted rounded-full transition-colors"
             >
-              <LayoutGrid className="w-4 h-4" />
-              Grid
-            </button>
-            <button
-              onClick={() => onViewModeChange('list')}
-              className={cn(
-                "flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-sans rounded-md transition-colors",
-                viewMode === 'list'
-                  ? "bg-primary text-primary-foreground"
-                  : "text-foreground hover:bg-muted"
-              )}
-            >
-              <List className="w-4 h-4" />
-              List
+              <X className="w-4 h-4 text-muted-foreground" />
             </button>
           </div>
-        </div>
 
-        {/* Search by Ticker */}
-        <div className="mb-6">
-          <label className="block text-xs font-sans text-muted-foreground mb-2">
-            Search by Ticker
-          </label>
-          <input
-            type="text"
-            value={searchTicker}
-            onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="#123 or $FCBC..."
-            className="w-full px-3 py-2 text-sm font-sans bg-background border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
-          />
-        </div>
-
-        {/* Status Filter */}
-        <div className="mb-6">
-          <label className="block text-xs font-sans text-muted-foreground mb-2">
-            Conservation Status
-          </label>
-          <div className="space-y-1.5">
-            <button
-              onClick={() => onStatusChange(null)}
-              className={cn(
-                "w-full text-left px-3 py-2 text-sm font-sans rounded-md transition-colors",
-                selectedStatus === null
-                  ? "bg-primary text-primary-foreground"
-                  : "text-foreground hover:bg-muted"
-              )}
-            >
-              All Species
-            </button>
-            {statuses.map((status) => (
+          {/* View Mode Toggle */}
+          <div className="mb-4">
+            <label className="block text-[10px] font-sans text-muted-foreground mb-1.5">
+              View Mode
+            </label>
+            <div className="flex gap-1">
               <button
-                key={status.value}
-                onClick={() => onStatusChange(status.value)}
+                onClick={() => onViewModeChange('grid')}
                 className={cn(
-                  "w-full text-left px-3 py-2 text-sm font-sans rounded-md transition-colors flex items-center gap-2",
-                  selectedStatus === status.value
+                  "flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs font-sans rounded-md transition-colors",
+                  viewMode === 'grid'
                     ? "bg-primary text-primary-foreground"
                     : "text-foreground hover:bg-muted"
                 )}
               >
-                <span className={cn("w-2 h-2 rounded-full", status.color)} />
-                {status.label}
+                <LayoutGrid className="w-3.5 h-3.5" />
+                Grid
               </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Sort Options */}
-        <div>
-          <label className="block text-xs font-sans text-muted-foreground mb-2">
-            Sort By
-          </label>
-          <div className="space-y-1.5">
-            {sortOptions.map((option) => (
               <button
-                key={option.value}
-                onClick={() => onSortChange(option.value)}
+                onClick={() => onViewModeChange('list')}
                 className={cn(
-                  "w-full text-left px-3 py-2 text-sm font-sans rounded-md transition-colors",
-                  sortBy === option.value
+                  "flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs font-sans rounded-md transition-colors",
+                  viewMode === 'list'
                     ? "bg-primary text-primary-foreground"
                     : "text-foreground hover:bg-muted"
                 )}
               >
-                {option.label}
+                <List className="w-3.5 h-3.5" />
+                List
               </button>
-            ))}
+            </div>
+          </div>
+
+          {/* Search by Ticker */}
+          <div className="mb-4">
+            <label className="block text-[10px] font-sans text-muted-foreground mb-1.5">
+              Search by Ticker
+            </label>
+            <input
+              type="text"
+              value={searchTicker}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder="#123 or $FCBC..."
+              className="w-full px-2.5 py-1.5 text-xs font-sans bg-background border border-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+          </div>
+
+          {/* Status Filter */}
+          <div className="mb-4">
+            <label className="block text-[10px] font-sans text-muted-foreground mb-1.5">
+              Conservation Status
+            </label>
+            <div className="flex flex-wrap gap-1">
+              <button
+                onClick={() => onStatusChange(null)}
+                className={cn(
+                  "px-2.5 py-1 text-[10px] font-sans rounded-full transition-colors",
+                  selectedStatus === null
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-foreground"
+                )}
+              >
+                All
+              </button>
+              {statuses.map((status) => (
+                <button
+                  key={status.value}
+                  onClick={() => onStatusChange(status.value)}
+                  className={cn(
+                    "flex items-center gap-1 px-2.5 py-1 text-[10px] font-sans rounded-full transition-colors",
+                    selectedStatus === status.value
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-foreground"
+                  )}
+                >
+                  <span className={cn("w-1.5 h-1.5 rounded-full", status.color)} />
+                  {status.value}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Sort Options */}
+          <div>
+            <label className="block text-[10px] font-sans text-muted-foreground mb-1.5">
+              Sort By
+            </label>
+            <div className="flex flex-wrap gap-1">
+              {sortOptions.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => onSortChange(option.value)}
+                  className={cn(
+                    "px-2.5 py-1 text-[10px] font-sans rounded-full transition-colors",
+                    sortBy === option.value
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-foreground"
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

@@ -32,10 +32,10 @@ const WalletDropdown = () => {
     return (
       <button
         onClick={connect}
-        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-sans border border-border rounded-md hover:bg-muted transition-colors"
+        className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-sans border border-border rounded-md hover:bg-muted transition-colors"
       >
-        <Wallet className="w-4 h-4" />
-        Connect
+        <Wallet className="w-3.5 h-3.5" />
+        <span className="hidden xs:inline">Connect</span>
       </button>
     );
   }
@@ -44,17 +44,17 @@ const WalletDropdown = () => {
     <div ref={dropdownRef} className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 transition-colors"
+        className="flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 transition-colors"
       >
-        <Wallet className="w-4 h-4 text-muted-foreground" />
-        <span className="text-sm font-sans text-foreground">{dnaBalance.toLocaleString()} DNA</span>
+        <Wallet className="w-3.5 h-3.5 text-muted-foreground" />
+        <span className="text-xs font-sans text-foreground">{dnaBalance.toLocaleString()}</span>
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-64 bg-card border border-border rounded-lg shadow-lg z-50 animate-fade-in">
-          <div className="p-4 border-b border-border">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-muted-foreground font-sans">Wallet Address</span>
+        <div className="absolute right-0 top-full mt-2 w-56 bg-card border border-border rounded-lg shadow-lg z-50 animate-fade-in">
+          <div className="p-3 border-b border-border">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] text-muted-foreground font-sans">Wallet Address</span>
               <button onClick={copyAddress} className="p-1 hover:bg-muted rounded transition-colors">
                 {copied ? (
                   <Check className="w-3 h-3 text-primary" />
@@ -63,36 +63,36 @@ const WalletDropdown = () => {
                 )}
               </button>
             </div>
-            <p className="font-mono text-sm text-foreground truncate">{address}</p>
+            <p className="font-mono text-xs text-foreground truncate">{address}</p>
           </div>
 
-          <div className="p-4 space-y-3">
+          <div className="p-3 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-sans text-muted-foreground">FCBC DNA</span>
-              <span className="text-sm font-sans font-medium text-foreground">{dnaBalance.toLocaleString()}</span>
+              <span className="text-xs font-sans text-muted-foreground">FCBC DNA</span>
+              <span className="text-xs font-sans font-medium text-foreground">{dnaBalance.toLocaleString()}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm font-sans text-muted-foreground">USDC Balance</span>
-              <span className="text-sm font-sans font-medium text-foreground">${usdcBalance.toFixed(2)}</span>
+              <span className="text-xs font-sans text-muted-foreground">USDC Balance</span>
+              <span className="text-xs font-sans font-medium text-foreground">${usdcBalance.toFixed(2)}</span>
             </div>
           </div>
 
-          <div className="p-4 border-t border-border">
-            <button className="flex items-center gap-2 w-full px-3 py-2 text-sm font-sans text-foreground hover:bg-muted rounded-md transition-colors">
-              <Vote className="w-4 h-4" />
+          <div className="p-3 border-t border-border">
+            <button className="flex items-center gap-2 w-full px-2 py-1.5 text-xs font-sans text-foreground hover:bg-muted rounded-md transition-colors">
+              <Vote className="w-3.5 h-3.5" />
               <span>See My Votes ({votes.length})</span>
             </button>
           </div>
 
-          <div className="p-4 border-t border-border">
+          <div className="p-3 border-t border-border">
             <button
               onClick={() => {
                 disconnect();
                 setIsOpen(false);
               }}
-              className="flex items-center gap-2 w-full px-3 py-2 text-sm font-sans text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+              className="flex items-center gap-2 w-full px-2 py-1.5 text-xs font-sans text-destructive hover:bg-destructive/10 rounded-md transition-colors"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-3.5 h-3.5" />
               <span>Disconnect</span>
             </button>
           </div>
