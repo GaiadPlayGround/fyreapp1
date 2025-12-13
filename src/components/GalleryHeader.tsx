@@ -10,7 +10,7 @@ const GalleryHeader = ({
   const displayOnchain = onchain > 0 ? onchain : 234;
   const displayTotal = total > 0 ? total : 1234;
   return <div className="text-center py-4 px-3">
-      <h2 className="font-serif text-2xl font-semibold text-foreground">
+      <h2 className="font-semibold text-[#005ae0] font-sans text-6xl">
         PureBreed Explorer
       </h2>
       <p className="text-muted-foreground mt-2 leading-relaxed text-2xl font-mono font-medium text-center">
