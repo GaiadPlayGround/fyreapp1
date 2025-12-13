@@ -2,22 +2,21 @@ import { useState, useEffect } from 'react';
 import { Species, ConservationStatus } from '@/data/species';
 
 interface ApiSpecies {
-  id: string;
   name: string;
   scientificName?: string;
   status?: ConservationStatus;
-  ticker?: string;
-  image: string;
+  code?: string;
+  symbol?: string;
+  slug?: string;
+  image?: string;
   population?: string;
   region?: string;
-  votes?: number;
   description?: string;
+  tokenId?: string;
 }
 
 interface ApiResponse {
-  species: ApiSpecies[];
-  total: number;
-  onchain: number;
+  data: ApiSpecies[];
 }
 
 export const useSpeciesApi = () => {
@@ -30,30 +29,33 @@ export const useSpeciesApi = () => {
   useEffect(() => {
     const fetchSpecies = async () => {
       try {
-        const response = await fetch('https://server.fcbc.fun/api/v1/zora/species?count=25');
-        const data: ApiResponse = await response.json();
+        const response = await fetch('https://server.fcbc.fun/api/v1/zora/species?count=250');
+        const json: ApiResponse = await response.json();
         
-        // Map API response to our Species format
-        const mappedSpecies: Species[] = data.species.map((s, index) => ({
-          id: s.id || String(index + 1).padStart(3, '0'),
+        if (!json || !json.data) {
+          throw new Error('Invalid FCBC API response');
+        }
+
+        const mappedSpecies: Species[] = json.data.map((s, index) => ({
+          id: String(index + 1).padStart(3, '0'),
           name: s.name,
           scientificName: s.scientificName || 'Species name',
           status: s.status || (['CR', 'EN', 'VU'] as ConservationStatus[])[index % 3],
-          ticker: s.ticker || `$FCBC${String(index + 1).padStart(3, '0')}`,
-          image: s.image,
+          ticker: `$FCBC${s.code || s.symbol || String(index + 1).padStart(3, '0')}`,
+          image: s.image || '',
           population: s.population || 'Unknown',
           region: s.region || 'Unknown',
-          votes: s.votes || Math.floor(Math.random() * 3000),
+          votes: Math.floor(Math.random() * 3000),
           description: s.description || 'A unique species in our collection.',
+          code: s.code || s.symbol,
         }));
 
         setSpecies(mappedSpecies);
-        setTotal(data.total || mappedSpecies.length);
-        setOnchain(data.onchain || mappedSpecies.length);
+        setTotal(1234);
+        setOnchain(mappedSpecies.length);
       } catch (err) {
         console.error('Failed to fetch species:', err);
         setError('Failed to load species data');
-        // Fallback to local data if API fails
         import('@/data/species').then(({ speciesData }) => {
           setSpecies(speciesData);
           setTotal(1234);
