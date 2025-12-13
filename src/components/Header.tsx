@@ -20,14 +20,9 @@ const Header = ({ onFilterToggle, isFilterOpen }: HeaderProps) => {
             alt="PureBreed Navigator" 
             className="w-9 h-9 rounded-lg object-contain"
           />
-          <div>
-            <h1 className="font-serif text-sm font-semibold text-foreground leading-tight">
-              PUREBREED NAVIGATOR
-            </h1>
-            <p className="text-[9px] font-sans text-muted-foreground">
-              a product of fcbc.fun
-            </p>
-          </div>
+          <h1 className="font-serif text-sm font-semibold text-foreground leading-tight">
+            Fyre App 1
+          </h1>
         </div>
 
         {/* Right: Actions */}

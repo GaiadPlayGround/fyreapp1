@@ -1,11 +1,14 @@
 import { useState, useMemo } from 'react';
 import Header from '@/components/Header';
+import GalleryHeader from '@/components/GalleryHeader';
 import FilterDrawer, { SortOption, ViewMode } from '@/components/FilterDrawer';
 import SpeciesGrid from '@/components/SpeciesGrid';
 import SpeciesSlideshow from '@/components/SpeciesSlideshow';
-import { speciesData, Species, ConservationStatus } from '@/data/species';
+import { Species, ConservationStatus } from '@/data/species';
+import { useSpeciesApi } from '@/hooks/useSpeciesApi';
 
 const Index = () => {
+  const { species: apiSpecies, total, onchain, loading } = useSpeciesApi();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<ConservationStatus | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>('trending');
@@ -15,14 +18,12 @@ const Index = () => {
 
   // Filter and sort species
   const filteredSpecies = useMemo(() => {
-    let result = [...speciesData];
+    let result = [...apiSpecies];
 
-    // Filter by status
     if (selectedStatus) {
       result = result.filter((s) => s.status === selectedStatus);
     }
 
-    // Filter by ticker search
     if (searchTicker) {
       const search = searchTicker.toLowerCase().replace(/[#$]/g, '');
       result = result.filter(
@@ -33,7 +34,6 @@ const Index = () => {
       );
     }
 
-    // Sort
     switch (sortBy) {
       case 'votes':
         result.sort((a, b) => b.votes - a.votes);
@@ -47,12 +47,11 @@ const Index = () => {
       case 'trending':
       case 'mcap':
       default:
-        // Keep original order for trending/mcap (placeholder)
         break;
     }
 
     return result;
-  }, [selectedStatus, sortBy, searchTicker]);
+  }, [apiSpecies, selectedStatus, sortBy, searchTicker]);
 
   const handleSpeciesClick = (species: Species, index: number) => {
     setSelectedSpecies({ species, index });
@@ -61,6 +60,17 @@ const Index = () => {
   const handleCloseSlideshow = () => {
     setSelectedSpecies(null);
   };
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+          <p className="text-sm text-muted-foreground font-sans">Loading species...</p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-background">
@@ -84,6 +94,8 @@ const Index = () => {
 
       {/* Mobile-optimized container with safe areas */}
       <div className="pt-14 pb-4 px-2">
+        <GalleryHeader onchain={onchain} total={total} />
+        
         <SpeciesGrid
           species={filteredSpecies}
           onSpeciesClick={handleSpeciesClick}

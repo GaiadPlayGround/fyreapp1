@@ -48,46 +48,31 @@ const VoteSquares = ({ speciesId, initialVotes }: VoteSquaresProps) => {
   };
 
   return (
-    <div className="flex items-center gap-3 p-3 bg-card/10 backdrop-blur-sm rounded-full">
-      <div className="flex gap-1">
+    <div className="flex flex-col items-center gap-1">
+      <div className="flex gap-1.5">
         {[1, 2, 3, 4, 5].map((rating) => (
           <button
             key={rating}
             onClick={() => handleVote(rating)}
             disabled={voted}
             className={cn(
-              "w-6 h-6 border-2 rounded-sm transition-all duration-200",
+              "w-7 h-7 border-2 rounded-sm transition-all duration-200",
               rating <= userVote
                 ? "bg-primary border-primary"
                 : "border-card/50 hover:border-card",
               voted && "cursor-default",
-              !voted && !isConnected && "hover:scale-110 cursor-pointer",
-              !voted && isConnected && "hover:scale-110"
+              !voted && "hover:scale-110 cursor-pointer"
             )}
-          >
-            {rating <= userVote && (
-              <svg
-                className="w-full h-full text-primary-foreground p-0.5"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            )}
-          </button>
+          />
         ))}
       </div>
-      <div className="flex flex-col">
-        <span className="text-card/70 text-xs font-sans">
-          {totalVotes.toLocaleString()}
+      <div className="text-center">
+        <span className="text-card text-xs font-sans">
+          {totalVotes.toLocaleString()} votes
         </span>
-        {!isConnected && (
-          <span className="text-card/50 text-[10px] font-sans">0.2 USDC</span>
-        )}
+        <span className="text-card/60 text-[10px] font-sans ml-2">
+          0.2 USDC/vote
+        </span>
       </div>
     </div>
   );
