@@ -11,6 +11,8 @@ interface WalletState {
   address: string | null;
   dnaBalance: number;
   usdcBalance: number;
+  fcbccBalance: number;
+  invites: number;
   votes: Vote[];
 }
 
@@ -19,6 +21,7 @@ interface WalletContextType extends WalletState {
   disconnect: () => void;
   addVote: (speciesId: string, rating: number) => boolean;
   hasVoted: (speciesId: string) => boolean;
+  getVoteCount: (speciesId: string) => number;
 }
 
 const WalletContext = createContext<WalletContextType | null>(null);
@@ -39,6 +42,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     address: null,
     dnaBalance: 0,
     usdcBalance: 0,
+    fcbccBalance: 0,
+    invites: 0,
     votes: [],
   });
 
@@ -49,6 +54,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       address: '0x1234...5678',
       dnaBalance: 1250,
       usdcBalance: 50.0,
+      fcbccBalance: 5000,
+      invites: 1,
       votes: [],
     });
   };
@@ -59,6 +66,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       address: null,
       dnaBalance: 0,
       usdcBalance: 0,
+      fcbccBalance: 0,
+      invites: 0,
       votes: [],
     });
   };
@@ -76,8 +85,13 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     return true;
   };
 
+  // Users can vote multiple times now
   const hasVoted = (speciesId: string): boolean => {
-    return state.votes.some((v) => v.speciesId === speciesId);
+    return false; // Always allow voting
+  };
+
+  const getVoteCount = (speciesId: string): number => {
+    return state.votes.filter((v) => v.speciesId === speciesId).length;
   };
 
   return (
@@ -88,6 +102,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         disconnect,
         addVote,
         hasVoted,
+        getVoteCount,
       }}
     >
       {children}

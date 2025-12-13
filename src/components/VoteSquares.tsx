@@ -6,13 +6,13 @@ import { toast } from '@/hooks/use-toast';
 interface VoteSquaresProps {
   speciesId: string;
   initialVotes: number;
+  onVoteSubmit?: () => void;
 }
 
-const VoteSquares = ({ speciesId, initialVotes }: VoteSquaresProps) => {
-  const { isConnected, addVote, hasVoted, usdcBalance, connect } = useWallet();
+const VoteSquares = ({ speciesId, initialVotes, onVoteSubmit }: VoteSquaresProps) => {
+  const { isConnected, addVote, usdcBalance, connect } = useWallet();
   const [userVote, setUserVote] = useState<number>(0);
   const [totalVotes, setTotalVotes] = useState(initialVotes);
-  const voted = hasVoted(speciesId);
 
   const handleVote = (rating: number) => {
     if (!isConnected) {
@@ -25,8 +25,6 @@ const VoteSquares = ({ speciesId, initialVotes }: VoteSquaresProps) => {
       return;
     }
 
-    if (voted) return;
-
     if (usdcBalance < 0.2) {
       toast({
         title: "Insufficient USDC",
@@ -36,14 +34,23 @@ const VoteSquares = ({ speciesId, initialVotes }: VoteSquaresProps) => {
       return;
     }
 
+    // Immediately assign all squares up to the rating
+    setUserVote(rating);
+
     const success = addVote(speciesId, rating);
     if (success) {
-      setUserVote(rating);
+      // Add the vote count to total and reset the squares
       setTotalVotes((prev) => prev + 1);
       toast({
         title: "Vote Submitted!",
         description: "0.2 USDC has been deducted from your balance.",
       });
+      
+      // Reset the vote squares to empty state after a short delay
+      setTimeout(() => {
+        setUserVote(0);
+        onVoteSubmit?.();
+      }, 500);
     }
   };
 
@@ -54,21 +61,19 @@ const VoteSquares = ({ speciesId, initialVotes }: VoteSquaresProps) => {
           <button
             key={rating}
             onClick={() => handleVote(rating)}
-            disabled={voted}
             className={cn(
               "w-7 h-7 border-2 rounded-sm transition-all duration-200",
               rating <= userVote
                 ? "bg-primary border-primary"
                 : "border-card/50 hover:border-card",
-              voted && "cursor-default",
-              !voted && "hover:scale-110 cursor-pointer"
+              "hover:scale-110 cursor-pointer"
             )}
           />
         ))}
       </div>
       <div className="text-center">
         <span className="text-card text-xs font-sans">
-          {totalVotes.toLocaleString()} votes
+          {totalVotes.toLocaleString()} Base Squares
         </span>
         <span className="text-card/60 text-[10px] font-sans ml-2">
           0.2 USDC/vote
