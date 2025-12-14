@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, LayoutGrid, List } from 'lucide-react';
+import { X, LayoutGrid, List, Volume2, VolumeX, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ConservationStatus } from '@/data/species';
 
@@ -17,6 +17,10 @@ interface FilterDrawerProps {
   onSearchChange: (search: string) => void;
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
+  animationEnabled?: boolean;
+  soundEnabled?: boolean;
+  onToggleAnimation?: () => void;
+  onToggleSound?: () => void;
 }
 
 const FilterDrawer = ({
@@ -30,6 +34,10 @@ const FilterDrawer = ({
   onSearchChange,
   viewMode,
   onViewModeChange,
+  animationEnabled = true,
+  soundEnabled = true,
+  onToggleAnimation,
+  onToggleSound,
 }: FilterDrawerProps) => {
   const statuses: { value: ConservationStatus; label: string; color: string }[] = [
     { value: 'EN', label: 'Endangered', color: 'bg-status-en' },
@@ -83,6 +91,39 @@ const FilterDrawer = ({
             >
               <X className="w-4 h-4 text-muted-foreground" />
             </button>
+          </div>
+
+          {/* Animation & Sound Toggles */}
+          <div className="mb-4">
+            <label className="block text-[10px] font-sans text-muted-foreground mb-1.5">
+              Effects
+            </label>
+            <div className="flex gap-1">
+              <button
+                onClick={onToggleAnimation}
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs font-sans rounded-md transition-colors",
+                  animationEnabled
+                    ? "bg-primary text-primary-foreground"
+                    : "text-foreground hover:bg-muted bg-muted"
+                )}
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                Animation
+              </button>
+              <button
+                onClick={onToggleSound}
+                className={cn(
+                  "flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs font-sans rounded-md transition-colors",
+                  soundEnabled
+                    ? "bg-primary text-primary-foreground"
+                    : "text-foreground hover:bg-muted bg-muted"
+                )}
+              >
+                {soundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+                Sound
+              </button>
+            </div>
           </div>
 
           {/* View Mode Toggle */}
