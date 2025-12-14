@@ -16,6 +16,8 @@ const Index = () => {
   const [searchTicker, setSearchTicker] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [selectedSpecies, setSelectedSpecies] = useState<{ species: Species; index: number } | null>(null);
+  const [animationEnabled, setAnimationEnabled] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const galleryRef = useRef<HTMLDivElement>(null);
 
   // Filter and sort species
@@ -83,13 +85,23 @@ const Index = () => {
       <OnboardingGuide />
       
       {/* Hero Section */}
-      <HeroSection onchain={onchain} total={total} onSwipeUp={handleSwipeUp} />
+      <HeroSection 
+        onchain={onchain} 
+        total={total} 
+        onSwipeUp={handleSwipeUp}
+        animationEnabled={animationEnabled}
+        soundEnabled={soundEnabled}
+      />
 
       {/* Gallery Section */}
       <div ref={galleryRef} className="scroll-mt-4">
         <Header
           onFilterToggle={() => setIsFilterOpen(!isFilterOpen)}
           isFilterOpen={isFilterOpen}
+          animationEnabled={animationEnabled}
+          soundEnabled={soundEnabled}
+          onToggleAnimation={() => setAnimationEnabled(!animationEnabled)}
+          onToggleSound={() => setSoundEnabled(!soundEnabled)}
         />
 
         <FilterDrawer
