@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
-import { Wallet, LogOut, Vote, Copy, Check, Users } from 'lucide-react';
+import { Wallet, LogOut, Vote, Copy, Check, Users, Share2 } from 'lucide-react';
 import { useWallet } from '@/contexts/WalletContext';
 import { cn } from '@/lib/utils';
 
 const WalletDropdown = () => {
-  const { isConnected, address, dnaBalance, usdcBalance, fcbccBalance, votes, invites, connect, disconnect } = useWallet();
+  const { isConnected, address, dnaBalance, usdcBalance, fcbccBalance, votes, shares, invites, connect, disconnect } = useWallet();
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [inviteCopied, setInviteCopied] = useState(false);
@@ -110,7 +110,11 @@ const WalletDropdown = () => {
             </button>
             <button className="flex items-center gap-2 w-full px-2 py-1.5 text-xs font-sans text-foreground hover:bg-muted rounded-md transition-colors">
               <Vote className="w-3.5 h-3.5" />
-              <span>My votes ({votes.length})</span>
+              <span>Vote tickets ({votes.length})</span>
+            </button>
+            <button className="flex items-center gap-2 w-full px-2 py-1.5 text-xs font-sans text-foreground hover:bg-muted rounded-md transition-colors">
+              <Share2 className="w-3.5 h-3.5" />
+              <span>My shares ({shares})</span>
             </button>
           </div>
 

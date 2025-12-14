@@ -13,6 +13,7 @@ interface WalletState {
   usdcBalance: number;
   fcbccBalance: number;
   invites: number;
+  shares: number;
   votes: Vote[];
 }
 
@@ -20,6 +21,7 @@ interface WalletContextType extends WalletState {
   connect: () => void;
   disconnect: () => void;
   addVote: (speciesId: string, rating: number) => boolean;
+  addShare: () => void;
   hasVoted: (speciesId: string) => boolean;
   getVoteCount: (speciesId: string) => number;
 }
@@ -44,6 +46,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     usdcBalance: 0,
     fcbccBalance: 0,
     invites: 0,
+    shares: 0,
     votes: [],
   });
 
@@ -56,6 +59,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       usdcBalance: 50.0,
       fcbccBalance: 5000,
       invites: 1,
+      shares: 0,
       votes: [],
     });
   };
@@ -68,8 +72,16 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       usdcBalance: 0,
       fcbccBalance: 0,
       invites: 0,
+      shares: 0,
       votes: [],
     });
+  };
+
+  const addShare = () => {
+    setState((prev) => ({
+      ...prev,
+      shares: prev.shares + 1,
+    }));
   };
 
   const addVote = (speciesId: string, rating: number): boolean => {
@@ -101,6 +113,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         connect,
         disconnect,
         addVote,
+        addShare,
         hasVoted,
         getVoteCount,
       }}
