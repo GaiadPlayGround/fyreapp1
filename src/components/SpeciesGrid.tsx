@@ -162,7 +162,7 @@ const SpeciesGrid = ({
           © 2025 Fyre App 1
         </p>
         <p className="text-xs text-muted-foreground mt-1">
-          with love from the og folks at <a href="https://fcbc.fun" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">fcbc.fun</a>
+          with love from the folks at <a href="https://fcbc.fun" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">fcbc.fun</a>
         </p>
       </footer>
     </div>;
