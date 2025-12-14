@@ -4,15 +4,17 @@ interface HeroSectionProps {
   onchain: number;
   total: number;
   onSwipeUp: () => void;
+  animationEnabled?: boolean;
+  soundEnabled?: boolean;
 }
 
-const HeroSection = ({ onchain, total, onSwipeUp }: HeroSectionProps) => {
+const HeroSection = ({ onchain, total, onSwipeUp, animationEnabled = true, soundEnabled = true }: HeroSectionProps) => {
   const displayOnchain = onchain > 0 ? onchain : 234;
   const displayTotal = total > 0 ? total : 1234;
 
   return (
     <section className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
-      <FallingSquares />
+      <FallingSquares animationEnabled={animationEnabled} soundEnabled={soundEnabled} />
       <div className="w-full max-w-2xl border-2 border-border rounded-lg p-6 sm:p-10 bg-card/30 relative z-10">
         <div className="text-center">
           <h1 className="font-mono text-3xl sm:text-5xl md:text-6xl font-semibold text-[#005ae0] tracking-wide">
