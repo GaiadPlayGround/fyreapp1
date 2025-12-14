@@ -159,7 +159,10 @@ const SpeciesGrid = ({
       {/* Footer */}
       <footer className="text-center py-6 mt-4 border-t border-border">
         <p className="text-sm text-muted-foreground">
-          © 2025 Fyre App 1 • <span className="text-foreground">Powered by FCBC</span>
+          © 2025 Fyre App 1
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">
+          with love from the og folks at <a href="https://fcbc.fun" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">fcbc.fun</a>
         </p>
       </footer>
     </div>;
