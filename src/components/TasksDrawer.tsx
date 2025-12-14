@@ -1,36 +1,76 @@
 import { useState } from 'react';
-import { Check, ChevronDown, ChevronUp, ExternalLink, Share2, Vote, Coins, Users } from 'lucide-react';
+import { Check, ChevronDown, ChevronUp, ExternalLink, Share2, Vote, Coins, Users, Copy } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useWallet } from '@/contexts/WalletContext';
+import { toast } from '@/hooks/use-toast';
+
+const CONTRACT_ADDRESS = '0x17d8d3c956a9b2d72257d7c9624cfcfd8ba8672b';
 
 interface Task {
   id: string;
   label: string;
-  completed: boolean;
   icon: React.ReactNode;
+  type: 'redirect' | 'progress' | 'copy';
+  url?: string;
+  requirement?: number;
+  progressKey?: 'votes' | 'shares' | 'referrals';
 }
+
+const TASKS: Task[] = [
+  { id: 'follow-zora', label: 'Follow FCBC on Zora', icon: <ExternalLink className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://zora.co/@fcbc' },
+  { id: 'follow-base', label: 'Follow FCBC on Base App', icon: <ExternalLink className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://base.org/name/fcbc' },
+  { id: 'follow-x', label: 'Follow FCBC on X', icon: <ExternalLink className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://x.com/fcbclub' },
+  { id: 'vote-10', label: 'Vote for 10 species', icon: <Vote className="w-3.5 h-3.5" />, type: 'progress', requirement: 10, progressKey: 'votes' },
+  { id: 'vote-25', label: 'Vote for 25 species', icon: <Vote className="w-3.5 h-3.5" />, type: 'progress', requirement: 25, progressKey: 'votes' },
+  { id: 'share-5', label: 'Share 5 species', icon: <Share2 className="w-3.5 h-3.5" />, type: 'progress', requirement: 5, progressKey: 'shares' },
+  { id: 'share-25', label: 'Share 25 species', icon: <Share2 className="w-3.5 h-3.5" />, type: 'progress', requirement: 25, progressKey: 'shares' },
+  { id: 'refer-3', label: 'Refer 3 people', icon: <Users className="w-3.5 h-3.5" />, type: 'progress', requirement: 3, progressKey: 'referrals' },
+  { id: 'refer-5', label: 'Refer 5 people', icon: <Users className="w-3.5 h-3.5" />, type: 'progress', requirement: 5, progressKey: 'referrals' },
+  { id: 'buy-coin', label: 'Buy Creator Coin', icon: <Coins className="w-3.5 h-3.5" />, type: 'copy' },
+];
 
 const TasksDrawer = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [tasks, setTasks] = useState<Task[]>([
-    { id: 'follow-zora', label: 'Follow FCBC on Zora', completed: false, icon: <ExternalLink className="w-3.5 h-3.5" /> },
-    { id: 'follow-base', label: 'Follow FCBC on Base App', completed: false, icon: <ExternalLink className="w-3.5 h-3.5" /> },
-    { id: 'follow-x', label: 'Follow FCBC on X', completed: false, icon: <ExternalLink className="w-3.5 h-3.5" /> },
-    { id: 'vote-10', label: 'Vote for 10 species', completed: false, icon: <Vote className="w-3.5 h-3.5" /> },
-    { id: 'vote-25', label: 'Vote for 25 species', completed: false, icon: <Vote className="w-3.5 h-3.5" /> },
-    { id: 'share-5', label: 'Share 5 species', completed: false, icon: <Share2 className="w-3.5 h-3.5" /> },
-    { id: 'share-25', label: 'Share 25 species', completed: false, icon: <Share2 className="w-3.5 h-3.5" /> },
-    { id: 'refer-3', label: 'Refer 3 people', completed: false, icon: <Users className="w-3.5 h-3.5" /> },
-    { id: 'refer-5', label: 'Refer 5 people', completed: false, icon: <Users className="w-3.5 h-3.5" /> },
-    { id: 'buy-coin', label: 'Buy Creator Coin', completed: false, icon: <Coins className="w-3.5 h-3.5" /> },
-  ]);
+  const [clickedRedirects, setClickedRedirects] = useState<Set<string>>(new Set());
+  const { votes, shares } = useWallet();
+  
+  // Mock referrals count - in real app would come from context
+  const referrals = 0;
 
-  const completedCount = tasks.filter(t => t.completed).length;
-
-  const toggleTask = (id: string) => {
-    setTasks(tasks.map(t => 
-      t.id === id ? { ...t, completed: !t.completed } : t
-    ));
+  const getProgress = (key: 'votes' | 'shares' | 'referrals'): number => {
+    switch (key) {
+      case 'votes': return votes.length;
+      case 'shares': return shares;
+      case 'referrals': return referrals;
+      default: return 0;
+    }
   };
+
+  const isTaskCompleted = (task: Task): boolean => {
+    if (task.type === 'redirect') {
+      return clickedRedirects.has(task.id);
+    }
+    if (task.type === 'progress' && task.requirement && task.progressKey) {
+      return getProgress(task.progressKey) >= task.requirement;
+    }
+    return false;
+  };
+
+  const handleTaskClick = (task: Task) => {
+    if (task.type === 'redirect' && task.url) {
+      window.open(task.url, '_blank');
+      setClickedRedirects(prev => new Set(prev).add(task.id));
+    } else if (task.type === 'copy') {
+      navigator.clipboard.writeText(CONTRACT_ADDRESS);
+      toast({
+        title: "Contract Address Copied!",
+        description: CONTRACT_ADDRESS,
+      });
+    }
+    // Progress tasks are read-only - they complete automatically
+  };
+
+  const completedCount = TASKS.filter(t => isTaskCompleted(t)).length;
 
   return (
     <div className="relative">
@@ -38,7 +78,7 @@ const TasksDrawer = () => {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-1.5 px-2 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
       >
-        <span className="font-sans">{completedCount}/{tasks.length}</span>
+        <span className="font-sans">{completedCount}/{TASKS.length}</span>
         {isOpen ? (
           <ChevronUp className="w-3 h-3" />
         ) : (
@@ -53,45 +93,55 @@ const TasksDrawer = () => {
               FYRE MISSIONS
             </h3>
             <ul className="space-y-2">
-              {tasks.map((task) => (
-                <li key={task.id}>
-                  <button
-                    onClick={() => toggleTask(task.id)}
-                    className="flex items-center gap-2 w-full text-left group"
-                  >
-                    <div
+              {TASKS.map((task) => {
+                const completed = isTaskCompleted(task);
+                const isClickable = task.type === 'redirect' || task.type === 'copy';
+                
+                return (
+                  <li key={task.id}>
+                    <button
+                      onClick={() => handleTaskClick(task)}
+                      disabled={!isClickable && !completed}
                       className={cn(
-                        "w-4 h-4 rounded-sm border flex items-center justify-center transition-colors flex-shrink-0",
-                        task.completed
-                          ? "bg-primary border-primary"
-                          : "border-muted-foreground/30 group-hover:border-primary/50"
+                        "flex items-center gap-2 w-full text-left group",
+                        isClickable && "cursor-pointer",
+                        !isClickable && "cursor-default"
                       )}
                     >
-                      {task.completed && (
-                        <Check className="w-3 h-3 text-primary-foreground" />
-                      )}
-                    </div>
-                    <span className="flex items-center gap-1.5">
-                      <span className={cn(
-                        "text-muted-foreground",
-                        task.completed && "opacity-50"
-                      )}>
-                        {task.icon}
-                      </span>
-                      <span
+                      <div
                         className={cn(
-                          "text-xs font-sans",
-                          task.completed
-                            ? "text-muted-foreground line-through"
-                            : "text-foreground"
+                          "w-4 h-4 rounded-sm border flex items-center justify-center transition-colors flex-shrink-0",
+                          completed
+                            ? "bg-primary border-primary"
+                            : "border-muted-foreground/30"
                         )}
                       >
-                        {task.label}
+                        {completed && (
+                          <Check className="w-3 h-3 text-primary-foreground" />
+                        )}
+                      </div>
+                      <span className="flex items-center gap-1.5">
+                        <span className={cn(
+                          "text-muted-foreground",
+                          completed && "opacity-50"
+                        )}>
+                          {task.type === 'copy' ? <Copy className="w-3.5 h-3.5" /> : task.icon}
+                        </span>
+                        <span
+                          className={cn(
+                            "text-xs font-sans",
+                            completed
+                              ? "text-muted-foreground line-through"
+                              : "text-foreground"
+                          )}
+                        >
+                          {task.label}
+                        </span>
                       </span>
-                    </span>
-                  </button>
-                </li>
-              ))}
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </div>

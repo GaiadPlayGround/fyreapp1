@@ -39,8 +39,8 @@ const VoteSquares = ({ speciesId, initialVotes, onVoteSubmit }: VoteSquaresProps
 
     const success = addVote(speciesId, rating);
     if (success) {
-      // Add the vote count to total and reset the squares
-      setTotalVotes((prev) => prev + 1);
+      // Add the rating value to total (not just +1)
+      setTotalVotes((prev) => prev + rating);
       toast({
         title: "Vote Submitted!",
         description: "0.2 USDC has been deducted from your balance.",
