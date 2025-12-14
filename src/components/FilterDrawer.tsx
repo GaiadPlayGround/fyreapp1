@@ -32,15 +32,21 @@ const FilterDrawer = ({
   onViewModeChange,
 }: FilterDrawerProps) => {
   const statuses: { value: ConservationStatus; label: string; color: string }[] = [
-    { value: 'CR', label: 'Critically Endangered', color: 'bg-status-cr' },
     { value: 'EN', label: 'Endangered', color: 'bg-status-en' },
+    { value: 'NT', label: 'Near Threatened', color: 'bg-yellow-500' },
+    { value: 'CR', label: 'Critically Endangered', color: 'bg-status-cr' },
+    { value: 'DD', label: 'Data Deficient', color: 'bg-gray-500' },
     { value: 'VU', label: 'Vulnerable', color: 'bg-status-vu' },
+    { value: 'LC', label: 'Least Concern', color: 'bg-green-500' },
+    { value: 'EX', label: 'Extinct', color: 'bg-black' },
+    { value: 'EW', label: 'Extinct in the Wild', color: 'bg-gray-800' },
+    { value: 'NE', label: 'Near Extinct', color: 'bg-red-900' },
   ];
 
   const sortOptions: { value: SortOption; label: string }[] = [
     { value: 'trending', label: 'Trending' },
-    { value: 'votes', label: 'Most Votes' },
-    { value: 'mcap', label: 'Market Cap' },
+    { value: 'votes', label: 'Votes' },
+    { value: 'mcap', label: 'Shares' },
     { value: 'new', label: 'Newest' },
     { value: 'id', label: 'ID' },
   ];
