@@ -43,7 +43,8 @@ const VoteSquares = ({ speciesId, initialVotes, onVoteSubmit }: VoteSquaresProps
       setTotalVotes((prev) => prev + rating);
       toast({
         title: "Vote Submitted!",
-        description: "0.2 USDC has been deducted from your balance.",
+        description: "-0.2 USDC",
+        duration: 1000,
       });
       
       // Reset the vote squares to empty state after a short delay

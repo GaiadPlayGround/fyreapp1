@@ -1,3 +1,5 @@
+import FallingSquares from './FallingSquares';
+
 interface HeroSectionProps {
   onchain: number;
   total: number;
@@ -9,8 +11,9 @@ const HeroSection = ({ onchain, total, onSwipeUp }: HeroSectionProps) => {
   const displayTotal = total > 0 ? total : 1234;
 
   return (
-    <section className="min-h-screen flex items-center justify-center px-4">
-      <div className="w-full max-w-2xl border-2 border-border rounded-lg p-6 sm:p-10 bg-card/30">
+    <section className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
+      <FallingSquares />
+      <div className="w-full max-w-2xl border-2 border-border rounded-lg p-6 sm:p-10 bg-card/30 relative z-10">
         <div className="text-center">
           <h1 className="font-mono text-3xl sm:text-5xl md:text-6xl font-semibold text-[#005ae0] tracking-wide">
             PUREBREEDS EXPLORER

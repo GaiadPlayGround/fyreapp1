@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import VoteSquares from './VoteSquares';
 import ShareButtons from './ShareButtons';
 import SlideshowControls from './SlideshowControls';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 interface SpeciesSlideshowProps {
   species: Species[];
@@ -17,7 +18,7 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
   const [showInfo, setShowInfo] = useState(false);
   const [showArrows, setShowArrows] = useState(true);
   const [showShare, setShowShare] = useState(false);
-  const [autoPlayInterval, setAutoPlayInterval] = useState<number | null>(5);
+  const [autoPlayInterval, setAutoPlayInterval] = useState<number | null>(10);
   const [voteKey, setVoteKey] = useState(0); // Key to reset VoteSquares
   const arrowHideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const autoPlayRef = useRef<NodeJS.Timeout | null>(null);
@@ -157,23 +158,39 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
       </div>
 
       {/* Top bar - Back arrow (left) and Info (right) */}
-      <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between safe-area-top z-10">
-        <button
-          onClick={onClose}
-          className="p-2 bg-card/10 backdrop-blur-sm rounded-full hover:bg-card/20 transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5 text-card" />
-        </button>
-        <button
-          onClick={() => setShowInfo(!showInfo)}
-          className={cn(
-            "p-2 backdrop-blur-sm rounded-full transition-colors",
-            showInfo ? "bg-card/30" : "bg-card/10 hover:bg-card/20"
-          )}
-        >
-          <Info className="w-5 h-5 text-card" />
-        </button>
-      </div>
+      <TooltipProvider>
+        <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between safe-area-top z-10">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={onClose}
+                className="p-2 bg-card/10 backdrop-blur-sm rounded-full hover:bg-card/20 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5 text-card" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p>Back to gallery</p>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setShowInfo(!showInfo)}
+                className={cn(
+                  "p-2 backdrop-blur-sm rounded-full transition-colors",
+                  showInfo ? "bg-card/30" : "bg-card/10 hover:bg-card/20"
+                )}
+              >
+                <Info className="w-5 h-5 text-card" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p>Species details</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      </TooltipProvider>
 
       {/* Navigation arrows - hide after 3 seconds */}
       <button
@@ -257,17 +274,26 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
       </div>
 
       {/* Bottom right - Share button */}
-      <div className="absolute bottom-6 right-4 safe-area-bottom z-10">
-        <button
-          onClick={() => setShowShare(!showShare)}
-          className={cn(
-            "p-3 backdrop-blur-sm rounded-full transition-colors",
-            showShare ? "bg-card/30" : "bg-card/10 hover:bg-card/20"
-          )}
-        >
-          <Share2 className="w-5 h-5 text-card" />
-        </button>
-      </div>
+      <TooltipProvider>
+        <div className="absolute bottom-6 right-4 safe-area-bottom z-10">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setShowShare(!showShare)}
+                className={cn(
+                  "p-3 backdrop-blur-sm rounded-full transition-colors",
+                  showShare ? "bg-card/30" : "bg-card/10 hover:bg-card/20"
+                )}
+              >
+                <Share2 className="w-5 h-5 text-card" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              <p>Share species</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      </TooltipProvider>
 
       {/* Share buttons popup */}
       {showShare && (
