@@ -42,7 +42,7 @@ const HeroSection = ({
       setParticles(prev => prev.filter(p => !newParticles.find(np => np.id === p.id)));
     }, 600);
   };
-  return <section className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
+  return <section className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden opacity-85">
       <FallingSquares animationEnabled={animationEnabled} soundEnabled={soundEnabled} onImpact={handleImpact} />
       <div className="w-full max-w-2xl border-2 border-border rounded-lg p-6 sm:p-10 bg-card/30 relative z-10">
         <div className="text-center">
