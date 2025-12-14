@@ -24,8 +24,9 @@ const HeroSection = ({
           </h1>
           
           <p className="text-muted-foreground mt-6 leading-relaxed text-lg sm:text-2xl font-medium font-serif">Browse, Vote and Share
-Tokenized Endangered Animals
-on Base L2<br />
+Tokenized Endangered Animals 
+on Base L2
+          <br />
             Tokenized Endangered PureBreeds<br />
             on Base L2
           </p>
