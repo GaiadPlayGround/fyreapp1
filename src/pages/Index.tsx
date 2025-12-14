@@ -98,10 +98,6 @@ const Index = () => {
         <Header
           onFilterToggle={() => setIsFilterOpen(!isFilterOpen)}
           isFilterOpen={isFilterOpen}
-          animationEnabled={animationEnabled}
-          soundEnabled={soundEnabled}
-          onToggleAnimation={() => setAnimationEnabled(!animationEnabled)}
-          onToggleSound={() => setSoundEnabled(!soundEnabled)}
         />
 
         <FilterDrawer
@@ -115,6 +111,10 @@ const Index = () => {
           onSearchChange={setSearchTicker}
           viewMode={viewMode}
           onViewModeChange={setViewMode}
+          animationEnabled={animationEnabled}
+          soundEnabled={soundEnabled}
+          onToggleAnimation={() => setAnimationEnabled(!animationEnabled)}
+          onToggleSound={() => setSoundEnabled(!soundEnabled)}
         />
 
         {/* Mobile-optimized container with safe areas */}

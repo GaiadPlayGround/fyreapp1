@@ -5,25 +5,15 @@ import { Button } from '@/components/ui/button';
 import logo from '@/assets/logo.png';
 import logoLight from '@/assets/logo-light.png';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Volume2, VolumeX, Sparkles, SparklesIcon } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface HeaderProps {
   onFilterToggle: () => void;
   isFilterOpen: boolean;
-  animationEnabled?: boolean;
-  soundEnabled?: boolean;
-  onToggleAnimation?: () => void;
-  onToggleSound?: () => void;
 }
 
 const Header = ({
   onFilterToggle,
   isFilterOpen,
-  animationEnabled = true,
-  soundEnabled = true,
-  onToggleAnimation,
-  onToggleSound,
 }: HeaderProps) => {
   const { theme } = useTheme();
   const currentLogo = theme === 'dark' ? logo : logoLight;
@@ -41,50 +31,6 @@ const Header = ({
 
         {/* Right: Actions */}
         <div className="flex items-center gap-1.5">
-          <TooltipProvider>
-            {/* Animation Toggle */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onToggleAnimation}
-                  className={`h-8 w-8 p-0 ${!animationEnabled ? 'opacity-50' : ''}`}
-                >
-                  {animationEnabled ? (
-                    <Sparkles className="h-4 w-4" />
-                  ) : (
-                    <SparklesIcon className="h-4 w-4" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{animationEnabled ? 'Disable animation' : 'Enable animation'}</p>
-              </TooltipContent>
-            </Tooltip>
-
-            {/* Sound Toggle */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onToggleSound}
-                  className={`h-8 w-8 p-0 ${!soundEnabled ? 'opacity-50' : ''}`}
-                >
-                  {soundEnabled ? (
-                    <Volume2 className="h-4 w-4" />
-                  ) : (
-                    <VolumeX className="h-4 w-4" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{soundEnabled ? 'Mute sounds' : 'Enable sounds'}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
           <TasksDrawer />
           <ThemeToggle />
           
