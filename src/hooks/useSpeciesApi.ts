@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Species, ConservationStatus, getStatusLabel } from '@/data/species';
+import { Species, ConservationStatus, getStatusLabel, getAllSpeciesData } from '@/data/species';
 
 interface ApiSpecies {
   id?: string;
@@ -98,17 +98,22 @@ export const useSpeciesApi = () => {
           };
         });
 
-        setSpecies(mappedSpecies);
+        // Merge with additional dummy species if we need more to fill the grid
+        const allDummySpecies = getAllSpeciesData();
+        const combinedSpecies = mappedSpecies.length < 75 
+          ? [...mappedSpecies, ...allDummySpecies.slice(mappedSpecies.length).slice(0, 75 - mappedSpecies.length)]
+          : mappedSpecies;
+
+        setSpecies(combinedSpecies);
         setTotal(1234);
-        setOnchain(mappedSpecies.length);
+        setOnchain(combinedSpecies.length);
       } catch (err) {
         console.error('Failed to fetch species:', err);
         setError('Failed to load species data');
-        import('@/data/species').then(({ speciesData }) => {
-          setSpecies(speciesData);
-          setTotal(1234);
-          setOnchain(speciesData.length);
-        });
+        const allDummySpecies = getAllSpeciesData();
+        setSpecies(allDummySpecies.slice(0, 75));
+        setTotal(1234);
+        setOnchain(allDummySpecies.length);
       } finally {
         setLoading(false);
       }

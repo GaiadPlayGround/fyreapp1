@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { X, LayoutGrid, List } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ConservationStatus } from '@/data/species';
@@ -161,7 +162,7 @@ const FilterDrawer = ({
           </div>
 
           {/* Sort Options */}
-          <div>
+          <div className="mb-4">
             <label className="block text-[10px] font-sans text-muted-foreground mb-1.5">
               Sort By
             </label>
@@ -182,9 +183,73 @@ const FilterDrawer = ({
               ))}
             </div>
           </div>
+
+          {/* Top 5 Leaderboard */}
+          <Leaderboard />
         </div>
       </div>
     </>
+  );
+};
+
+// Mock leaderboard data
+const MOCK_VOTERS = [
+  { rank: 1, name: '0x7a3...f2c', score: 2847 },
+  { rank: 2, name: '0x9b1...e8d', score: 2341 },
+  { rank: 3, name: '0x4c2...a1b', score: 1956 },
+  { rank: 4, name: '0x8f3...c9e', score: 1678 },
+  { rank: 5, name: '0x2d4...b7a', score: 1423 },
+];
+
+const MOCK_SHARERS = [
+  { rank: 1, name: '0x5e2...d4f', score: 156 },
+  { rank: 2, name: '0x7a3...f2c', score: 134 },
+  { rank: 3, name: '0x1c8...a3e', score: 98 },
+  { rank: 4, name: '0x9b1...e8d', score: 87 },
+  { rank: 5, name: '0x6f5...c2d', score: 72 },
+];
+
+const Leaderboard = () => {
+  const [showVoters, setShowVoters] = useState(true);
+  const data = showVoters ? MOCK_VOTERS : MOCK_SHARERS;
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <label className="text-[10px] font-sans text-muted-foreground">
+          Top 5
+        </label>
+        <div className="flex bg-muted rounded-full p-0.5">
+          <button
+            onClick={() => setShowVoters(true)}
+            className={cn(
+              "px-2 py-0.5 text-[9px] font-sans rounded-full transition-colors",
+              showVoters ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+            )}
+          >
+            Voters
+          </button>
+          <button
+            onClick={() => setShowVoters(false)}
+            className={cn(
+              "px-2 py-0.5 text-[9px] font-sans rounded-full transition-colors",
+              !showVoters ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+            )}
+          >
+            Sharers
+          </button>
+        </div>
+      </div>
+      <div className="space-y-1">
+        {data.map((entry) => (
+          <div key={entry.rank} className="flex items-center justify-between text-[10px] font-sans py-1 px-1.5 bg-muted/50 rounded">
+            <span className="text-muted-foreground">{entry.rank}.</span>
+            <span className="text-foreground flex-1 ml-1.5 truncate">{entry.name}</span>
+            <span className="text-muted-foreground">{entry.score.toLocaleString()}</span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 };
 
