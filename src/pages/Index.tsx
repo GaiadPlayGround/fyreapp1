@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import Header from '@/components/Header';
-import GalleryHeader from '@/components/GalleryHeader';
+import HeroSection from '@/components/HeroSection';
 import FilterDrawer, { SortOption, ViewMode } from '@/components/FilterDrawer';
 import SpeciesGrid from '@/components/SpeciesGrid';
 import SpeciesSlideshow from '@/components/SpeciesSlideshow';
+import OnboardingGuide from '@/components/OnboardingGuide';
 import { Species, ConservationStatus } from '@/data/species';
 import { useSpeciesApi } from '@/hooks/useSpeciesApi';
 
@@ -15,6 +16,7 @@ const Index = () => {
   const [searchTicker, setSearchTicker] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [selectedSpecies, setSelectedSpecies] = useState<{ species: Species; index: number } | null>(null);
+  const galleryRef = useRef<HTMLDivElement>(null);
 
   // Filter and sort species
   const filteredSpecies = useMemo(() => {
@@ -61,6 +63,10 @@ const Index = () => {
     setSelectedSpecies(null);
   };
 
+  const handleSwipeUp = () => {
+    galleryRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   if (loading) {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center">
@@ -74,34 +80,40 @@ const Index = () => {
 
   return (
     <main className="min-h-screen bg-background">
-      <Header
-        onFilterToggle={() => setIsFilterOpen(!isFilterOpen)}
-        isFilterOpen={isFilterOpen}
-      />
+      <OnboardingGuide />
+      
+      {/* Hero Section */}
+      <HeroSection onchain={onchain} total={total} onSwipeUp={handleSwipeUp} />
 
-      <FilterDrawer
-        isOpen={isFilterOpen}
-        onClose={() => setIsFilterOpen(false)}
-        selectedStatus={selectedStatus}
-        onStatusChange={setSelectedStatus}
-        sortBy={sortBy}
-        onSortChange={setSortBy}
-        searchTicker={searchTicker}
-        onSearchChange={setSearchTicker}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-      />
-
-      {/* Mobile-optimized container with safe areas */}
-      <div className="pt-14 pb-4 px-2">
-        <GalleryHeader onchain={onchain} total={total} />
-        
-        <SpeciesGrid
-          species={filteredSpecies}
-          onSpeciesClick={handleSpeciesClick}
+      {/* Gallery Section */}
+      <div ref={galleryRef} className="scroll-mt-4">
+        <Header
+          onFilterToggle={() => setIsFilterOpen(!isFilterOpen)}
           isFilterOpen={isFilterOpen}
-          viewMode={viewMode}
         />
+
+        <FilterDrawer
+          isOpen={isFilterOpen}
+          onClose={() => setIsFilterOpen(false)}
+          selectedStatus={selectedStatus}
+          onStatusChange={setSelectedStatus}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          searchTicker={searchTicker}
+          onSearchChange={setSearchTicker}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+        />
+
+        {/* Mobile-optimized container with safe areas */}
+        <div className="pt-14 pb-4 px-2">
+          <SpeciesGrid
+            species={filteredSpecies}
+            onSpeciesClick={handleSpeciesClick}
+            isFilterOpen={isFilterOpen}
+            viewMode={viewMode}
+          />
+        </div>
       </div>
 
       {selectedSpecies && (
