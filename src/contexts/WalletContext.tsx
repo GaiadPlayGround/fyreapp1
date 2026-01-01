@@ -15,6 +15,7 @@ interface WalletState {
   invites: number;
   shares: number;
   votes: Vote[];
+  inviteCode: string | null;
 }
 
 interface WalletContextType extends WalletState {
@@ -48,10 +49,12 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     invites: 0,
     shares: 0,
     votes: [],
+    inviteCode: null,
   });
 
   const connect = () => {
-    // Mock wallet connection
+    // Generate unique invite code based on address
+    const uniqueCode = `INV${Date.now().toString(36).toUpperCase()}`;
     setState({
       isConnected: true,
       address: '0x1234...5678',
@@ -61,6 +64,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       invites: 1,
       shares: 0,
       votes: [],
+      inviteCode: uniqueCode,
     });
   };
 
@@ -74,6 +78,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       invites: 0,
       shares: 0,
       votes: [],
+      inviteCode: null,
     });
   };
 
