@@ -14,13 +14,150 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      species_shares: {
+        Row: {
+          created_at: string | null
+          id: string
+          platform: string
+          species_id: string
+          wallet_address: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          platform: string
+          species_id: string
+          wallet_address: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          platform?: string
+          species_id?: string
+          wallet_address?: string
+        }
+        Relationships: []
+      }
+      species_stats: {
+        Row: {
+          base_squares: number | null
+          created_at: string | null
+          id: string
+          last_viewed_at: string | null
+          share_count: number | null
+          species_id: string
+          updated_at: string | null
+          view_count: number | null
+        }
+        Insert: {
+          base_squares?: number | null
+          created_at?: string | null
+          id?: string
+          last_viewed_at?: string | null
+          share_count?: number | null
+          species_id: string
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Update: {
+          base_squares?: number | null
+          created_at?: string | null
+          id?: string
+          last_viewed_at?: string | null
+          share_count?: number | null
+          species_id?: string
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Relationships: []
+      }
+      species_views: {
+        Row: {
+          created_at: string | null
+          id: string
+          species_id: string
+          wallet_address: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          species_id: string
+          wallet_address?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          species_id?: string
+          wallet_address?: string | null
+        }
+        Relationships: []
+      }
+      species_votes: {
+        Row: {
+          created_at: string | null
+          id: string
+          rating: number
+          species_id: string
+          usdc_cost: number | null
+          wallet_address: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          rating: number
+          species_id: string
+          usdc_cost?: number | null
+          wallet_address: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          rating?: number
+          species_id?: string
+          usdc_cost?: number | null
+          wallet_address?: string
+        }
+        Relationships: []
+      }
+      wallets: {
+        Row: {
+          address: string
+          created_at: string | null
+          id: string
+          invite_code: string | null
+          invited_by: string | null
+          total_shares: number | null
+          total_votes: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          address: string
+          created_at?: string | null
+          id?: string
+          invite_code?: string | null
+          invited_by?: string | null
+          total_shares?: number | null
+          total_votes?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string
+          created_at?: string | null
+          id?: string
+          invite_code?: string | null
+          invited_by?: string | null
+          total_shares?: number | null
+          total_votes?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_invite_code: { Args: never; Returns: string }
     }
     Enums: {
       [_ in never]: never
