@@ -7,6 +7,7 @@ import SpeciesSlideshow from '@/components/SpeciesSlideshow';
 import OnboardingGuide from '@/components/OnboardingGuide';
 import { Species, ConservationStatus } from '@/data/species';
 import { useSpeciesApi } from '@/hooks/useSpeciesApi';
+import { useAnimalSounds } from '@/hooks/useAnimalSounds';
 
 const Index = () => {
   const { species: apiSpecies, total, onchain, loading } = useSpeciesApi();
@@ -17,8 +18,11 @@ const Index = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [selectedSpecies, setSelectedSpecies] = useState<{ species: Species; index: number } | null>(null);
   const [animationEnabled, setAnimationEnabled] = useState(true);
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(false);
   const galleryRef = useRef<HTMLDivElement>(null);
+  
+  // Random animal sounds on homepage
+  useAnimalSounds(soundEnabled);
 
   // Filter and sort species
   const filteredSpecies = useMemo(() => {
@@ -42,14 +46,16 @@ const Index = () => {
       case 'votes':
         result.sort((a, b) => b.votes - a.votes);
         break;
+      case 'shares':
+        // Shares sorting handled by stats hook
+        break;
       case 'new':
-        result.sort((a, b) => parseInt(b.id) - parseInt(a.id));
+        result.sort((a, b) => parseInt(b.id.replace(/\D/g, '')) - parseInt(a.id.replace(/\D/g, '')));
         break;
       case 'id':
-        result.sort((a, b) => parseInt(a.id) - parseInt(b.id));
+        result.sort((a, b) => parseInt(a.id.replace(/\D/g, '')) - parseInt(b.id.replace(/\D/g, '')));
         break;
       case 'trending':
-      case 'mcap':
       default:
         break;
     }

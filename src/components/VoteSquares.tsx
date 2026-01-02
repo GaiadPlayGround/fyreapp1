@@ -1,20 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { useWallet } from '@/contexts/WalletContext';
 import { toast } from '@/hooks/use-toast';
+import { useSpeciesStats } from '@/hooks/useSpeciesStats';
 
 interface VoteSquaresProps {
   speciesId: string;
-  initialVotes: number;
   onVoteSubmit?: () => void;
 }
 
-const VoteSquares = ({ speciesId, initialVotes, onVoteSubmit }: VoteSquaresProps) => {
-  const { isConnected, addVote, usdcBalance, connect } = useWallet();
+const VoteSquares = ({ speciesId, onVoteSubmit }: VoteSquaresProps) => {
+  const { isConnected, address, usdcBalance, connect } = useWallet();
+  const { getBaseSquares, recordVote, refetch } = useSpeciesStats();
   const [userVote, setUserVote] = useState<number>(0);
-  const [totalVotes, setTotalVotes] = useState(initialVotes);
+  const [totalVotes, setTotalVotes] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleVote = (rating: number) => {
+  useEffect(() => {
+    setTotalVotes(getBaseSquares(speciesId));
+  }, [speciesId, getBaseSquares]);
+
+  const handleVote = async (rating: number) => {
     if (!isConnected) {
       toast({
         title: "Wallet Required",
@@ -34,24 +40,39 @@ const VoteSquares = ({ speciesId, initialVotes, onVoteSubmit }: VoteSquaresProps
       return;
     }
 
-    // Immediately assign all squares up to the rating
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
     setUserVote(rating);
 
-    const success = addVote(speciesId, rating);
-    if (success) {
-      // Add the rating value to total (not just +1)
-      setTotalVotes((prev) => prev + rating);
-      toast({
-        title: "Vote Submitted!",
-        description: "-0.2 USDC",
-        duration: 1000,
-      });
-      
-      // Reset the vote squares to empty state after a short delay
-      setTimeout(() => {
+    try {
+      const success = await recordVote(speciesId, address || '', rating);
+      if (success) {
+        setTotalVotes((prev) => prev + rating);
+        toast({
+          title: "Vote Submitted!",
+          description: `-0.2 USDC • +${rating} Base Squares`,
+          duration: 1500,
+        });
+        
+        setTimeout(() => {
+          setUserVote(0);
+          refetch();
+          onVoteSubmit?.();
+        }, 500);
+      } else {
+        toast({
+          title: "Vote Failed",
+          description: "Please try again.",
+          variant: "destructive",
+        });
         setUserVote(0);
-        onVoteSubmit?.();
-      }, 500);
+      }
+    } catch (err) {
+      console.error('Vote error:', err);
+      setUserVote(0);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -62,12 +83,14 @@ const VoteSquares = ({ speciesId, initialVotes, onVoteSubmit }: VoteSquaresProps
           <button
             key={rating}
             onClick={() => handleVote(rating)}
+            disabled={isSubmitting}
             className={cn(
               "w-7 h-7 border-2 rounded-sm transition-all duration-200",
               rating <= userVote
                 ? "bg-primary border-primary"
                 : "border-card/50 hover:border-card",
-              "hover:scale-110 cursor-pointer"
+              "hover:scale-110 cursor-pointer",
+              isSubmitting && "opacity-50 cursor-not-allowed"
             )}
           />
         ))}
