@@ -16,6 +16,13 @@ interface Task {
   progressKey?: 'votes' | 'shares' | 'referrals' | 'genomes' | 'dna';
 }
 
+const formatNumber = (num: number): string => {
+  if (num >= 1000000000) return `${(num / 1000000000).toFixed(0)}B`;
+  if (num >= 1000000) return `${(num / 1000000).toFixed(0)}M`;
+  if (num >= 1000) return `${(num / 1000).toFixed(0)}K`;
+  return num.toString();
+};
+
 const TASKS: Task[] = [
   { id: 'follow-zora', label: 'Follow FCBC on Zora', icon: <ExternalLink className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://zora.co/@fcbcc' },
   { id: 'follow-base', label: 'Follow FCBC on Base App', icon: <ExternalLink className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://farcaster.xyz/warplette' },
@@ -86,6 +93,12 @@ const TasksDrawer = () => {
     // Progress tasks are read-only - they complete automatically
   };
 
+  const getProgressDisplay = (task: Task): string | null => {
+    if (task.type !== 'progress' || !task.requirement || !task.progressKey) return null;
+    const current = getProgress(task.progressKey);
+    return `${formatNumber(current)}/${formatNumber(task.requirement)}`;
+  };
+
   const completedCount = TASKS.filter(t => isTaskCompleted(t)).length;
 
   return (
@@ -103,7 +116,7 @@ const TasksDrawer = () => {
       </button>
 
       {isOpen && (
-        <div className="absolute top-full right-0 mt-2 w-64 bg-card border border-border rounded-md shadow-lg animate-fade-in max-h-80 overflow-y-auto z-50">
+        <div className="absolute top-full right-0 mt-2 w-72 bg-card border border-border rounded-md shadow-lg animate-fade-in max-h-80 overflow-y-auto z-50">
           <div className="p-3">
             <h3 className="font-serif text-sm font-medium text-foreground mb-3">
               FYRE MISSIONS
@@ -112,6 +125,7 @@ const TasksDrawer = () => {
               {TASKS.map((task) => {
                 const completed = isTaskCompleted(task);
                 const isClickable = task.type === 'redirect' || task.type === 'copy';
+                const progressDisplay = getProgressDisplay(task);
                 
                 return (
                   <li key={task.id}>
@@ -136,16 +150,16 @@ const TasksDrawer = () => {
                           <Check className="w-3 h-3 text-primary-foreground" />
                         )}
                       </div>
-                      <span className="flex items-center gap-1.5">
+                      <span className="flex items-center gap-1.5 flex-1 min-w-0">
                         <span className={cn(
-                          "text-muted-foreground",
+                          "text-muted-foreground flex-shrink-0",
                           completed && "opacity-50"
                         )}>
                           {task.type === 'copy' ? <Copy className="w-3.5 h-3.5" /> : task.icon}
                         </span>
                         <span
                           className={cn(
-                            "text-xs font-sans",
+                            "text-xs font-sans truncate",
                             completed
                               ? "text-muted-foreground line-through"
                               : "text-foreground"
@@ -154,6 +168,16 @@ const TasksDrawer = () => {
                           {task.label}
                         </span>
                       </span>
+                      {progressDisplay && (
+                        <span
+                          className={cn(
+                            "text-xs font-mono flex-shrink-0",
+                            completed ? "text-primary" : "text-muted-foreground"
+                          )}
+                        >
+                          {progressDisplay}
+                        </span>
+                      )}
                     </button>
                   </li>
                 );

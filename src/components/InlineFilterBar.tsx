@@ -71,7 +71,7 @@ const InlineFilterBar = ({
   const hasActiveFilters = selectedStatus !== null || sortBy !== 'id' || searchTicker !== '' || viewMode !== 'grid';
 
   return (
-    <div className="flex items-center gap-2 px-3 py-3 bg-background border-b border-border">
+    <div className="flex items-center gap-2 px-3 py-3 bg-background border-b border-border sticky top-14 z-40">
       {/* Search Input */}
       <div className="flex-1 relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
