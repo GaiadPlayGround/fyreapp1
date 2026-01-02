@@ -30,7 +30,8 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
   const touchEndRef = useRef<number | null>(null);
 
   const currentSpecies = species[currentIndex];
-  const { speakSpeciesName, stopSpeaking } = useVoiceCallout();
+  const { speakSpeciesName, stopSpeaking, voices, selectedVoice, setSelectedVoice } = useVoiceCallout();
+  const [showVoiceSelector, setShowVoiceSelector] = useState(false);
   const { recordView } = useSpeciesStats();
   const { address } = useWallet();
 
@@ -201,11 +202,18 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
             </TooltipContent>
           </Tooltip>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 relative">
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
-                  onClick={() => setVoiceEnabled(!voiceEnabled)}
+                  onClick={() => {
+                    if (!voiceEnabled) {
+                      setVoiceEnabled(true);
+                      setShowVoiceSelector(true);
+                    } else {
+                      setShowVoiceSelector(!showVoiceSelector);
+                    }
+                  }}
                   className={cn(
                     "p-2 backdrop-blur-sm rounded-full transition-colors",
                     voiceEnabled ? "bg-primary/30" : "bg-card/10 hover:bg-card/20"
@@ -219,9 +227,40 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
                 </button>
               </TooltipTrigger>
               <TooltipContent side="bottom">
-                <p>{voiceEnabled ? 'Disable' : 'Enable'} voice callouts</p>
+                <p>Voice callouts</p>
               </TooltipContent>
             </Tooltip>
+            
+            {/* Voice selector dropdown */}
+            {showVoiceSelector && voiceEnabled && (
+              <div className="absolute top-full right-0 mt-2 w-48 bg-card/90 backdrop-blur-sm rounded-lg shadow-lg p-2 animate-fade-in z-20">
+                <div className="flex items-center justify-between mb-2 pb-2 border-b border-border/50">
+                  <span className="text-xs text-card-foreground font-medium">Voice</span>
+                  <button
+                    onClick={() => { setVoiceEnabled(false); setShowVoiceSelector(false); }}
+                    className="text-xs text-muted-foreground hover:text-destructive"
+                  >
+                    Off
+                  </button>
+                </div>
+                <div className="space-y-1 max-h-40 overflow-y-auto">
+                  {voices.map((v) => (
+                    <button
+                      key={v.name}
+                      onClick={() => setSelectedVoice(v.name)}
+                      className={cn(
+                        "w-full text-left text-xs px-2 py-1.5 rounded transition-colors",
+                        selectedVoice === v.name
+                          ? "bg-primary text-primary-foreground"
+                          : "text-card-foreground hover:bg-muted/50"
+                      )}
+                    >
+                      {v.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             
             <Tooltip>
               <TooltipTrigger asChild>

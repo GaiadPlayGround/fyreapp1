@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import TasksDrawer from './TasksDrawer';
 import WalletDropdown from './WalletDropdown';
+import LeaderboardDialog from './LeaderboardDialog';
 
 import logo from '@/assets/logo.png';
 import logoLight from '@/assets/logo-light.png';
@@ -46,6 +47,7 @@ const Header = ({
         {/* Right: Actions */}
         <div className="flex items-center gap-1.5">
           <TasksDrawer />
+          <LeaderboardDialog />
 
           <WalletDropdown
             animationEnabled={animationEnabled}
