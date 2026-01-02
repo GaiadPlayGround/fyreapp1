@@ -1,11 +1,14 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { ArrowLeft, Info, ChevronLeft, ChevronRight, Share2, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Info, ChevronLeft, ChevronRight, Share2, ExternalLink, Volume2, VolumeX } from 'lucide-react';
 import { Species, getStatusColor, getStatusLabel } from '@/data/species';
 import { cn } from '@/lib/utils';
 import VoteSquares from './VoteSquares';
 import ShareButtons from './ShareButtons';
 import SlideshowControls from './SlideshowControls';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import { useVoiceCallout } from '@/hooks/useVoiceCallout';
+import { useSpeciesStats } from '@/hooks/useSpeciesStats';
+import { useWallet } from '@/contexts/WalletContext';
 
 interface SpeciesSlideshowProps {
   species: Species[];
@@ -19,13 +22,38 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
   const [showArrows, setShowArrows] = useState(true);
   const [showShare, setShowShare] = useState(false);
   const [autoPlayInterval, setAutoPlayInterval] = useState<number | null>(10);
-  const [voteKey, setVoteKey] = useState(0); // Key to reset VoteSquares
+  const [voteKey, setVoteKey] = useState(0);
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
   const arrowHideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const autoPlayRef = useRef<NodeJS.Timeout | null>(null);
   const touchStartRef = useRef<number | null>(null);
   const touchEndRef = useRef<number | null>(null);
 
   const currentSpecies = species[currentIndex];
+  const { speakSpeciesName, stopSpeaking } = useVoiceCallout();
+  const { recordView } = useSpeciesStats();
+  const { address } = useWallet();
+
+  // Speak species name when voice is enabled and slide changes
+  useEffect(() => {
+    if (voiceEnabled && currentSpecies) {
+      speakSpeciesName(currentSpecies.name);
+    }
+  }, [currentIndex, voiceEnabled, currentSpecies, speakSpeciesName]);
+
+  // Record view when species changes
+  useEffect(() => {
+    if (currentSpecies) {
+      recordView(currentSpecies.id, address || undefined);
+    }
+  }, [currentSpecies?.id, address, recordView]);
+
+  // Stop speaking when voice is disabled
+  useEffect(() => {
+    if (!voiceEnabled) {
+      stopSpeaking();
+    }
+  }, [voiceEnabled, stopSpeaking]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartRef.current = e.targetTouches[0].clientX;
@@ -71,7 +99,6 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
       }
       return prev === 0 ? species.length - 1 : prev - 1;
     });
-    // Reset vote pane for new image
     setVoteKey((k) => k + 1);
     showArrowsTemporarily();
   }, [species.length, showArrowsTemporarily]);
@@ -125,8 +152,9 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = '';
+      stopSpeaking();
     };
-  }, []);
+  }, [stopSpeaking]);
 
   const truncateDescription = (text: string, maxWords: number = 50) => {
     const words = text.split(' ');
@@ -134,7 +162,6 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
     return words.slice(0, maxWords).join(' ') + '...';
   };
 
-  // Generate FCBC URL for this species
   const getFcbcUrl = () => {
     return `https://www.fcbc.fun/species/FCBC${currentSpecies.id}?code=9406/136251508`;
   };
@@ -157,7 +184,7 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-foreground/30" />
       </div>
 
-      {/* Top bar - Back arrow (left) and Info (right) */}
+      {/* Top bar - Back arrow (left) and Info/Voice (right) */}
       <TooltipProvider>
         <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between safe-area-top z-10">
           <Tooltip>
@@ -173,22 +200,46 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
               <p>Back to gallery</p>
             </TooltipContent>
           </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => setShowInfo(!showInfo)}
-                className={cn(
-                  "p-2 backdrop-blur-sm rounded-full transition-colors",
-                  showInfo ? "bg-card/30" : "bg-card/10 hover:bg-card/20"
-                )}
-              >
-                <Info className="w-5 h-5 text-card" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">
-              <p>Species details</p>
-            </TooltipContent>
-          </Tooltip>
+          
+          <div className="flex items-center gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setVoiceEnabled(!voiceEnabled)}
+                  className={cn(
+                    "p-2 backdrop-blur-sm rounded-full transition-colors",
+                    voiceEnabled ? "bg-primary/30" : "bg-card/10 hover:bg-card/20"
+                  )}
+                >
+                  {voiceEnabled ? (
+                    <Volume2 className="w-5 h-5 text-card" />
+                  ) : (
+                    <VolumeX className="w-5 h-5 text-card" />
+                  )}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p>{voiceEnabled ? 'Disable' : 'Enable'} voice callouts</p>
+              </TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setShowInfo(!showInfo)}
+                  className={cn(
+                    "p-2 backdrop-blur-sm rounded-full transition-colors",
+                    showInfo ? "bg-card/30" : "bg-card/10 hover:bg-card/20"
+                  )}
+                >
+                  <Info className="w-5 h-5 text-card" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p>Species details</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
         </div>
       </TooltipProvider>
 
@@ -269,7 +320,6 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
         <VoteSquares 
           key={`${currentSpecies.id}-${voteKey}`}
           speciesId={currentSpecies.id} 
-          initialVotes={currentSpecies.votes} 
         />
       </div>
 

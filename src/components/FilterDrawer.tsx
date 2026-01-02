@@ -3,7 +3,7 @@ import { X, LayoutGrid, List, Volume2, VolumeX, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ConservationStatus } from '@/data/species';
 
-export type SortOption = 'trending' | 'mcap' | 'new' | 'id' | 'votes';
+export type SortOption = 'trending' | 'votes' | 'shares' | 'new' | 'id';
 export type ViewMode = 'grid' | 'list';
 
 interface FilterDrawerProps {
@@ -51,12 +51,12 @@ const FilterDrawer = ({
     { value: 'NE', label: 'Near Extinct', color: 'bg-red-900' },
   ];
 
-  const sortOptions: { value: SortOption; label: string }[] = [
-    { value: 'trending', label: 'Trending' },
-    { value: 'votes', label: 'Votes' },
-    { value: 'mcap', label: 'Shares' },
-    { value: 'new', label: 'Newest' },
-    { value: 'id', label: 'ID' },
+  const sortOptions: { value: SortOption; label: string; description: string }[] = [
+    { value: 'trending', label: 'Trending', description: 'Recently opened globally' },
+    { value: 'votes', label: 'Votes', description: 'Highest Base Squares' },
+    { value: 'shares', label: 'Shares', description: 'Most shared' },
+    { value: 'new', label: 'Newest', description: 'FCBC234 to FCBC1' },
+    { value: 'id', label: 'ID', description: 'FCBC1 to FCBC234' },
   ];
 
   if (!isOpen) return null;
@@ -173,6 +173,30 @@ const FilterDrawer = ({
             />
           </div>
 
+          {/* Sort Options */}
+          <div className="mb-4">
+            <label className="block text-[10px] font-sans text-muted-foreground mb-1.5">
+              Sort By
+            </label>
+            <div className="flex flex-wrap gap-1">
+              {sortOptions.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => onSortChange(option.value)}
+                  title={option.description}
+                  className={cn(
+                    "px-2.5 py-1 text-[10px] font-sans rounded-full transition-colors",
+                    sortBy === option.value
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-foreground"
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Status Filter */}
           <div className="mb-4">
             <label className="block text-[10px] font-sans text-muted-foreground mb-1.5">
@@ -203,29 +227,6 @@ const FilterDrawer = ({
                 >
                   <span className={cn("w-1.5 h-1.5 rounded-full", status.color)} />
                   {status.value}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Sort Options */}
-          <div className="mb-4">
-            <label className="block text-[10px] font-sans text-muted-foreground mb-1.5">
-              Sort By
-            </label>
-            <div className="flex flex-wrap gap-1">
-              {sortOptions.map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => onSortChange(option.value)}
-                  className={cn(
-                    "px-2.5 py-1 text-[10px] font-sans rounded-full transition-colors",
-                    sortBy === option.value
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-foreground"
-                  )}
-                >
-                  {option.label}
                 </button>
               ))}
             </div>
