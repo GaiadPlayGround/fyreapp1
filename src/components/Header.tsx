@@ -1,21 +1,25 @@
 import { useState, useEffect } from 'react';
 import TasksDrawer from './TasksDrawer';
 import WalletDropdown from './WalletDropdown';
-import { Button } from '@/components/ui/button';
+
 import logo from '@/assets/logo.png';
 import logoLight from '@/assets/logo-light.png';
 import { useTheme } from '@/contexts/ThemeContext';
 
 interface HeaderProps {
-  onFilterToggle: () => void;
-  isFilterOpen: boolean;
+  animationEnabled?: boolean;
+  soundEnabled?: boolean;
+  onToggleAnimation?: () => void;
+  onToggleSound?: () => void;
 }
 
 const TITLE_OPTIONS = ['FyreApp 1', 'Slideshows and Votes'];
 
 const Header = ({
-  onFilterToggle,
-  isFilterOpen
+  animationEnabled = true,
+  soundEnabled = false,
+  onToggleAnimation,
+  onToggleSound,
 }: HeaderProps) => {
   const { theme } = useTheme();
   const currentLogo = theme === 'dark' ? logo : logoLight;
@@ -42,12 +46,13 @@ const Header = ({
         {/* Right: Actions */}
         <div className="flex items-center gap-1.5">
           <TasksDrawer />
-          
-          <Button variant="outline" size="sm" onClick={onFilterToggle} className="text-[10px] font-sans h-8 px-2">
-            {isFilterOpen ? 'Close' : 'Nav'}
-          </Button>
 
-          <WalletDropdown />
+          <WalletDropdown
+            animationEnabled={animationEnabled}
+            soundEnabled={soundEnabled}
+            onToggleAnimation={onToggleAnimation}
+            onToggleSound={onToggleSound}
+          />
         </div>
       </div>
     </header>

@@ -13,19 +13,31 @@ interface Task {
   type: 'redirect' | 'progress' | 'copy';
   url?: string;
   requirement?: number;
-  progressKey?: 'votes' | 'shares' | 'referrals';
+  progressKey?: 'votes' | 'shares' | 'referrals' | 'genomes' | 'dna';
 }
 
 const TASKS: Task[] = [
   { id: 'follow-zora', label: 'Follow FCBC on Zora', icon: <ExternalLink className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://zora.co/@fcbcc' },
   { id: 'follow-base', label: 'Follow FCBC on Base App', icon: <ExternalLink className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://farcaster.xyz/warplette' },
   { id: 'follow-x', label: 'Follow FCBC on X', icon: <ExternalLink className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://x.com/warplette' },
+  { id: 'follow-farcaster', label: 'Follow on Farcaster', icon: <ExternalLink className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://warpcast.com/fcbc' },
   { id: 'vote-10', label: 'Vote for 10 species', icon: <Vote className="w-3.5 h-3.5" />, type: 'progress', requirement: 10, progressKey: 'votes' },
   { id: 'vote-25', label: 'Vote for 25 species', icon: <Vote className="w-3.5 h-3.5" />, type: 'progress', requirement: 25, progressKey: 'votes' },
+  { id: 'vote-50', label: 'Vote for 50 species', icon: <Vote className="w-3.5 h-3.5" />, type: 'progress', requirement: 50, progressKey: 'votes' },
+  { id: 'vote-100', label: 'Vote for 100 species', icon: <Vote className="w-3.5 h-3.5" />, type: 'progress', requirement: 100, progressKey: 'votes' },
   { id: 'share-5', label: 'Share 5 species', icon: <Share2 className="w-3.5 h-3.5" />, type: 'progress', requirement: 5, progressKey: 'shares' },
   { id: 'share-25', label: 'Share 25 species', icon: <Share2 className="w-3.5 h-3.5" />, type: 'progress', requirement: 25, progressKey: 'shares' },
+  { id: 'share-50', label: 'Share 50 species', icon: <Share2 className="w-3.5 h-3.5" />, type: 'progress', requirement: 50, progressKey: 'shares' },
   { id: 'refer-3', label: 'Refer 3 people', icon: <Users className="w-3.5 h-3.5" />, type: 'progress', requirement: 3, progressKey: 'referrals' },
   { id: 'refer-5', label: 'Refer 5 people', icon: <Users className="w-3.5 h-3.5" />, type: 'progress', requirement: 5, progressKey: 'referrals' },
+  { id: 'genome-10', label: 'Own 10 genomes', icon: <Coins className="w-3.5 h-3.5" />, type: 'progress', requirement: 10, progressKey: 'genomes' },
+  { id: 'genome-25', label: 'Own 25 genomes', icon: <Coins className="w-3.5 h-3.5" />, type: 'progress', requirement: 25, progressKey: 'genomes' },
+  { id: 'genome-50', label: 'Own 50 genomes', icon: <Coins className="w-3.5 h-3.5" />, type: 'progress', requirement: 50, progressKey: 'genomes' },
+  { id: 'genome-100', label: 'Own 100 genomes', icon: <Coins className="w-3.5 h-3.5" />, type: 'progress', requirement: 100, progressKey: 'genomes' },
+  { id: 'dna-100m', label: '100M DNA units', icon: <Coins className="w-3.5 h-3.5" />, type: 'progress', requirement: 100000000, progressKey: 'dna' },
+  { id: 'dna-500m', label: '500M DNA units', icon: <Coins className="w-3.5 h-3.5" />, type: 'progress', requirement: 500000000, progressKey: 'dna' },
+  { id: 'dna-1b', label: '1B DNA units', icon: <Coins className="w-3.5 h-3.5" />, type: 'progress', requirement: 1000000000, progressKey: 'dna' },
+  { id: 'dna-10b', label: '10B DNA units', icon: <Coins className="w-3.5 h-3.5" />, type: 'progress', requirement: 10000000000, progressKey: 'dna' },
   { id: 'buy-coin', label: 'Buy Creator Coin', icon: <Coins className="w-3.5 h-3.5" />, type: 'copy' },
 ];
 
@@ -34,14 +46,18 @@ const TasksDrawer = () => {
   const [clickedRedirects, setClickedRedirects] = useState<Set<string>>(new Set());
   const { votes, shares } = useWallet();
   
-  // Mock referrals count - in real app would come from context
+  // Mock values - in real app would come from context
   const referrals = 0;
+  const genomes = 0; // Owned DNA genomes
+  const dna = 349000000; // Total DNA units
 
-  const getProgress = (key: 'votes' | 'shares' | 'referrals'): number => {
+  const getProgress = (key: 'votes' | 'shares' | 'referrals' | 'genomes' | 'dna'): number => {
     switch (key) {
       case 'votes': return votes.length;
       case 'shares': return shares;
       case 'referrals': return referrals;
+      case 'genomes': return genomes;
+      case 'dna': return dna;
       default: return 0;
     }
   };
