@@ -1,19 +1,21 @@
 import { useState, useMemo, useRef } from 'react';
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
-import FilterDrawer, { SortOption, ViewMode } from '@/components/FilterDrawer';
+import InlineFilterBar from '@/components/InlineFilterBar';
 import SpeciesGrid from '@/components/SpeciesGrid';
 import SpeciesSlideshow from '@/components/SpeciesSlideshow';
 import OnboardingGuide from '@/components/OnboardingGuide';
 import { Species, ConservationStatus } from '@/data/species';
 import { useSpeciesApi } from '@/hooks/useSpeciesApi';
 import { useAnimalSounds } from '@/hooks/useAnimalSounds';
+import { useSpeciesStats } from '@/hooks/useSpeciesStats';
+import { SortOption, ViewMode } from '@/components/FilterDrawer';
 
 const Index = () => {
   const { species: apiSpecies, total, onchain, loading } = useSpeciesApi();
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const { getBaseSquares } = useSpeciesStats();
   const [selectedStatus, setSelectedStatus] = useState<ConservationStatus | null>(null);
-  const [sortBy, setSortBy] = useState<SortOption>('trending');
+  const [sortBy, setSortBy] = useState<SortOption>('id');
   const [searchTicker, setSearchTicker] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [selectedSpecies, setSelectedSpecies] = useState<{ species: Species; index: number } | null>(null);
@@ -44,7 +46,8 @@ const Index = () => {
 
     switch (sortBy) {
       case 'votes':
-        result.sort((a, b) => b.votes - a.votes);
+        // Sort by base squares (highest first)
+        result.sort((a, b) => getBaseSquares(b.id) - getBaseSquares(a.id));
         break;
       case 'shares':
         // Shares sorting handled by stats hook
@@ -61,7 +64,7 @@ const Index = () => {
     }
 
     return result;
-  }, [apiSpecies, selectedStatus, sortBy, searchTicker]);
+  }, [apiSpecies, selectedStatus, sortBy, searchTicker, getBaseSquares]);
 
   const handleSpeciesClick = (species: Species, index: number) => {
     setSelectedSpecies({ species, index });
@@ -102,34 +105,33 @@ const Index = () => {
       {/* Gallery Section */}
       <div ref={galleryRef} className="scroll-mt-4">
         <Header
-          onFilterToggle={() => setIsFilterOpen(!isFilterOpen)}
-          isFilterOpen={isFilterOpen}
-        />
-
-        <FilterDrawer
-          isOpen={isFilterOpen}
-          onClose={() => setIsFilterOpen(false)}
-          selectedStatus={selectedStatus}
-          onStatusChange={setSelectedStatus}
-          sortBy={sortBy}
-          onSortChange={setSortBy}
-          searchTicker={searchTicker}
-          onSearchChange={setSearchTicker}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
           animationEnabled={animationEnabled}
           soundEnabled={soundEnabled}
           onToggleAnimation={() => setAnimationEnabled(!animationEnabled)}
           onToggleSound={() => setSoundEnabled(!soundEnabled)}
         />
 
+        {/* Inline Filter Bar */}
+        <div className="fixed top-14 left-0 right-0 z-40 bg-background safe-area-top">
+          <InlineFilterBar
+            selectedStatus={selectedStatus}
+            onStatusChange={setSelectedStatus}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
+            searchTicker={searchTicker}
+            onSearchChange={setSearchTicker}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+          />
+        </div>
+
         {/* Mobile-optimized container with safe areas */}
-        <div className="pt-14 pb-4 px-2">
+        <div className="pt-28 pb-4 px-2">
           <SpeciesGrid
             species={filteredSpecies}
             onSpeciesClick={handleSpeciesClick}
-            isFilterOpen={isFilterOpen}
             viewMode={viewMode}
+            animationEnabled={animationEnabled}
           />
         </div>
       </div>

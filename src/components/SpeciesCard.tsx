@@ -2,17 +2,21 @@ import { ExternalLink } from 'lucide-react';
 import { Species, getStatusColor } from '@/data/species';
 import { cn } from '@/lib/utils';
 import ElectricBorder from './ElectricBorder';
+import { getHabitatColor } from '@/utils/habitatColors';
 
 interface SpeciesCardProps {
   species: Species;
   onClick: () => void;
   compact?: boolean;
+  animationEnabled?: boolean;
 }
 
-const SpeciesCard = ({ species, onClick, compact = false }: SpeciesCardProps) => {
+const SpeciesCard = ({ species, onClick, compact = false, animationEnabled = true }: SpeciesCardProps) => {
+  const borderColor = getHabitatColor(species.region, species.id);
+  
   return (
     <ElectricBorder 
-      color="#005ae0" 
+      color={borderColor}
       speed={0.8} 
       chaos={0.08} 
       borderRadius={8}
