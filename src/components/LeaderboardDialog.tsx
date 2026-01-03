@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Trophy } from 'lucide-react';
+import { Award } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useWalletLeaderboard } from '@/hooks/useWalletLeaderboard';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   Dialog,
   DialogContent,
@@ -41,13 +42,17 @@ const LeaderboardDialog = () => {
       <DialogTrigger asChild>
         <button
           className="flex items-center gap-1.5 px-2 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          title="Achievements & Leaderboard"
         >
-          <Trophy className="w-4 h-4" />
+          <Award className="w-4 h-4" />
         </button>
       </DialogTrigger>
       <DialogContent className="max-w-sm max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle className="font-serif text-lg">Top 50 Leaderboard</DialogTitle>
+          <DialogTitle className="font-serif text-lg flex items-center gap-2">
+            <Award className="w-5 h-5 text-primary" />
+            Top 50 Leaderboard
+          </DialogTitle>
         </DialogHeader>
         
         {/* Tabs */}
@@ -87,35 +92,49 @@ const LeaderboardDialog = () => {
               No data yet
             </div>
           ) : (
-            data.map((item) => (
-              <div
-                key={item.address}
-                className={cn(
-                  "flex items-center justify-between px-3 py-2 rounded-md",
-                  item.rank <= 3 ? "bg-primary/10" : "bg-muted/50"
-                )}
-              >
-                <div className="flex items-center gap-3">
-                  <span
-                    className={cn(
-                      "w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold",
-                      item.rank === 1 && "bg-yellow-500 text-black",
-                      item.rank === 2 && "bg-gray-400 text-black",
-                      item.rank === 3 && "bg-amber-700 text-white",
-                      item.rank > 3 && "bg-muted text-muted-foreground"
-                    )}
+            <AnimatePresence mode="popLayout">
+              {data.map((item, index) => (
+                <motion.div
+                  key={item.address}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ delay: index * 0.03, duration: 0.3 }}
+                  className={cn(
+                    "flex items-center justify-between px-3 py-2 rounded-md",
+                    item.rank <= 3 ? "bg-primary/10" : "bg-muted/50"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: index * 0.03 + 0.1, type: "spring" }}
+                      className={cn(
+                        "w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold",
+                        item.rank === 1 && "bg-yellow-500 text-black",
+                        item.rank === 2 && "bg-gray-400 text-black",
+                        item.rank === 3 && "bg-amber-700 text-white",
+                        item.rank > 3 && "bg-muted text-muted-foreground"
+                      )}
+                    >
+                      {item.rank}
+                    </motion.span>
+                    <span className="font-mono text-sm text-foreground">
+                      {truncateAddress(item.address)}
+                    </span>
+                  </div>
+                  <motion.span
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: index * 0.03 + 0.2 }}
+                    className="font-sans text-sm font-medium text-foreground"
                   >
-                    {item.rank}
-                  </span>
-                  <span className="font-mono text-sm text-foreground">
-                    {truncateAddress(item.address)}
-                  </span>
-                </div>
-                <span className="font-sans text-sm font-medium text-foreground">
-                  {item.count.toLocaleString()}
-                </span>
-              </div>
-            ))
+                    {item.count.toLocaleString()}
+                  </motion.span>
+                </motion.div>
+              ))}
+            </AnimatePresence>
           )}
         </div>
       </DialogContent>
