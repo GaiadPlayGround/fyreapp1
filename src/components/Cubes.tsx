@@ -28,7 +28,7 @@ const Cubes = ({
   maxAngle = 45,
   radius = 3,
   easing = 'power3.out',
-  duration = { enter: 0.3, leave: 0.6 },
+  duration = { enter: 0.5, leave: 1.0 },
   cellGap,
   borderStyle = '1px solid #fff',
   faceColor = '#060010',
@@ -229,7 +229,7 @@ const Cubes = ({
       x: Math.random() * gridSize,
       y: Math.random() * gridSize
     };
-    const speed = 0.02;
+    const speed = 0.012; // Slower animation speed
     const loop = () => {
       if (!userActiveRef.current) {
         const pos = simPosRef.current;

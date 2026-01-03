@@ -103,7 +103,7 @@ const Index = () => {
       />
 
       {/* Gallery Section */}
-      <div ref={galleryRef} className="scroll-mt-4">
+      <section ref={galleryRef} id="gallery" className="relative">
         <Header
           animationEnabled={animationEnabled}
           soundEnabled={soundEnabled}
@@ -111,8 +111,8 @@ const Index = () => {
           onToggleSound={() => setSoundEnabled(!soundEnabled)}
         />
 
-        {/* Inline Filter Bar */}
-        <div className="fixed top-14 left-0 right-0 z-40 bg-background safe-area-top">
+        {/* Inline Filter Bar - Sticky within gallery section */}
+        <div className="sticky top-14 z-40 bg-background safe-area-top border-b border-border">
           <InlineFilterBar
             selectedStatus={selectedStatus}
             onStatusChange={setSelectedStatus}
@@ -126,7 +126,7 @@ const Index = () => {
         </div>
 
         {/* Mobile-optimized container with safe areas */}
-        <div className="pt-28 pb-4 px-2">
+        <div className="pb-4 px-2">
           <SpeciesGrid
             species={filteredSpecies}
             onSpeciesClick={handleSpeciesClick}
@@ -134,7 +134,7 @@ const Index = () => {
             animationEnabled={animationEnabled}
           />
         </div>
-      </div>
+      </section>
 
       {selectedSpecies && (
         <SpeciesSlideshow

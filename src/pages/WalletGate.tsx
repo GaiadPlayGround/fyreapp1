@@ -13,10 +13,10 @@ const WalletGate = () => {
     setIsConnecting(true);
     setShowDecryptedText(true);
     
-    // Delay actual connect to show the decrypted text animation
+    // Slower delay to allow the decrypted text animation to complete
     setTimeout(() => {
       connect();
-    }, 2500);
+    }, 4500);
   };
 
   return (
@@ -29,31 +29,39 @@ const WalletGate = () => {
             maxAngle={35}
             radius={4}
             easing="power3.out"
-            duration={{ enter: 0.3, leave: 0.6 }}
+            duration={{ enter: 0.5, leave: 1.0 }}
             cellGap={{ col: 8, row: 8 }}
             borderStyle="1px solid rgba(255,255,255,0.15)"
             faceColor="#060010"
             rippleOnClick={true}
             rippleColor="#005ae0"
-            rippleSpeed={2}
+            rippleSpeed={1}
             autoAnimate={true}
             centerContent={
               <div className="flex flex-col items-center justify-center gap-6 p-4 text-center">
                 {showDecryptedText ? (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <DecryptedText
-                      text="FYREAPP 1: PUREBREEDS"
-                      speed={40}
-                      maxIterations={15}
+                      text="FYREAPP 1"
+                      speed={80}
+                      maxIterations={20}
                       animateOn="view"
-                      className="text-white font-mono text-lg sm:text-xl font-bold tracking-wider"
-                      encryptedClassName="text-[#005ae0] font-mono text-lg sm:text-xl font-bold tracking-wider"
+                      className="text-white font-mono text-xl sm:text-2xl font-bold tracking-wider"
+                      encryptedClassName="text-[#005ae0] font-mono text-xl sm:text-2xl font-bold tracking-wider"
                     />
-                    <div className="h-2" />
+                    <div className="h-3" />
                     <DecryptedText
-                      text="SLIDES AND FAV"
-                      speed={50}
-                      maxIterations={12}
+                      text="PureBreed Slideshows"
+                      speed={100}
+                      maxIterations={18}
+                      animateOn="view"
+                      className="text-white/90 font-mono text-sm sm:text-base tracking-widest"
+                      encryptedClassName="text-[#005ae0]/90 font-mono text-sm sm:text-base tracking-widest"
+                    />
+                    <DecryptedText
+                      text="and Base Square Voting"
+                      speed={100}
+                      maxIterations={18}
                       animateOn="view"
                       className="text-white/80 font-mono text-sm sm:text-base tracking-widest"
                       encryptedClassName="text-[#005ae0]/80 font-mono text-sm sm:text-base tracking-widest"

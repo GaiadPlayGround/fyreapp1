@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, ChevronRight, Filter, Grid, List, Clock, Share2, Info, ArrowLeft } from 'lucide-react';
+import { X, ChevronRight, Filter, Grid, List, Clock, Share2, Info, ArrowLeft, MousePointer2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface GuideStep {
@@ -9,6 +9,11 @@ interface GuideStep {
 }
 
 const guideSteps: GuideStep[] = [
+  {
+    icon: <MousePointer2 className="w-5 h-5" />,
+    title: "Quick Tip",
+    description: "Tap any icon twice to remove it from the screen. This helps keep your view clean!"
+  },
   {
     icon: <Filter className="w-5 h-5" />,
     title: "Filter & Sort",
@@ -50,9 +55,10 @@ const ONBOARDING_KEY = 'purebreeds_onboarding_complete';
 
 interface OnboardingGuideProps {
   forceShow?: boolean;
+  onClose?: () => void;
 }
 
-const OnboardingGuide = ({ forceShow = false }: OnboardingGuideProps) => {
+const OnboardingGuide = ({ forceShow = false, onClose }: OnboardingGuideProps) => {
   const [isVisible, setIsVisible] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
 
@@ -80,7 +86,9 @@ const OnboardingGuide = ({ forceShow = false }: OnboardingGuideProps) => {
 
   const handleClose = () => {
     setIsVisible(false);
+    setCurrentStep(0);
     localStorage.setItem(ONBOARDING_KEY, 'true');
+    onClose?.();
   };
 
   if (!isVisible) return null;

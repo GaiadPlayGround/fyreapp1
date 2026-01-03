@@ -1,12 +1,12 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { ArrowLeft, Info, ChevronLeft, ChevronRight, Share2, ExternalLink, Volume2, VolumeX } from 'lucide-react';
+import { ArrowLeft, Info, ChevronLeft, ChevronRight, Share2, ExternalLink, Volume2, VolumeX, Pause, Play, X } from 'lucide-react';
 import { Species, getStatusColor, getStatusLabel } from '@/data/species';
 import { cn } from '@/lib/utils';
 import VoteSquares from './VoteSquares';
 import ShareButtons from './ShareButtons';
 import SlideshowControls from './SlideshowControls';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
-import { useVoiceCallout } from '@/hooks/useVoiceCallout';
+import { useElevenLabsVoice, ELEVENLABS_VOICES } from '@/hooks/useElevenLabsVoice';
 import { useSpeciesStats } from '@/hooks/useSpeciesStats';
 import { useWallet } from '@/contexts/WalletContext';
 
@@ -16,24 +16,55 @@ interface SpeciesSlideshowProps {
   onClose: () => void;
 }
 
+// Trigger haptic feedback on mobile
+const triggerHaptic = () => {
+  if ('vibrate' in navigator) {
+    navigator.vibrate(10);
+  }
+};
+
+// Analyze image brightness (simplified - assumes animal images are typically darker on edges)
+const getTextColorForBackground = (brightness: 'light' | 'dark' = 'dark') => {
+  return brightness === 'light' ? 'text-black' : 'text-white';
+};
+
 const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowProps) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [showInfo, setShowInfo] = useState(false);
   const [showArrows, setShowArrows] = useState(true);
   const [showShare, setShowShare] = useState(false);
   const [autoPlayInterval, setAutoPlayInterval] = useState<number | null>(10);
+  const [isPaused, setIsPaused] = useState(false);
   const [voteKey, setVoteKey] = useState(0);
   const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [showVoiceSelector, setShowVoiceSelector] = useState(false);
+  const [iconsVisible, setIconsVisible] = useState(true);
+  const [arrowsHoverActive, setArrowsHoverActive] = useState(false);
+  
   const arrowHideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const autoPlayRef = useRef<NodeJS.Timeout | null>(null);
+  const idleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const touchStartRef = useRef<number | null>(null);
   const touchEndRef = useRef<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const currentSpecies = species[currentIndex];
-  const { speakSpeciesName, stopSpeaking, voices, selectedVoice, setSelectedVoice } = useVoiceCallout();
-  const [showVoiceSelector, setShowVoiceSelector] = useState(false);
+  const { speakSpeciesName, stopSpeaking, voices, selectedVoice, setSelectedVoice, isLoading: voiceLoading, useFallback } = useElevenLabsVoice();
   const { recordView } = useSpeciesStats();
   const { address } = useWallet();
+
+  // Reset idle timer on any interaction
+  const resetIdleTimer = useCallback(() => {
+    setIconsVisible(true);
+    if (idleTimeoutRef.current) {
+      clearTimeout(idleTimeoutRef.current);
+    }
+    idleTimeoutRef.current = setTimeout(() => {
+      if (!showInfo) {
+        setIconsVisible(false);
+      }
+    }, 15000);
+  }, [showInfo]);
 
   // Speak species name when voice is enabled and slide changes
   useEffect(() => {
@@ -59,6 +90,7 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartRef.current = e.targetTouches[0].clientX;
     showArrowsTemporarily();
+    resetIdleTimer();
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
@@ -89,9 +121,11 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
       clearTimeout(arrowHideTimeoutRef.current);
     }
     arrowHideTimeoutRef.current = setTimeout(() => {
-      setShowArrows(false);
+      if (!arrowsHoverActive) {
+        setShowArrows(false);
+      }
     }, 3000);
-  }, []);
+  }, [arrowsHoverActive]);
 
   const navigate = useCallback((direction: 'prev' | 'next') => {
     setCurrentIndex((prev) => {
@@ -102,17 +136,25 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
     });
     setVoteKey((k) => k + 1);
     showArrowsTemporarily();
-  }, [species.length, showArrowsTemporarily]);
+    resetIdleTimer();
+  }, [species.length, showArrowsTemporarily, resetIdleTimer]);
 
   const handleBackgroundClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
       setShowInfo(false);
+      resetIdleTimer();
     }
+  };
+
+  const handleIconClick = (callback: () => void) => {
+    triggerHaptic();
+    callback();
+    resetIdleTimer();
   };
 
   // Auto-play effect
   useEffect(() => {
-    if (autoPlayInterval !== null) {
+    if (autoPlayInterval !== null && !isPaused) {
       autoPlayRef.current = setInterval(() => {
         navigate('next');
       }, autoPlayInterval * 1000);
@@ -123,7 +165,7 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
         clearInterval(autoPlayRef.current);
       }
     };
-  }, [autoPlayInterval, navigate]);
+  }, [autoPlayInterval, isPaused, navigate]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -132,21 +174,25 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
       if (e.key === 'ArrowRight') navigate('next');
       if (e.key === 'Escape') onClose();
       if (e.key === 'i') setShowInfo((v) => !v);
+      if (e.key === ' ') {
+        e.preventDefault();
+        setIsPaused((p) => !p);
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [navigate, onClose]);
 
-  // Initial arrow hide after 3 seconds
+  // Initial arrow hide and idle timer setup
   useEffect(() => {
     showArrowsTemporarily();
+    resetIdleTimer();
     return () => {
-      if (arrowHideTimeoutRef.current) {
-        clearTimeout(arrowHideTimeoutRef.current);
-      }
+      if (arrowHideTimeoutRef.current) clearTimeout(arrowHideTimeoutRef.current);
+      if (idleTimeoutRef.current) clearTimeout(idleTimeoutRef.current);
     };
-  }, [showArrowsTemporarily]);
+  }, [showArrowsTemporarily, resetIdleTimer]);
 
   // Prevent body scroll
   useEffect(() => {
@@ -156,6 +202,25 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
       stopSpeaking();
     };
   }, [stopSpeaking]);
+
+  // Mouse move on edges for arrows
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    const container = containerRef.current;
+    if (!container) return;
+    
+    const rect = container.getBoundingClientRect();
+    const edgeThreshold = 100;
+    const x = e.clientX - rect.left;
+    
+    if (x < edgeThreshold || x > rect.width - edgeThreshold) {
+      setArrowsHoverActive(true);
+      setShowArrows(true);
+    } else {
+      setArrowsHoverActive(false);
+    }
+    
+    resetIdleTimer();
+  }, [resetIdleTimer]);
 
   const truncateDescription = (text: string, maxWords: number = 50) => {
     const words = text.split(' ');
@@ -167,9 +232,18 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
     return `https://www.fcbc.fun/species/FCBC${currentSpecies.id}?code=9406/136251508`;
   };
 
+  // Dynamic text color based on position (bottom area is usually darker)
+  const infoTextColor = 'text-white';
+  const infoTextColorMuted = 'text-white/80';
+
   return (
-    <div className="fixed inset-0 z-50 bg-foreground">
-      {/* Full-screen image with swipe support */}
+    <div 
+      ref={containerRef}
+      className="fixed inset-0 z-50 bg-foreground"
+      onMouseMove={handleMouseMove}
+      onClick={() => resetIdleTimer()}
+    >
+      {/* Full-screen image with better object positioning */}
       <div 
         className="absolute inset-0"
         onTouchStart={handleTouchStart}
@@ -180,40 +254,67 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
         <img
           src={currentSpecies.image}
           alt={currentSpecies.name}
-          className="w-full h-full object-cover gallery-transition"
+          className="w-full h-full object-cover object-top gallery-transition"
+          style={{ objectPosition: 'center 20%' }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-foreground/60 via-transparent to-foreground/30" />
+        <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-transparent to-foreground/30" />
       </div>
 
-      {/* Top bar - Back arrow (left) and Info/Voice (right) */}
+      {/* Top bar - Back arrow, Pause (left) and Info/Voice (right) */}
       <TooltipProvider>
-        <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between safe-area-top z-10">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={onClose}
-                className="p-2 bg-card/10 backdrop-blur-sm rounded-full hover:bg-card/20 transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5 text-card" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">
-              <p>Back to gallery</p>
-            </TooltipContent>
-          </Tooltip>
+        <div className={cn(
+          "absolute top-0 left-0 right-0 p-4 flex items-center justify-between safe-area-top z-10 transition-opacity duration-300",
+          iconsVisible ? "opacity-100" : "opacity-0 pointer-events-none"
+        )}>
+          <div className="flex items-center gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => handleIconClick(onClose)}
+                  className="p-2 bg-card/10 backdrop-blur-sm rounded-full hover:bg-card/20 transition-colors"
+                >
+                  <ArrowLeft className="w-5 h-5 text-card" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p>Back to gallery</p>
+              </TooltipContent>
+            </Tooltip>
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => handleIconClick(() => setIsPaused(!isPaused))}
+                  className={cn(
+                    "p-2 backdrop-blur-sm rounded-full transition-colors",
+                    isPaused ? "bg-primary/30" : "bg-card/10 hover:bg-card/20"
+                  )}
+                >
+                  {isPaused ? (
+                    <Play className="w-5 h-5 text-card" />
+                  ) : (
+                    <Pause className="w-5 h-5 text-card" />
+                  )}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p>{isPaused ? 'Resume slideshow' : 'Pause slideshow'}</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
           
           <div className="flex items-center gap-2 relative">
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
-                  onClick={() => {
+                  onClick={() => handleIconClick(() => {
                     if (!voiceEnabled) {
                       setVoiceEnabled(true);
                       setShowVoiceSelector(true);
                     } else {
                       setShowVoiceSelector(!showVoiceSelector);
                     }
-                  }}
+                  })}
                   className={cn(
                     "p-2 backdrop-blur-sm rounded-full transition-colors",
                     voiceEnabled ? "bg-primary/30" : "bg-card/10 hover:bg-card/20"
@@ -227,37 +328,48 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
                 </button>
               </TooltipTrigger>
               <TooltipContent side="bottom">
-                <p>Voice callouts</p>
+                <p>Voice callouts {useFallback ? '(fallback)' : ''}</p>
               </TooltipContent>
             </Tooltip>
             
             {/* Voice selector dropdown */}
             {showVoiceSelector && voiceEnabled && (
-              <div className="absolute top-full right-0 mt-2 w-48 bg-card/90 backdrop-blur-sm rounded-lg shadow-lg p-2 animate-fade-in z-20">
+              <div className="absolute top-full right-0 mt-2 w-52 bg-card/95 backdrop-blur-sm rounded-lg shadow-lg p-2 animate-fade-in z-20">
                 <div className="flex items-center justify-between mb-2 pb-2 border-b border-border/50">
-                  <span className="text-xs text-card-foreground font-medium">Voice</span>
+                  <span className="text-xs text-card-foreground font-medium">
+                    Voice {useFallback && <span className="text-muted-foreground">(fallback)</span>}
+                  </span>
                   <button
-                    onClick={() => { setVoiceEnabled(false); setShowVoiceSelector(false); }}
-                    className="text-xs text-muted-foreground hover:text-destructive"
+                    onClick={() => handleIconClick(() => setShowVoiceSelector(false))}
+                    className="text-muted-foreground hover:text-foreground p-1"
                   >
-                    Off
+                    <X className="w-3 h-3" />
                   </button>
                 </div>
                 <div className="space-y-1 max-h-40 overflow-y-auto">
-                  {voices.map((v) => (
+                  {ELEVENLABS_VOICES.map((v) => (
                     <button
-                      key={v.name}
-                      onClick={() => setSelectedVoice(v.name)}
+                      key={v.id}
+                      onClick={() => handleIconClick(() => setSelectedVoice(v.id))}
                       className={cn(
-                        "w-full text-left text-xs px-2 py-1.5 rounded transition-colors",
-                        selectedVoice === v.name
+                        "w-full text-left text-xs px-2 py-1.5 rounded transition-colors flex items-center justify-between",
+                        selectedVoice === v.id
                           ? "bg-primary text-primary-foreground"
                           : "text-card-foreground hover:bg-muted/50"
                       )}
                     >
-                      {v.name}
+                      <span>{v.name}</span>
+                      <span className="text-[10px] opacity-70">{v.gender}</span>
                     </button>
                   ))}
+                  <div className="border-t border-border/50 pt-1 mt-1">
+                    <button
+                      onClick={() => handleIconClick(() => { setVoiceEnabled(false); setShowVoiceSelector(false); })}
+                      className="w-full text-left text-xs px-2 py-1.5 rounded text-destructive hover:bg-destructive/10"
+                    >
+                      Turn Off Voice
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -265,7 +377,7 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
-                  onClick={() => setShowInfo(!showInfo)}
+                  onClick={() => handleIconClick(() => setShowInfo(!showInfo))}
                   className={cn(
                     "p-2 backdrop-blur-sm rounded-full transition-colors",
                     showInfo ? "bg-card/30" : "bg-card/10 hover:bg-card/20"
@@ -282,21 +394,25 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
         </div>
       </TooltipProvider>
 
-      {/* Navigation arrows - hide after 3 seconds */}
+      {/* Navigation arrows - show on hover near edges */}
       <button
-        onClick={() => navigate('prev')}
+        onClick={() => handleIconClick(() => navigate('prev'))}
+        onMouseEnter={() => setArrowsHoverActive(true)}
+        onMouseLeave={() => setArrowsHoverActive(false)}
         className={cn(
           "absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-card/10 backdrop-blur-sm rounded-full hover:bg-card/20 transition-all duration-300",
-          showArrows ? "opacity-100" : "opacity-0 pointer-events-none"
+          (showArrows || arrowsHoverActive) ? "opacity-100" : "opacity-0"
         )}
       >
         <ChevronLeft className="w-6 h-6 text-card" />
       </button>
       <button
-        onClick={() => navigate('next')}
+        onClick={() => handleIconClick(() => navigate('next'))}
+        onMouseEnter={() => setArrowsHoverActive(true)}
+        onMouseLeave={() => setArrowsHoverActive(false)}
         className={cn(
           "absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-card/10 backdrop-blur-sm rounded-full hover:bg-card/20 transition-all duration-300",
-          showArrows ? "opacity-100" : "opacity-0 pointer-events-none"
+          (showArrows || arrowsHoverActive) ? "opacity-100" : "opacity-0"
         )}
       >
         <ChevronRight className="w-6 h-6 text-card" />
@@ -305,11 +421,11 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
       {/* Species info - shows at bottom when info toggled */}
       {showInfo && (
         <div className="absolute bottom-32 left-4 right-4 z-10 animate-fade-in">
-          <div className="p-4 bg-card/10 backdrop-blur-sm rounded-md">
-            <h2 className="font-serif text-xl font-semibold text-card mb-1">
+          <div className="p-4 bg-black/60 backdrop-blur-sm rounded-md">
+            <h2 className={cn("font-serif text-xl font-semibold mb-1", infoTextColor)}>
               {currentSpecies.name}
             </h2>
-            <p className="font-sans text-sm text-card/90 italic mb-2">
+            <p className={cn("font-sans text-sm italic mb-2", infoTextColorMuted)}>
               {currentSpecies.scientificName}
             </p>
             <div className="flex items-center gap-2 mb-2">
@@ -317,19 +433,19 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
                 className={cn(
                   "px-2 py-0.5 rounded-sm text-xs font-sans font-medium",
                   getStatusColor(currentSpecies.status),
-                  currentSpecies.status === 'CR' ? 'text-card' : 'text-foreground'
+                  currentSpecies.status === 'CR' ? 'text-white' : 'text-foreground'
                 )}
               >
                 {getStatusLabel(currentSpecies.status)}
               </span>
-              <span className="text-card/70 font-sans text-xs">
+              <span className={cn("font-sans text-xs", infoTextColorMuted)}>
                 {currentSpecies.ticker}
               </span>
             </div>
-            <p className="font-sans text-sm text-card/80 mb-3">
+            <p className={cn("font-sans text-sm mb-3", infoTextColorMuted)}>
               {truncateDescription(currentSpecies.description)}
             </p>
-            <div className="flex gap-4 text-xs font-sans text-card/70 mb-3">
+            <div className={cn("flex gap-4 text-xs font-sans mb-3", infoTextColorMuted)}>
               <span>Population: {currentSpecies.population}</span>
               <span>Region: {currentSpecies.region}</span>
             </div>
@@ -347,14 +463,17 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
       )}
 
       {/* Bottom left - Slideshow timer */}
-      <div className="absolute bottom-6 left-4 safe-area-bottom z-10">
+      <div className={cn(
+        "absolute bottom-6 left-4 safe-area-bottom z-10 transition-opacity duration-300",
+        iconsVisible ? "opacity-100" : "opacity-0 pointer-events-none"
+      )}>
         <SlideshowControls
           interval={autoPlayInterval}
           onIntervalChange={setAutoPlayInterval}
         />
       </div>
 
-      {/* Bottom center - Vote squares */}
+      {/* Bottom center - Vote squares (always visible) */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 safe-area-bottom z-10">
         <VoteSquares 
           key={`${currentSpecies.id}-${voteKey}`}
@@ -364,11 +483,14 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
 
       {/* Bottom right - Share button */}
       <TooltipProvider>
-        <div className="absolute bottom-6 right-4 safe-area-bottom z-10">
+        <div className={cn(
+          "absolute bottom-6 right-4 safe-area-bottom z-10 transition-opacity duration-300",
+          iconsVisible ? "opacity-100" : "opacity-0 pointer-events-none"
+        )}>
           <Tooltip>
             <TooltipTrigger asChild>
               <button
-                onClick={() => setShowShare(!showShare)}
+                onClick={() => handleIconClick(() => setShowShare(!showShare))}
                 className={cn(
                   "p-3 backdrop-blur-sm rounded-full transition-colors",
                   showShare ? "bg-card/30" : "bg-card/10 hover:bg-card/20"
