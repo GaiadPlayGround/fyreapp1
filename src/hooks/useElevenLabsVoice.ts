@@ -6,13 +6,11 @@ export interface ElevenLabsVoice {
   gender: 'male' | 'female';
 }
 
-// ElevenLabs voices with clear gender differentiation
+// Reduced to 3 distinct voices with clear differentiation
 export const ELEVENLABS_VOICES: ElevenLabsVoice[] = [
-  { id: 'Sarah (Female)', name: 'Sarah', gender: 'female' },
-  { id: 'Charlie (Male)', name: 'Charlie', gender: 'male' },
-  { id: 'Lily (Female)', name: 'Lily', gender: 'female' },
-  { id: 'George (Male)', name: 'George', gender: 'male' },
-  { id: 'Alice (Female)', name: 'Alice', gender: 'female' },
+  { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah', gender: 'female' }, // Soft female
+  { id: 'IKne3meq5aSn9XLyUdCD', name: 'Charlie', gender: 'male' }, // Deep male
+  { id: 'pFZP5JQG7iQjIQuC4Bku', name: 'Lily', gender: 'female' }, // British female
 ];
 
 export const useElevenLabsVoice = () => {

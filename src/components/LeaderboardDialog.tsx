@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Award } from 'lucide-react';
+import { BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useWalletLeaderboard } from '@/hooks/useWalletLeaderboard';
 import { motion, AnimatePresence } from 'motion/react';
@@ -42,15 +42,15 @@ const LeaderboardDialog = () => {
       <DialogTrigger asChild>
         <button
           className="flex items-center gap-1.5 px-2 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-          title="Achievements & Leaderboard"
+          title="Leaderboard"
         >
-          <Award className="w-4 h-4" />
+          <BarChart3 className="w-4 h-4" />
         </button>
       </DialogTrigger>
       <DialogContent className="max-w-sm max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="font-serif text-lg flex items-center gap-2">
-            <Award className="w-5 h-5 text-primary" />
+            <BarChart3 className="w-5 h-5 text-primary" />
             Top 50 Leaderboard
           </DialogTitle>
         </DialogHeader>

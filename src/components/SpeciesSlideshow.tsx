@@ -243,9 +243,9 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
       onMouseMove={handleMouseMove}
       onClick={() => resetIdleTimer()}
     >
-      {/* Full-screen image with better object positioning */}
+      {/* Full-screen image - show entire animal with object-contain */}
       <div 
-        className="absolute inset-0"
+        className="absolute inset-0 bg-foreground"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -254,8 +254,7 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
         <img
           src={currentSpecies.image}
           alt={currentSpecies.name}
-          className="w-full h-full object-cover object-top gallery-transition"
-          style={{ objectPosition: 'center 20%' }}
+          className="w-full h-full object-contain gallery-transition"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-transparent to-foreground/30" />
       </div>
