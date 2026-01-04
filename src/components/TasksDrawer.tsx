@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, ChevronDown, ChevronUp, ExternalLink, Share2, Vote, Coins, Users, Copy } from 'lucide-react';
+import { Check, ChevronDown, ChevronUp, ExternalLink, Share2, Vote, Coins, Users, Copy, Headphones, ShoppingCart, Twitter, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useWallet } from '@/contexts/WalletContext';
 import { toast } from '@/hooks/use-toast';
@@ -10,7 +10,7 @@ interface Task {
   id: string;
   label: string;
   icon: React.ReactNode;
-  type: 'redirect' | 'progress' | 'copy';
+  type: 'redirect' | 'progress' | 'copy' | 'share';
   url?: string;
   requirement?: number;
   progressKey?: 'votes' | 'shares' | 'referrals' | 'genomes' | 'dna';
@@ -25,9 +25,14 @@ const formatNumber = (num: number): string => {
 
 const TASKS: Task[] = [
   { id: 'follow-zora', label: 'Follow FCBC on Zora', icon: <ExternalLink className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://zora.co/@fcbcc' },
-  { id: 'follow-base', label: 'Follow FCBC on Base App', icon: <ExternalLink className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://farcaster.xyz/warplette' },
+  { id: 'follow-base', label: 'Follow FCBC on Base App', icon: <ExternalLink className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://base.app/profile/0xD7305c73f62B7713B74316613795C77E814Dea0f' },
   { id: 'follow-x', label: 'Follow FCBC on X', icon: <ExternalLink className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://x.com/warplette' },
-  { id: 'follow-farcaster', label: 'Follow on Farcaster', icon: <ExternalLink className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://warpcast.com/fcbc' },
+  { id: 'follow-farcaster', label: 'Follow on Farcaster', icon: <ExternalLink className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://farcaster.xyz/warplette' },
+  { id: 'listen-ama', label: 'Listen to Founders AMA', icon: <Headphones className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://x.com/i/status/2007512266556702973' },
+  { id: 'buy-enzyme', label: 'Buy 100+ Enzyme Consumables', icon: <ShoppingCart className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://opensea.io/collection/fcbrwa-enzyme' },
+  { id: 'buy-dna', label: 'Buy your 1st DNA token', icon: <Coins className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://zora.co/@fcbcc' },
+  { id: 'invite-10', label: 'Invite 10 people to FyreApp 0', icon: <Users className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://docs.fcbc.fun' },
+  { id: 'fyre-posting', label: 'Start #FyreBasePosting!', icon: <Twitter className="w-3.5 h-3.5" />, type: 'share' },
   { id: 'vote-10', label: 'Vote for 10 species', icon: <Vote className="w-3.5 h-3.5" />, type: 'progress', requirement: 10, progressKey: 'votes' },
   { id: 'vote-25', label: 'Vote for 25 species', icon: <Vote className="w-3.5 h-3.5" />, type: 'progress', requirement: 25, progressKey: 'votes' },
   { id: 'vote-50', label: 'Vote for 50 species', icon: <Vote className="w-3.5 h-3.5" />, type: 'progress', requirement: 50, progressKey: 'votes' },
@@ -70,7 +75,7 @@ const TasksDrawer = () => {
   };
 
   const isTaskCompleted = (task: Task): boolean => {
-    if (task.type === 'redirect') {
+    if (task.type === 'redirect' || task.type === 'share') {
       return clickedRedirects.has(task.id);
     }
     if (task.type === 'progress' && task.requirement && task.progressKey) {
@@ -82,6 +87,17 @@ const TasksDrawer = () => {
   const handleTaskClick = (task: Task) => {
     if (task.type === 'redirect' && task.url) {
       window.open(task.url, '_blank');
+      setClickedRedirects(prev => new Set(prev).add(task.id));
+    } else if (task.type === 'share') {
+      // Open X share intent for #FyreBasePosting
+      const shareText = `I'm exploring endangered species and bio-RWAs with the FCBC Club! 🧬
+
+DNA Markets are the new class of tokens representing real-world biodiversity.
+
+Join the movement: https://fcbc.fun
+
+#FyreBasePosting #FCBC #bioRWA`;
+      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`, '_blank');
       setClickedRedirects(prev => new Set(prev).add(task.id));
     } else if (task.type === 'copy') {
       navigator.clipboard.writeText(CONTRACT_ADDRESS);
@@ -124,7 +140,7 @@ const TasksDrawer = () => {
             <ul className="space-y-2">
               {TASKS.map((task) => {
                 const completed = isTaskCompleted(task);
-                const isClickable = task.type === 'redirect' || task.type === 'copy';
+                const isClickable = task.type === 'redirect' || task.type === 'copy' || task.type === 'share';
                 const progressDisplay = getProgressDisplay(task);
                 
                 return (
