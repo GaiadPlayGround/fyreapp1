@@ -1,7 +1,6 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { WalletProvider } from "@/contexts/WalletContext";
@@ -10,8 +9,6 @@ import { useAccount } from "wagmi";
 import Index from "./pages/Index";
 import WalletGate from "./pages/WalletGate";
 import NotFound from "./pages/NotFound";
-
-const queryClient = new QueryClient();
 
 const ProtectedRoutes = () => {
   const { isConnected } = useAccount();
@@ -30,21 +27,19 @@ const ProtectedRoutes = () => {
 };
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider>
-      <OnchainProvider>
-        <WalletProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <ProtectedRoutes />
-            </BrowserRouter>
-          </TooltipProvider>
-        </WalletProvider>
-      </OnchainProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
+  <ThemeProvider>
+    <OnchainProvider>
+      <WalletProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <ProtectedRoutes />
+          </BrowserRouter>
+        </TooltipProvider>
+      </WalletProvider>
+    </OnchainProvider>
+  </ThemeProvider>
 );
 
 export default App;
