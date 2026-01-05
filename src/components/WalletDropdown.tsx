@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Wallet, LogOut, Vote, Copy, Check, Users, Share2, Moon, Sun, Volume2, VolumeX, Sparkles, HelpCircle } from 'lucide-react';
+import { Wallet, LogOut, Vote, Copy, Check, Users, Share2, Moon, Sun, Volume2, VolumeX, Sparkles, HelpCircle, Ticket } from 'lucide-react';
 import { useWallet } from '@/contexts/WalletContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { cn } from '@/lib/utils';
@@ -11,6 +11,14 @@ interface WalletDropdownProps {
   onToggleAnimation?: () => void;
   onToggleSound?: () => void;
 }
+
+// Format large numbers
+const formatBalance = (num: number): string => {
+  if (num >= 1000000000) return `${(num / 1000000000).toFixed(1)}B`;
+  if (num >= 1000000) return `${(num / 1000000).toFixed(1)}m`;
+  if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
+  return num.toLocaleString();
+};
 
 const WalletDropdown = ({
   animationEnabled = true,
@@ -24,6 +32,8 @@ const WalletDropdown = ({
     dnaBalance,
     usdcBalance,
     fcbccBalance,
+    ownedGenomes,
+    voteTickets,
     votes,
     shares,
     invites,
@@ -78,7 +88,7 @@ const WalletDropdown = ({
       <div ref={dropdownRef} className="relative">
         <button onClick={() => setIsOpen(!isOpen)} className="flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 transition-colors">
           <Wallet className="w-3.5 h-3.5 text-muted-foreground" />
-          <span className="text-xs font-sans text-foreground">349m</span>
+          <span className="text-xs font-sans text-foreground">{formatBalance(dnaBalance)}</span>
         </button>
 
         {isOpen && <div className="absolute right-0 top-full mt-2 w-72 bg-card border border-border rounded-lg shadow-lg z-50 animate-fade-in max-h-[80vh] overflow-y-auto">
@@ -106,19 +116,19 @@ const WalletDropdown = ({
             <div className="p-3 space-y-2 border-b border-border">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-sans text-muted-foreground">Total DNA Tokens held:</span>
-                <span className="text-xs font-sans font-medium text-foreground">349m</span>
+                <span className="text-xs font-sans font-medium text-foreground">{formatBalance(dnaBalance)}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-sans text-muted-foreground">USDC Balance:</span>
-                <span className="text-xs font-sans font-medium text-foreground">${usdcBalance.toFixed(2)}</span>
+                <span className="text-xs font-sans font-medium text-foreground">${usdcBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-sans text-muted-foreground">$FCBCC balance:</span>
-                <span className="text-xs font-sans font-medium text-foreground">{fcbccBalance.toLocaleString()}</span>
+                <span className="text-xs font-sans font-medium text-foreground">{formatBalance(fcbccBalance)}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-sans text-muted-foreground">Owned DNA genomes:</span>
-                <span className="text-xs font-sans font-medium text-foreground">{dnaBalance.toLocaleString()}</span>
+                <span className="text-xs font-sans font-medium text-foreground">{ownedGenomes.toLocaleString()}</span>
               </div>
             </div>
 
@@ -161,8 +171,8 @@ const WalletDropdown = ({
                 {inviteCopied ? <Check className="w-3 h-3 text-primary" /> : <Copy className="w-3 h-3 text-muted-foreground" />}
               </button>
               <button className="flex items-center gap-2 w-full px-2 py-1.5 text-xs font-sans text-foreground hover:bg-muted rounded-md transition-colors">
-                <Vote className="w-3.5 h-3.5" />
-                <span>Vote tickets ({votes.length})</span>
+                <Ticket className="w-3.5 h-3.5" />
+                <span>Vote tickets ({voteTickets})</span>
               </button>
               <button className="flex items-center gap-2 w-full px-2 py-1.5 text-xs font-sans text-foreground hover:bg-muted rounded-md transition-colors">
                 <Share2 className="w-3.5 h-3.5" />

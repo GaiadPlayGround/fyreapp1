@@ -5,7 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { WalletProvider, useWallet } from "@/contexts/WalletContext";
-import Index from "./pages/Index";
+import Home from "./pages/Home";
+import Explore from "./pages/Explore";
 import WalletGate from "./pages/WalletGate";
 import NotFound from "./pages/NotFound";
 
@@ -20,7 +21,8 @@ const ProtectedRoutes = () => {
 
   return (
     <Routes>
-      <Route path="/" element={<Index />} />
+      <Route path="/" element={<Home />} />
+      <Route path="/explore" element={<Explore />} />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>

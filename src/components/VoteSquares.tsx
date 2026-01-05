@@ -72,7 +72,7 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
       if (success) {
         toast({
           title: "Vote Submitted!",
-          description: `-0.2 USDC • +${rating} Base Squares`,
+          description: `-0.2 USDC • +${rating} Base Squares • +1 Vote Ticket`,
           duration: 1500,
         });
         
