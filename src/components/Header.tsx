@@ -3,7 +3,6 @@ import { Flame } from 'lucide-react';
 import WalletDropdown from './WalletDropdown';
 import LeaderboardDialog from './LeaderboardDialog';
 import FyreMissionsDialog from './FyreMissionsDialog';
-import Link from "next/link";
 
 import logo from '@/assets/logo.png';
 import logoLight from '@/assets/logo-light.png';
@@ -37,6 +36,8 @@ const Header = ({
     return () => clearInterval(interval);
   }, []);
 
+
+import Link from "next/link";
 
 return (
   <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border safe-area-top">
