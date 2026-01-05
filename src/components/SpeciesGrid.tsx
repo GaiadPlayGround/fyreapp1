@@ -4,7 +4,6 @@ import { Species, getStatusColor, getStatusLabel } from '@/data/species';
 import SpeciesCard from './SpeciesCard';
 import { cn } from '@/lib/utils';
 import { ViewMode } from './FilterDrawer';
-import Footer from './Footer';
 import { useSpeciesStats } from '@/hooks/useSpeciesStats';
 import ElectricBorder from './ElectricBorder';
 import { getHabitatColor } from '@/utils/habitatColors';
@@ -249,8 +248,6 @@ const SpeciesGrid = ({
         </div>
       )}
 
-      {/* Footer */}
-      <Footer />
     </div>
   );
 };
