@@ -47,7 +47,7 @@ const Explore = () => {
     const scheduleNextPopup = () => {
       const elapsed = Date.now() - startTime;
       const interval = elapsed < tenMinutes ? twoMinutes : thirtyMinutes;
-      
+
       timeoutId = setTimeout(() => {
         setShowEnzymeAd(true);
         scheduleNextPopup();
@@ -61,6 +61,13 @@ const Explore = () => {
     }, twoMinutes);
 
     return () => clearTimeout(timeoutId);
+  }, []);
+
+  // Allow manual opening from Wallet dropdown
+  useEffect(() => {
+    const handler = (_e: Event) => setShowEnzymeAd(true);
+    window.addEventListener('enzymeAd:open', handler);
+    return () => window.removeEventListener('enzymeAd:open', handler);
   }, []);
 
   // Filter and sort species
@@ -117,9 +124,9 @@ const Explore = () => {
         onToggleSound={() => setSoundEnabled(!soundEnabled)}
       />
       
-      <main className="flex-1">
+      <main className="flex-1 pt-14">
         {/* Sticky Filter Bar */}
-        <div ref={gridRef} className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border">
+        <div ref={gridRef} className="sticky top-14 z-30 bg-background/95 backdrop-blur-sm border-b border-border">
           <InlineFilterBar
             viewMode={viewMode}
             onViewModeChange={setViewMode}

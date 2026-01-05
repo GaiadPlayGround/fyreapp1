@@ -181,7 +181,7 @@ const WalletDropdown = ({
             </div>
 
             {/* Replay Onboarding */}
-            <div className="p-3 border-b border-border">
+            <div className="p-3 border-b border-border space-y-1">
               <button 
                 onClick={() => {
                   setShowOnboarding(true);
@@ -191,6 +191,17 @@ const WalletDropdown = ({
               >
                 <HelpCircle className="w-3.5 h-3.5" />
                 <span>Replay Onboarding Guide</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent('enzymeAd:open'));
+                  setIsOpen(false);
+                }}
+                className="flex items-center gap-2 w-full px-2 py-1.5 text-xs font-sans text-foreground hover:bg-muted rounded-md transition-colors"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>View FCbRWA Enzyme Ad</span>
               </button>
             </div>
 

@@ -29,7 +29,7 @@ const Home = () => {
     const scheduleNextPopup = () => {
       const elapsed = Date.now() - startTime;
       const interval = elapsed < tenMinutes ? twoMinutes : thirtyMinutes;
-      
+
       timeoutId = setTimeout(() => {
         setShowEnzymeAd(true);
         scheduleNextPopup();
@@ -43,6 +43,13 @@ const Home = () => {
     }, twoMinutes);
 
     return () => clearTimeout(timeoutId);
+  }, []);
+
+  // Allow manual opening from Wallet dropdown
+  useEffect(() => {
+    const handler = (_e: Event) => setShowEnzymeAd(true);
+    window.addEventListener('enzymeAd:open', handler);
+    return () => window.removeEventListener('enzymeAd:open', handler);
   }, []);
 
   const handleExplore = () => {

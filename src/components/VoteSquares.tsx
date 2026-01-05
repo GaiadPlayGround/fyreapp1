@@ -12,7 +12,7 @@ interface VoteSquaresProps {
 }
 
 const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactionEnd }: VoteSquaresProps) => {
-  const { isConnected, address, usdcBalance, connect } = useWallet();
+  const { isConnected, address, usdcBalance, connect, addVoteTicket } = useWallet();
   const { getBaseSquares, recordVote, refetch } = useSpeciesStats();
   const [userVote, setUserVote] = useState<number>(0);
   const [totalVotes, setTotalVotes] = useState(0);
@@ -70,6 +70,8 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
       const success = await recordVote(speciesId, address || '', rating);
       
       if (success) {
+        addVoteTicket();
+
         toast({
           title: "Vote Submitted!",
           description: `-0.2 USDC • +${rating} Base Squares • +1 Vote Ticket`,
