@@ -1,23 +1,24 @@
-import { useState } from 'react';
-import { useWallet } from '@/contexts/WalletContext';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect } from 'react';
+import { ConnectWallet, Wallet } from '@coinbase/onchainkit/wallet';
+import { useAccount } from 'wagmi';
 import Cubes from '@/components/Cubes';
 import DecryptedText from '@/components/DecryptedText';
 
 const WalletGate = () => {
-  const { connect } = useWallet();
-  const [isConnecting, setIsConnecting] = useState(false);
+  const { isConnecting, isConnected } = useAccount();
   const [showDecryptedText, setShowDecryptedText] = useState(false);
 
-  const handleConnect = () => {
-    setIsConnecting(true);
-    setShowDecryptedText(true);
-    
-    // Slower delay to allow the decrypted text animation to complete
-    setTimeout(() => {
-      connect();
-    }, 4500);
-  };
+  useEffect(() => {
+    if (isConnecting) {
+      setShowDecryptedText(true);
+    }
+  }, [isConnecting]);
+
+  useEffect(() => {
+    if (isConnected) {
+      setShowDecryptedText(true);
+    }
+  }, [isConnected]);
 
   return (
     <div className="min-h-screen bg-[#060010] flex flex-col items-center justify-center p-4 relative overflow-hidden">
@@ -72,14 +73,11 @@ const WalletGate = () => {
                     <h1 className="font-mono text-xl sm:text-2xl font-bold text-white tracking-wider">
                       FYREAPP 1
                     </h1>
-                    <Button 
-                      onClick={handleConnect}
-                      disabled={isConnecting}
-                      size="lg"
-                      className="bg-[#005ae0] hover:bg-[#0047b3] text-white font-mono font-semibold px-8 py-3 rounded-lg shadow-lg shadow-[#005ae0]/30 transition-all"
-                    >
-                      {isConnecting ? 'CONNECTING...' : 'CONNECT WALLET'}
-                    </Button>
+                    <Wallet>
+                      <ConnectWallet 
+                        className="bg-[#005ae0] hover:bg-[#0047b3] text-white font-mono font-semibold px-8 py-3 rounded-lg shadow-lg shadow-[#005ae0]/30 transition-all"
+                      />
+                    </Wallet>
                   </>
                 )}
               </div>
