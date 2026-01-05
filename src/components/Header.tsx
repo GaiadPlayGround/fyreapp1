@@ -3,6 +3,7 @@ import { Flame } from 'lucide-react';
 import WalletDropdown from './WalletDropdown';
 import LeaderboardDialog from './LeaderboardDialog';
 import FyreMissionsDialog from './FyreMissionsDialog';
+import Link from "next/link";
 
 import logo from '@/assets/logo.png';
 import logoLight from '@/assets/logo-light.png';
@@ -36,16 +37,23 @@ const Header = ({
     return () => clearInterval(interval);
   }, []);
 
-  return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border safe-area-top">
-      <div className="px-3 h-14 flex items-center justify-between">
-        {/* Left: Logo and Title */}
-        <div className="flex items-center gap-2">
-          <img src={currentLogo} alt="Fyre App 1" className="w-9 h-9 rounded-lg object-contain" />
-          <h1 className="font-serif font-semibold text-foreground leading-tight text-base transition-all duration-300">
-            {TITLE_OPTIONS[titleIndex]}
-          </h1>
-        </div>
+
+return (
+  <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border safe-area-top">
+    <div className="px-3 h-14 flex items-center justify-between">
+      {/* Left: Logo and Title */}
+      <div className="flex items-center gap-2">
+        <Link href="/home">
+          <img
+            src={currentLogo}
+            alt="Fyre App 1"
+            className="w-9 h-9 rounded-lg object-contain cursor-pointer"
+          />
+        </Link>
+        <h1 className="font-serif font-semibold text-foreground leading-tight text-base transition-all duration-300">
+          {TITLE_OPTIONS[titleIndex]}
+        </h1>
+      </div>
 
         {/* Right: Actions */}
         <div className="flex items-center gap-1.5">
