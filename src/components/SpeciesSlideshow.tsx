@@ -229,7 +229,10 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
   };
 
   const getFcbcUrl = () => {
-    return `https://www.fcbc.fun/species/FCBC${currentSpecies.id}?code=9406/136251508`;
+    // Build URL using symbol and code from species data
+    const speciesSymbol = currentSpecies.symbol || `FCBC${currentSpecies.id.replace(/\D/g, '')}`;
+    const speciesCode = (currentSpecies as any).code || `${currentSpecies.id.replace(/\D/g, '')}0/12345678`;
+    return `https://www.fcbc.fun/species/${speciesSymbol}?code=${speciesCode}`;
   };
 
   // Dynamic text color based on position (bottom area is usually darker)
@@ -476,7 +479,9 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 safe-area-bottom z-10">
         <VoteSquares 
           key={`${currentSpecies.id}-${voteKey}`}
-          speciesId={currentSpecies.id} 
+          speciesId={currentSpecies.id}
+          onTransactionStart={() => setIsPaused(true)}
+          onTransactionEnd={() => setIsPaused(false)}
         />
       </div>
 

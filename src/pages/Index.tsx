@@ -1,10 +1,11 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
 import InlineFilterBar from '@/components/InlineFilterBar';
 import SpeciesGrid from '@/components/SpeciesGrid';
 import SpeciesSlideshow from '@/components/SpeciesSlideshow';
 import OnboardingGuide from '@/components/OnboardingGuide';
+import EnzymeAdPopup from '@/components/EnzymeAdPopup';
 import { Species, ConservationStatus } from '@/data/species';
 import { useSpeciesApi } from '@/hooks/useSpeciesApi';
 import { useAnimalSounds } from '@/hooks/useAnimalSounds';
@@ -13,7 +14,7 @@ import { SortOption, ViewMode } from '@/components/FilterDrawer';
 
 const Index = () => {
   const { species: apiSpecies, total, onchain, loading } = useSpeciesApi();
-  const { getBaseSquares } = useSpeciesStats();
+  const { getBaseSquares, getShareCount, stats } = useSpeciesStats();
   const [selectedStatus, setSelectedStatus] = useState<ConservationStatus | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>('id');
   const [searchTicker, setSearchTicker] = useState('');
@@ -21,10 +22,19 @@ const Index = () => {
   const [selectedSpecies, setSelectedSpecies] = useState<{ species: Species; index: number } | null>(null);
   const [animationEnabled, setAnimationEnabled] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(false);
+  const [showEnzymeAd, setShowEnzymeAd] = useState(false);
   const galleryRef = useRef<HTMLDivElement>(null);
   
   // Random animal sounds on homepage
   useAnimalSounds(soundEnabled);
+
+  // Show Enzyme ad popup after 120 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowEnzymeAd(true);
+    }, 120000);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Filter and sort species
   const filteredSpecies = useMemo(() => {
@@ -45,26 +55,38 @@ const Index = () => {
     }
 
     switch (sortBy) {
-      case 'votes':
-        // Sort by base squares (highest first)
-        result.sort((a, b) => getBaseSquares(b.id) - getBaseSquares(a.id));
-        break;
-      case 'shares':
-        // Shares sorting handled by stats hook
-        break;
-      case 'new':
-        result.sort((a, b) => parseInt(b.id.replace(/\D/g, '')) - parseInt(a.id.replace(/\D/g, '')));
-        break;
       case 'id':
+        // ID: fcbc1 to fcbc1234 (ascending)
         result.sort((a, b) => parseInt(a.id.replace(/\D/g, '')) - parseInt(b.id.replace(/\D/g, '')));
         break;
       case 'trending':
+        // Trending: by last_viewed_at (most recently viewed first)
+        result.sort((a, b) => {
+          const statA = stats[a.id];
+          const statB = stats[b.id];
+          const timeA = statA?.last_viewed_at ? new Date(statA.last_viewed_at).getTime() : 0;
+          const timeB = statB?.last_viewed_at ? new Date(statB.last_viewed_at).getTime() : 0;
+          return timeB - timeA;
+        });
+        break;
+      case 'votes':
+        // Votes: by base squares (highest first)
+        result.sort((a, b) => getBaseSquares(b.id) - getBaseSquares(a.id));
+        break;
+      case 'shares':
+        // Shares: by share count (highest first)
+        result.sort((a, b) => getShareCount(b.id) - getShareCount(a.id));
+        break;
+      case 'new':
+        // Newest: fcbc1234 to fcbc1 (descending)
+        result.sort((a, b) => parseInt(b.id.replace(/\D/g, '')) - parseInt(a.id.replace(/\D/g, '')));
+        break;
       default:
         break;
     }
 
     return result;
-  }, [apiSpecies, selectedStatus, sortBy, searchTicker, getBaseSquares]);
+  }, [apiSpecies, selectedStatus, sortBy, searchTicker, getBaseSquares, getShareCount, stats]);
 
   const handleSpeciesClick = (species: Species, index: number) => {
     setSelectedSpecies({ species, index });
@@ -92,6 +114,11 @@ const Index = () => {
   return (
     <main className="min-h-screen bg-background">
       <OnboardingGuide />
+      
+      {/* Enzyme Ad Popup */}
+      {showEnzymeAd && (
+        <EnzymeAdPopup onClose={() => setShowEnzymeAd(false)} />
+      )}
       
       {/* Hero Section */}
       <HeroSection 

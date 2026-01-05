@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 const Footer = () => {
@@ -17,8 +17,8 @@ const Footer = () => {
       url: 'https://base.app/profile/0xD7305c73f62B7713B74316613795C77E814Dea0f', 
       icon: (
         <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
-          <rect x="2" y="2" width="20" height="20" rx="4" fill="#5B4FE9"/>
-          <path d="M12 6v12M8 10l4-4 4 4M8 14l4 4 4-4" stroke="white" strokeWidth="1.5" fill="none"/>
+          <rect width="24" height="24" rx="4" fill="#0052FF"/>
+          <circle cx="12" cy="12" r="7" stroke="white" strokeWidth="2" fill="none"/>
         </svg>
       )
     },
@@ -27,16 +27,10 @@ const Footer = () => {
       url: 'https://farcaster.xyz/warplette', 
       icon: (
         <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="10" fill="url(#farcaster-gradient)"/>
-          <defs>
-            <linearGradient id="farcaster-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#855DCD"/>
-              <stop offset="100%" stopColor="#2B5876"/>
-            </linearGradient>
-          </defs>
-          <ellipse cx="12" cy="10" rx="6" ry="5" fill="white" opacity="0.9"/>
-          <circle cx="10" cy="10" r="1.5" fill="#333"/>
-          <circle cx="14" cy="10" r="1.5" fill="#333"/>
+          <rect width="24" height="24" rx="4" fill="#855DCD"/>
+          <path d="M6 7h12v2H6zM8 11h8v6H8z" fill="white"/>
+          <rect x="7" y="9" width="2" height="2" fill="white"/>
+          <rect x="15" y="9" width="2" height="2" fill="white"/>
         </svg>
       )
     },
@@ -45,7 +39,8 @@ const Footer = () => {
       url: 'https://zora.co/@fcbcc', 
       icon: (
         <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
-          <rect x="2" y="2" width="20" height="20" rx="2" fill="#0000FF"/>
+          <rect width="24" height="24" rx="4" fill="#0000FF"/>
+          <rect x="8" y="8" width="8" height="8" rx="1" fill="white"/>
         </svg>
       )
     },
@@ -53,13 +48,13 @@ const Footer = () => {
 
   // Quicklinks with active/inactive status
   const quickLinks = [
-    { id: 0, name: 'FyreApp 0', fullName: 'FyreApp 0: Fyre Docs', url: 'https://docs.fcbc.fun', active: true },
+    { id: 0, name: 'FyreApp 0', fullName: 'FyreApp 0: Fyre Docs', url: 'https://fyreapp0.lovable.app/', active: true },
     { id: 1, name: 'FyreApp 1', fullName: 'FyreApp 1: PureBreed Explorer', url: '/', active: true },
     { id: 2, name: 'FyreApp 2', fullName: 'FyreApp 2: Portfolio Manager', url: '#', active: false },
     { id: 3, name: 'FyreApp 3', fullName: 'FyreApp 3: Custody and Snapshots', url: '#', active: false },
     { id: 4, name: 'FyreApp 4', fullName: 'FyreApp 4: Fyre Labs', url: '#', active: false },
     { id: 5, name: 'FyreApp 5', fullName: 'FyreApp 5: Fyre Arena', url: '#', active: false },
-    { id: 'herald', name: 'Herald', fullName: 'FyreHerald (community FyreApp 1)', url: 'https://herald.fcbc.fun', active: true },
+    { id: 'herald', name: 'Herald', fullName: 'FyreHerald (community FyreApp 1)', url: 'https://farcaster.xyz/miniapps/NBRppPFoPDDF/fyre-herald', active: true },
   ];
 
   return (

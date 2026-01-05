@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Check, ChevronDown, ChevronUp, ExternalLink, Share2, Vote, Coins, Users, Copy, Headphones, ShoppingCart, Twitter, Send } from 'lucide-react';
+import { Check, ExternalLink, Share2, Vote, Coins, Users, Copy, Headphones, ShoppingCart, Twitter, Flame, X } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { cn } from '@/lib/utils';
 import { useWallet } from '@/contexts/WalletContext';
 import { toast } from '@/hooks/use-toast';
@@ -31,7 +32,7 @@ const TASKS: Task[] = [
   { id: 'listen-ama', label: 'Listen to Founders AMA', icon: <Headphones className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://x.com/i/status/2007512266556702973' },
   { id: 'buy-enzyme', label: 'Buy 100+ Enzyme Consumables', icon: <ShoppingCart className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://opensea.io/collection/fcbrwa-enzyme' },
   { id: 'buy-dna', label: 'Buy your 1st DNA token', icon: <Coins className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://zora.co/@fcbcc' },
-  { id: 'invite-10', label: 'Invite 10 people to FyreApp 0', icon: <Users className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://docs.fcbc.fun' },
+  { id: 'invite-10', label: 'Invite 10 people to FyreApp 0', icon: <Users className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://fyreapp0.lovable.app/' },
   { id: 'fyre-posting', label: 'Start #FyreBasePosting!', icon: <Twitter className="w-3.5 h-3.5" />, type: 'share' },
   { id: 'vote-10', label: 'Vote for 10 species', icon: <Vote className="w-3.5 h-3.5" />, type: 'progress', requirement: 10, progressKey: 'votes' },
   { id: 'vote-25', label: 'Vote for 25 species', icon: <Vote className="w-3.5 h-3.5" />, type: 'progress', requirement: 25, progressKey: 'votes' },
@@ -53,15 +54,18 @@ const TASKS: Task[] = [
   { id: 'buy-coin', label: 'Buy Creator Coin', icon: <Coins className="w-3.5 h-3.5" />, type: 'copy' },
 ];
 
-const TasksDrawer = () => {
-  const [isOpen, setIsOpen] = useState(false);
+interface FyreMissionsDialogProps {
+  children: React.ReactNode;
+}
+
+const FyreMissionsDialog = ({ children }: FyreMissionsDialogProps) => {
   const [clickedRedirects, setClickedRedirects] = useState<Set<string>>(new Set());
   const { votes, shares } = useWallet();
   
   // Mock values - in real app would come from context
   const referrals = 0;
-  const genomes = 0; // Owned DNA genomes
-  const dna = 349000000; // Total DNA units
+  const genomes = 0;
+  const dna = 349000000;
 
   const getProgress = (key: 'votes' | 'shares' | 'referrals' | 'genomes' | 'dna'): number => {
     switch (key) {
@@ -89,7 +93,6 @@ const TasksDrawer = () => {
       window.open(task.url, '_blank');
       setClickedRedirects(prev => new Set(prev).add(task.id));
     } else if (task.type === 'share') {
-      // Open X share intent for #FyreBasePosting
       const shareText = `I'm exploring endangered species and bio-RWAs with the FCBC Club! 🧬
 
 DNA Markets are the new class of tokens representing real-world biodiversity.
@@ -106,7 +109,6 @@ Join the movement: https://fcbc.fun
         description: CONTRACT_ADDRESS,
       });
     }
-    // Progress tasks are read-only - they complete automatically
   };
 
   const getProgressDisplay = (task: Task): string | null => {
@@ -118,92 +120,85 @@ Join the movement: https://fcbc.fun
   const completedCount = TASKS.filter(t => isTaskCompleted(t)).length;
 
   return (
-    <div className="relative">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-1.5 px-2 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <span className="font-sans">{completedCount}/{TASKS.length}</span>
-        {isOpen ? (
-          <ChevronUp className="w-3 h-3" />
-        ) : (
-          <ChevronDown className="w-3 h-3" />
-        )}
-      </button>
-
-      {isOpen && (
-        <div className="absolute top-full right-0 mt-2 w-72 bg-card border border-border rounded-md shadow-lg animate-fade-in max-h-80 overflow-y-auto z-50">
-          <div className="p-3">
-            <h3 className="font-serif text-sm font-medium text-foreground mb-3">
-              FYRE MISSIONS
-            </h3>
-            <ul className="space-y-2">
-              {TASKS.map((task) => {
-                const completed = isTaskCompleted(task);
-                const isClickable = task.type === 'redirect' || task.type === 'copy' || task.type === 'share';
-                const progressDisplay = getProgressDisplay(task);
-                
-                return (
-                  <li key={task.id}>
-                    <button
-                      onClick={() => handleTaskClick(task)}
-                      disabled={!isClickable && !completed}
-                      className={cn(
-                        "flex items-center gap-2 w-full text-left group",
-                        isClickable && "cursor-pointer",
-                        !isClickable && "cursor-default"
-                      )}
-                    >
-                      <div
-                        className={cn(
-                          "w-4 h-4 rounded-sm border flex items-center justify-center transition-colors flex-shrink-0",
-                          completed
-                            ? "bg-primary border-primary"
-                            : "border-muted-foreground/30"
-                        )}
-                      >
-                        {completed && (
-                          <Check className="w-3 h-3 text-primary-foreground" />
-                        )}
-                      </div>
-                      <span className="flex items-center gap-1.5 flex-1 min-w-0">
-                        <span className={cn(
-                          "text-muted-foreground flex-shrink-0",
-                          completed && "opacity-50"
-                        )}>
-                          {task.type === 'copy' ? <Copy className="w-3.5 h-3.5" /> : task.icon}
-                        </span>
-                        <span
-                          className={cn(
-                            "text-xs font-sans truncate",
-                            completed
-                              ? "text-muted-foreground line-through"
-                              : "text-foreground"
-                          )}
-                        >
-                          {task.label}
-                        </span>
-                      </span>
-                      {progressDisplay && (
-                        <span
-                          className={cn(
-                            "text-xs font-mono flex-shrink-0",
-                            completed ? "text-primary" : "text-muted-foreground"
-                          )}
-                        >
-                          {progressDisplay}
-                        </span>
-                      )}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
+    <Dialog>
+      <DialogTrigger asChild>
+        {children}
+      </DialogTrigger>
+      <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 font-serif">
+            <Flame className="w-5 h-5 text-primary" />
+            FYRE MISSIONS
+            <span className="text-sm text-muted-foreground font-sans ml-auto">
+              {completedCount}/{TASKS.length}
+            </span>
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-2 mt-4">
+          {TASKS.map((task) => {
+            const completed = isTaskCompleted(task);
+            const isClickable = task.type === 'redirect' || task.type === 'copy' || task.type === 'share';
+            const progressDisplay = getProgressDisplay(task);
+            
+            return (
+              <button
+                key={task.id}
+                onClick={() => handleTaskClick(task)}
+                disabled={!isClickable && !completed}
+                className={cn(
+                  "flex items-center gap-2 w-full text-left p-2 rounded-lg transition-colors",
+                  isClickable && "hover:bg-muted cursor-pointer",
+                  !isClickable && "cursor-default"
+                )}
+              >
+                <div
+                  className={cn(
+                    "w-5 h-5 rounded-sm border flex items-center justify-center transition-colors flex-shrink-0",
+                    completed
+                      ? "bg-primary border-primary"
+                      : "border-muted-foreground/30"
+                  )}
+                >
+                  {completed && (
+                    <Check className="w-3 h-3 text-primary-foreground" />
+                  )}
+                </div>
+                <span className="flex items-center gap-1.5 flex-1 min-w-0">
+                  <span className={cn(
+                    "text-muted-foreground flex-shrink-0",
+                    completed && "opacity-50"
+                  )}>
+                    {task.type === 'copy' ? <Copy className="w-3.5 h-3.5" /> : task.icon}
+                  </span>
+                  <span
+                    className={cn(
+                      "text-sm font-sans truncate",
+                      completed
+                        ? "text-muted-foreground line-through"
+                        : "text-foreground"
+                    )}
+                  >
+                    {task.label}
+                  </span>
+                </span>
+                {progressDisplay && (
+                  <span
+                    className={cn(
+                      "text-xs font-mono flex-shrink-0",
+                      completed ? "text-primary" : "text-muted-foreground"
+                    )}
+                  >
+                    {progressDisplay}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
-      )}
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
-export default TasksDrawer;
+export default FyreMissionsDialog;

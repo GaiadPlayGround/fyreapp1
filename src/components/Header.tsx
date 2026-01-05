@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import TasksDrawer from './TasksDrawer';
+import { Flame } from 'lucide-react';
 import WalletDropdown from './WalletDropdown';
 import LeaderboardDialog from './LeaderboardDialog';
+import FyreMissionsDialog from './FyreMissionsDialog';
 
 import logo from '@/assets/logo.png';
 import logoLight from '@/assets/logo-light.png';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useWallet } from '@/contexts/WalletContext';
 
 interface HeaderProps {
   animationEnabled?: boolean;
@@ -23,6 +25,7 @@ const Header = ({
   onToggleSound,
 }: HeaderProps) => {
   const { theme } = useTheme();
+  const { votes, shares } = useWallet();
   const currentLogo = theme === 'dark' ? logo : logoLight;
   const [titleIndex, setTitleIndex] = useState(0);
 
@@ -46,7 +49,13 @@ const Header = ({
 
         {/* Right: Actions */}
         <div className="flex items-center gap-1.5">
-          <TasksDrawer />
+          <FyreMissionsDialog>
+            <button className="flex items-center gap-1.5 px-2 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
+              <Flame className="w-3.5 h-3.5" />
+              <span className="font-sans">{votes.length + shares}/27</span>
+            </button>
+          </FyreMissionsDialog>
+          
           <LeaderboardDialog />
 
           <WalletDropdown
