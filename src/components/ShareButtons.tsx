@@ -1,5 +1,6 @@
 import { Species } from '@/data/species';
 import { useWallet } from '@/contexts/WalletContext';
+import { useSpeciesStats } from '@/hooks/useSpeciesStats';
 
 interface ShareButtonsProps {
   species: Species;
@@ -8,17 +9,23 @@ interface ShareButtonsProps {
 const CONTRACT_ADDRESS = '0xbfca039bbda0bd750c2b83d666810b1bb4d31b38';
 
 const ShareButtons = ({ species }: ShareButtonsProps) => {
-  const { addShare } = useWallet();
+  const { addShare, address } = useWallet();
+  const { recordShare } = useSpeciesStats();
   
-  // Truncate description to ~50 words
-  const truncateToWords = (text: string, maxWords: number = 50) => {
+  // Truncate description to ~15 words for share text
+  const truncateToWords = (text: string, maxWords: number = 15) => {
     const words = text.split(' ');
     if (words.length <= maxWords) return text;
     return words.slice(0, maxWords).join(' ') + '...';
   };
   
-  const truncatedDesc = truncateToWords(species.description, 50);
-  const speciesUrl = `https://www.fcbc.fun/species/${species.id}?code=${(species as any).code || '19832/233712210'}`;
+  const truncatedDesc = truncateToWords(species.description, 15);
+  
+  // Build species URL using symbol and code
+  // symbol is like "FCBC3", code is like "68005/12881238"
+  const speciesSymbol = species.symbol || `FCBC${species.id.replace(/\D/g, '')}`;
+  const speciesCode = (species as any).code || `${species.id.replace(/\D/g, '')}0/12345678`;
+  const speciesUrl = `https://www.fcbc.fun/species/${speciesSymbol}?code=${speciesCode}`;
   
   // X share format
   const xShareText = `The ${species.name} is an endangered animal brought onchain to Base by the FCBC Club. 
@@ -28,7 +35,7 @@ Buy DNA and Create Hybrids:
 ${speciesUrl}`;
 
   // BaseApp/Farcaster share format
-  const farcasterShareText = `Meet ${species.ticker}.
+  const farcasterShareText = `Meet ${speciesSymbol}.
 
 -THE ${species.name.toUpperCase()} 
 
@@ -40,14 +47,18 @@ Live on FCBCdotFUN.
 
 contract: ${CONTRACT_ADDRESS}`;
 
-  const handleShare = (url: string) => {
+  const handleShare = async (url: string, platform: string) => {
     addShare();
+    if (address) {
+      await recordShare(species.id, address, platform);
+    }
     window.open(url, '_blank');
   };
 
   const shareLinks = [
     {
       name: 'X',
+      platform: 'x',
       icon: (
         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
           <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
@@ -57,6 +68,7 @@ contract: ${CONTRACT_ADDRESS}`;
     },
     {
       name: 'Farcaster',
+      platform: 'farcaster',
       icon: (
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
           <circle cx="12" cy="12" r="8" fill="url(#fc-grad-share)"/>
@@ -75,10 +87,11 @@ contract: ${CONTRACT_ADDRESS}`;
     },
     {
       name: 'Base App',
+      platform: 'baseapp',
       icon: (
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
-          <rect x="4" y="4" width="16" height="16" rx="3" fill="#5B4FE9"/>
-          <path d="M12 8v8M9 11l3-3 3 3M9 13l3 3 3-3" stroke="white" strokeWidth="1.2" fill="none"/>
+          <rect x="4" y="4" width="16" height="16" rx="3" fill="#0052FF"/>
+          <circle cx="12" cy="12" r="5" stroke="white" strokeWidth="1.5" fill="none"/>
         </svg>
       ),
       url: `https://warpcast.com/~/compose?text=${encodeURIComponent(farcasterShareText)}`,
@@ -90,7 +103,7 @@ contract: ${CONTRACT_ADDRESS}`;
       {shareLinks.map((link) => (
         <button
           key={link.name}
-          onClick={() => handleShare(link.url)}
+          onClick={() => handleShare(link.url, link.platform)}
           className="flex items-center gap-2 px-3 py-2 text-card/90 hover:text-card hover:bg-card/10 rounded transition-colors"
         >
           {link.icon}

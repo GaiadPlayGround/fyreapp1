@@ -37,13 +37,13 @@ export const useSpeciesStats = () => {
     fetchStats();
   }, [fetchStats]);
 
-  const getBaseSquares = (speciesId: string): number => {
+  const getBaseSquares = useCallback((speciesId: string): number => {
     return stats[speciesId]?.base_squares || 0;
-  };
+  }, [stats]);
 
-  const getShareCount = (speciesId: string): number => {
+  const getShareCount = useCallback((speciesId: string): number => {
     return stats[speciesId]?.share_count || 0;
-  };
+  }, [stats]);
 
   const recordVote = async (speciesId: string, walletAddress: string, rating: number) => {
     try {

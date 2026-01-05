@@ -86,9 +86,16 @@ const SpeciesGrid = ({
   const navigatePage = (direction: 'prev' | 'next') => {
     if (direction === 'prev' && currentPage > 1) {
       setCurrentPage(p => p - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (direction === 'next' && currentPage < totalPages) {
       setCurrentPage(p => p + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+  };
+
+  const handlePageClick = (pageNum: number) => {
+    setCurrentPage(pageNum);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   if (species.length === 0) {
@@ -123,16 +130,9 @@ const SpeciesGrid = ({
       {/* List View */}
       {viewMode === 'list' && (
         <div className="space-y-1.5">
-          {paginatedSpecies.map((s, index) => (
-            <ElectricBorder
-              key={s.id}
-              color={getHabitatColor(s.region, s.id)}
-              speed={0.6}
-              chaos={0.05}
-              borderRadius={8}
-              className="w-full animate-fade-in"
-              style={{ animationDelay: `${Math.min(index * 15, 200)}ms` }}
-            >
+          {paginatedSpecies.map((s, index) => {
+            const showElectricBorder = animationEnabled;
+            const cardContent = (
               <div 
                 onClick={() => onSpeciesClick(s, startIndex + index)} 
                 className="flex items-center gap-3 p-2.5 bg-card rounded-lg active:bg-muted/50 cursor-pointer transition-colors"
@@ -165,8 +165,30 @@ const SpeciesGrid = ({
                   <p className="text-[10px] text-muted-foreground">Base Squares</p>
                 </div>
               </div>
-            </ElectricBorder>
-          ))}
+            );
+
+            return showElectricBorder ? (
+              <ElectricBorder
+                key={s.id}
+                color={getHabitatColor(s.region, s.id)}
+                speed={0.6}
+                chaos={0.05}
+                borderRadius={8}
+                className="w-full animate-fade-in"
+                style={{ animationDelay: `${Math.min(index * 15, 200)}ms` }}
+              >
+                {cardContent}
+              </ElectricBorder>
+            ) : (
+              <div 
+                key={s.id}
+                className="w-full animate-fade-in border border-border rounded-lg"
+                style={{ animationDelay: `${Math.min(index * 15, 200)}ms` }}
+              >
+                {cardContent}
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -199,7 +221,7 @@ const SpeciesGrid = ({
               return (
                 <button 
                   key={pageNum} 
-                  onClick={() => setCurrentPage(pageNum)} 
+                  onClick={() => handlePageClick(pageNum)} 
                   className={cn(
                     "w-9 h-9 rounded-lg text-sm font-sans transition-colors", 
                     currentPage === pageNum 
