@@ -118,9 +118,10 @@ const SpeciesGrid = ({
               style={{ animationDelay: `${Math.min(index * 20, 300)}ms` }}
             >
               <SpeciesCard 
-                species={{...s, votes: getBaseSquares(s.id)}} 
+                species={{ ...s, votes: getBaseSquares(s.id) }} 
                 onClick={() => onSpeciesClick(s, startIndex + index)} 
-                compact 
+                compact
+                animationEnabled={animationEnabled}
               />
             </div>
           ))}

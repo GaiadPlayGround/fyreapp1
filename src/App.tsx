@@ -4,30 +4,13 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import { WalletProvider, useWallet } from "@/contexts/WalletContext";
+import { WalletProvider } from "@/contexts/WalletContext";
 import Home from "./pages/Home";
 import Explore from "./pages/Explore";
 import WalletGate from "./pages/WalletGate";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
-
-const ProtectedRoutes = () => {
-  const { isConnected } = useWallet();
-
-  if (!isConnected) {
-    return <WalletGate />;
-  }
-
-  return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/explore" element={<Explore />} />
-      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-      <Route path="*" element={<NotFound />} />
-    </Routes>
-  );
-};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -37,7 +20,14 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <ProtectedRoutes />
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/explore" element={<Explore />} />
+              {/* Optional connect screen */}
+              <Route path="/connect" element={<WalletGate />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
           </BrowserRouter>
         </TooltipProvider>
       </WalletProvider>
