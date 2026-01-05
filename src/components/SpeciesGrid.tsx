@@ -19,6 +19,26 @@ interface SpeciesGridProps {
 const ITEMS_PER_PAGE_GRID_MOBILE = 60;
 const ITEMS_PER_PAGE_LIST = 100;
 
+const StaticElectricBorder = ({ children, color, borderRadius, className, style }: {
+  children: React.ReactNode;
+  color: string;
+  borderRadius: number;
+  className?: string;
+  style?: React.CSSProperties;
+}) => (
+  <div 
+    className={`relative ${className}`}
+    style={{
+      ...style,
+      borderRadius,
+      border: `2px solid ${color}`,
+      boxShadow: `0 0 8px ${color}40`,
+    }}
+  >
+    {children}
+  </div>
+);
+
 const SpeciesGrid = ({
   species,
   onSpeciesClick,
@@ -86,9 +106,16 @@ const SpeciesGrid = ({
   const navigatePage = (direction: 'prev' | 'next') => {
     if (direction === 'prev' && currentPage > 1) {
       setCurrentPage(p => p - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } else if (direction === 'next' && currentPage < totalPages) {
       setCurrentPage(p => p + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+  };
+  
+  const handlePageClick = (pageNum: number) => {
+    setCurrentPage(pageNum);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   if (species.length === 0) {
@@ -123,50 +150,53 @@ const SpeciesGrid = ({
       {/* List View */}
       {viewMode === 'list' && (
         <div className="space-y-1.5">
-          {paginatedSpecies.map((s, index) => (
-            <ElectricBorder
-              key={s.id}
-              color={getHabitatColor(s.region, s.id)}
-              speed={0.6}
-              chaos={0.05}
-              borderRadius={8}
-              className="w-full animate-fade-in"
-              style={{ animationDelay: `${Math.min(index * 15, 200)}ms` }}
-            >
-              <div 
-                onClick={() => onSpeciesClick(s, startIndex + index)} 
-                className="flex items-center gap-3 p-2.5 bg-card rounded-lg active:bg-muted/50 cursor-pointer transition-colors"
+          {paginatedSpecies.map((s, index) => {
+            const BorderComponent = animationEnabled ? ElectricBorder : StaticElectricBorder;
+            return (
+              <BorderComponent
+                key={s.id}
+                color={getHabitatColor(s.region, s.id)}
+                speed={0.6}
+                chaos={0.05}
+                borderRadius={8}
+                className="w-full animate-fade-in"
+                style={{ animationDelay: `${Math.min(index * 15, 200)}ms` }}
               >
-                <img src={s.image} alt={s.name} className="w-12 h-12 object-cover rounded-md" />
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-serif text-sm font-medium text-foreground truncate">
-                    {s.name}
-                  </h3>
-                  <p className="font-sans text-[10px] text-muted-foreground italic truncate">
-                    {s.scientificName}
-                  </p>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className={cn(
-                      "px-1 py-0.5 rounded-sm text-[8px] font-sans font-medium", 
-                      getStatusColor(s.status), 
-                      s.status === 'CR' ? 'text-card' : 'text-foreground'
-                    )}>
-                      {s.status}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground font-sans">
-                      {s.ticker}
-                    </span>
+                <div 
+                  onClick={() => onSpeciesClick(s, startIndex + index)} 
+                  className="flex items-center gap-3 p-2.5 bg-card rounded-lg active:bg-muted/50 cursor-pointer transition-colors"
+                >
+                  <img src={s.image} alt={s.name} className="w-12 h-12 object-cover rounded-md" />
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-serif text-sm font-medium text-foreground truncate">
+                      {s.name}
+                    </h3>
+                    <p className="font-sans text-[10px] text-muted-foreground italic truncate">
+                      {s.scientificName}
+                    </p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className={cn(
+                        "px-1 py-0.5 rounded-sm text-[8px] font-sans font-medium", 
+                        getStatusColor(s.status), 
+                        s.status === 'CR' ? 'text-card' : 'text-foreground'
+                      )}>
+                        {s.status}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground font-sans">
+                        {s.ticker}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs font-sans font-medium text-foreground">
+                      {getBaseSquares(s.id).toLocaleString()}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">Base Squares</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-xs font-sans font-medium text-foreground">
-                    {getBaseSquares(s.id).toLocaleString()}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground">Base Squares</p>
-                </div>
-              </div>
-            </ElectricBorder>
-          ))}
+              </BorderComponent>
+            );
+          })}
         </div>
       )}
 
@@ -199,7 +229,7 @@ const SpeciesGrid = ({
               return (
                 <button 
                   key={pageNum} 
-                  onClick={() => setCurrentPage(pageNum)} 
+                  onClick={() => handlePageClick(pageNum)} 
                   className={cn(
                     "w-9 h-9 rounded-lg text-sm font-sans transition-colors", 
                     currentPage === pageNum 
