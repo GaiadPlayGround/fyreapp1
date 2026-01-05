@@ -14,11 +14,6 @@ export function OnchainProvider({ children }: OnchainProviderProps) {
         appearance: {
           mode: 'auto',
           theme: 'default',
-          name: 'FyreApp 1',
-        },
-        wallet: {
-          display: 'modal',
-          preference: 'all',
         },
       }}
     >
