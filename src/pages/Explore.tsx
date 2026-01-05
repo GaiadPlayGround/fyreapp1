@@ -3,7 +3,7 @@ import Header from '@/components/Header';
 import InlineFilterBar from '@/components/InlineFilterBar';
 import SpeciesGrid from '@/components/SpeciesGrid';
 import SpeciesSlideshow from '@/components/SpeciesSlideshow';
-
+import Footer from '@/components/Footer';
 import EnzymeAdPopup from '@/components/EnzymeAdPopup';
 import { useSpeciesApi } from '@/hooks/useSpeciesApi';
 import { useAnimalSounds } from '@/hooks/useAnimalSounds';
@@ -148,7 +148,7 @@ const Explore = () => {
         />
       </main>
 
-    
+      <Footer />
 
       {/* Slideshow */}
       {slideshowOpen && (
