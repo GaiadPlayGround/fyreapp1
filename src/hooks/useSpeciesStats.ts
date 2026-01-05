@@ -45,6 +45,11 @@ export const useSpeciesStats = () => {
     return stats[speciesId]?.share_count || 0;
   }, [stats]);
 
+  const getLastViewedAt = useCallback((speciesId: string): Date => {
+    const lastViewed = stats[speciesId]?.last_viewed_at;
+    return lastViewed ? new Date(lastViewed) : new Date(0);
+  }, [stats]);
+
   const recordVote = async (speciesId: string, walletAddress: string, rating: number) => {
     try {
       const { error } = await supabase
@@ -127,6 +132,7 @@ export const useSpeciesStats = () => {
     loading,
     getBaseSquares,
     getShareCount,
+    getLastViewedAt,
     recordVote,
     recordShare,
     recordView,

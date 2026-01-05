@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Species, ConservationStatus, getStatusLabel, getAllSpeciesData } from '@/data/species';
+export type { Species } from '@/data/species';
 
 interface ApiSpecies {
   id?: string;

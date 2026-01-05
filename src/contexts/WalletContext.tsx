@@ -12,6 +12,8 @@ interface WalletState {
   dnaBalance: number;
   usdcBalance: number;
   fcbccBalance: number;
+  ownedGenomes: number;
+  voteTickets: number;
   invites: number;
   shares: number;
   votes: Vote[];
@@ -23,6 +25,7 @@ interface WalletContextType extends WalletState {
   disconnect: () => void;
   addVote: (speciesId: string, rating: number) => boolean;
   addShare: () => void;
+  addVoteTicket: () => void;
   hasVoted: (speciesId: string) => boolean;
   getVoteCount: (speciesId: string) => number;
 }
@@ -43,9 +46,11 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const [state, setState] = useState<WalletState>({
     isConnected: false,
     address: null,
-    dnaBalance: 0,
-    usdcBalance: 0,
-    fcbccBalance: 0,
+    dnaBalance: 349000000, // 349m
+    usdcBalance: 5747.00,
+    fcbccBalance: 8400000, // 8.4m
+    ownedGenomes: 174,
+    voteTickets: 0,
     invites: 0,
     shares: 0,
     votes: [],
@@ -58,9 +63,11 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     setState({
       isConnected: true,
       address: '0x1234...5678',
-      dnaBalance: 1250,
-      usdcBalance: 50.0,
-      fcbccBalance: 5000,
+      dnaBalance: 349000000, // 349m
+      usdcBalance: 5747.00,
+      fcbccBalance: 8400000, // 8.4m
+      ownedGenomes: 174,
+      voteTickets: 0,
       invites: 1,
       shares: 0,
       votes: [],
@@ -75,6 +82,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       dnaBalance: 0,
       usdcBalance: 0,
       fcbccBalance: 0,
+      ownedGenomes: 0,
+      voteTickets: 0,
       invites: 0,
       shares: 0,
       votes: [],
@@ -89,6 +98,13 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     }));
   };
 
+  const addVoteTicket = () => {
+    setState((prev) => ({
+      ...prev,
+      voteTickets: prev.voteTickets + 1,
+    }));
+  };
+
   const addVote = (speciesId: string, rating: number): boolean => {
     if (!state.isConnected || state.usdcBalance < VOTE_COST) {
       return false;
@@ -97,6 +113,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     setState((prev) => ({
       ...prev,
       usdcBalance: prev.usdcBalance - VOTE_COST,
+      voteTickets: prev.voteTickets + 1, // +1 vote ticket with each vote
       votes: [...prev.votes, { speciesId, rating, timestamp: new Date() }],
     }));
     return true;
@@ -111,6 +128,14 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     return state.votes.filter((v) => v.speciesId === speciesId).length;
   };
 
+  // Format helper for display
+  const formatBalance = (num: number): string => {
+    if (num >= 1000000000) return `${(num / 1000000000).toFixed(1)}B`;
+    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}m`;
+    if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
+    return num.toLocaleString();
+  };
+
   return (
     <WalletContext.Provider
       value={{
@@ -119,6 +144,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         disconnect,
         addVote,
         addShare,
+        addVoteTicket,
         hasVoted,
         getVoteCount,
       }}
