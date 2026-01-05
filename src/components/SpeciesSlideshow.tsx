@@ -230,9 +230,10 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
 
   const getFcbcUrl = () => {
     // URL format: https://www.fcbc.fun/species/{symbol}?code={code}
-    const symbol = currentSpecies.symbol || `FCBC${currentSpecies.id.replace('FCBC #', '')}`;
-    const code = currentSpecies.code || symbol;
-    return `https://www.fcbc.fun/species/${symbol}?code=${code}`;
+    // symbol is like "FCBC3", code is like "68005/12881238"
+    const symbol = currentSpecies.symbol || currentSpecies.id.replace('FCBC #', 'FCBC');
+    const code = currentSpecies.code || '';
+    return `https://www.fcbc.fun/species/${symbol}?code=${encodeURIComponent(code)}`;
   };
 
   // Dynamic text color based on position (bottom area is usually darker)
