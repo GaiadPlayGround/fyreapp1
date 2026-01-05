@@ -5,20 +5,13 @@ import Cubes from '@/components/Cubes';
 import DecryptedText from '@/components/DecryptedText';
 
 const WalletGate = () => {
-  const { isConnecting, isConnected } = useAccount();
-  const [showDecryptedText, setShowDecryptedText] = useState(false);
+  const { isConnecting } = useAccount();
+  const [hasClicked, setHasClicked] = useState(false);
 
-  useEffect(() => {
-    if (isConnecting) {
-      setShowDecryptedText(true);
-    }
-  }, [isConnecting]);
-
-  useEffect(() => {
-    if (isConnected) {
-      setShowDecryptedText(true);
-    }
-  }, [isConnected]);
+  // Show decrypted text when user clicks connect
+  const handleConnectClick = () => {
+    setHasClicked(true);
+  };
 
   return (
     <div className="min-h-screen bg-[#060010] flex flex-col items-center justify-center p-4 relative overflow-hidden">
@@ -36,11 +29,11 @@ const WalletGate = () => {
             faceColor="#060010"
             rippleOnClick={true}
             rippleColor="#005ae0"
-            rippleSpeed={1}
+            rippleSpeed={hasClicked ? 0.3 : 1}
             autoAnimate={true}
             centerContent={
               <div className="flex flex-col items-center justify-center gap-6 p-4 text-center">
-                {showDecryptedText ? (
+                {hasClicked || isConnecting ? (
                   <div className="space-y-3">
                     <DecryptedText
                       text="FYREAPP 1"
@@ -67,17 +60,38 @@ const WalletGate = () => {
                       className="text-white/80 font-mono text-sm sm:text-base tracking-widest"
                       encryptedClassName="text-[#005ae0]/80 font-mono text-sm sm:text-base tracking-widest"
                     />
+                    {!isConnecting && (
+                      <div className="mt-4">
+                        <p className="text-white/50 text-xs font-mono mb-3">
+                          Wallet connection cancelled
+                        </p>
+                        <Wallet>
+                          <ConnectWallet 
+                            className="bg-[#005ae0] hover:bg-[#0047b3] text-white font-mono font-semibold px-6 py-2 rounded-lg shadow-lg shadow-[#005ae0]/30 transition-all text-sm"
+                          />
+                        </Wallet>
+                      </div>
+                    )}
+                    {isConnecting && (
+                      <div className="mt-4">
+                        <p className="text-[#005ae0] text-xs font-mono animate-pulse">
+                          Connecting...
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <>
                     <h1 className="font-mono text-xl sm:text-2xl font-bold text-white tracking-wider">
                       FYREAPP 1
                     </h1>
-                    <Wallet>
-                      <ConnectWallet 
-                        className="bg-[#005ae0] hover:bg-[#0047b3] text-white font-mono font-semibold px-8 py-3 rounded-lg shadow-lg shadow-[#005ae0]/30 transition-all"
-                      />
-                    </Wallet>
+                    <div onClick={handleConnectClick}>
+                      <Wallet>
+                        <ConnectWallet 
+                          className="bg-[#005ae0] hover:bg-[#0047b3] text-white font-mono font-semibold px-8 py-3 rounded-lg shadow-lg shadow-[#005ae0]/30 transition-all"
+                        />
+                      </Wallet>
+                    </div>
                   </>
                 )}
               </div>
