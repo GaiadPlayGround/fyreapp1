@@ -8,7 +8,7 @@ import SlideshowControls from './SlideshowControls';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { useElevenLabsVoice, ELEVENLABS_VOICES } from '@/hooks/useElevenLabsVoice';
 import { useSpeciesStats } from '@/hooks/useSpeciesStats';
-import { useWallet } from '@/contexts/WalletContext';
+import { useWalletIdentity } from '@/hooks/useWalletIdentity';
 
 interface SpeciesSlideshowProps {
   species: Species[];
@@ -51,7 +51,7 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
   const currentSpecies = species[currentIndex];
   const { speakSpeciesName, stopSpeaking, voices, selectedVoice, setSelectedVoice, isLoading: voiceLoading, useFallback } = useElevenLabsVoice();
   const { recordView } = useSpeciesStats();
-  const { address } = useWallet();
+  const { address } = useWalletIdentity();
 
   // Reset idle timer on any interaction
   const resetIdleTimer = useCallback(() => {
@@ -229,7 +229,10 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
   };
 
   const getFcbcUrl = () => {
-    return `https://www.fcbc.fun/species/FCBC${currentSpecies.id}?code=9406/136251508`;
+    // URL format: https://www.fcbc.fun/species/{symbol}?code={code}
+    const symbol = currentSpecies.symbol || `FCBC${currentSpecies.id.replace('FCBC #', '')}`;
+    const code = currentSpecies.code || symbol;
+    return `https://www.fcbc.fun/species/${symbol}?code=${code}`;
   };
 
   // Dynamic text color based on position (bottom area is usually darker)

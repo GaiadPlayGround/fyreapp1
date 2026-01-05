@@ -1,5 +1,7 @@
 import { Species } from '@/data/species';
 import { useWallet } from '@/contexts/WalletContext';
+import { useWalletIdentity } from '@/hooks/useWalletIdentity';
+import { useSpeciesStats } from '@/hooks/useSpeciesStats';
 
 interface ShareButtonsProps {
   species: Species;
@@ -9,7 +11,8 @@ const CONTRACT_ADDRESS = '0xbfca039bbda0bd750c2b83d666810b1bb4d31b38';
 
 const ShareButtons = ({ species }: ShareButtonsProps) => {
   const { addShare } = useWallet();
-  
+  const { address } = useWalletIdentity();
+  const { recordShare } = useSpeciesStats();
   // Truncate description to ~50 words
   const truncateToWords = (text: string, maxWords: number = 50) => {
     const words = text.split(' ');
@@ -18,7 +21,11 @@ const ShareButtons = ({ species }: ShareButtonsProps) => {
   };
   
   const truncatedDesc = truncateToWords(species.description, 50);
-  const speciesUrl = `https://www.fcbc.fun/species/${species.id}?code=${(species as any).code || '19832/233712210'}`;
+  
+  // Build species URL using symbol and code fields
+  const symbol = species.symbol || `FCBC${species.id.replace('FCBC #', '')}`;
+  const code = species.code || symbol;
+  const speciesUrl = `https://www.fcbc.fun/species/${symbol}?code=${code}`;
   
   // X share format
   const xShareText = `The ${species.name} is an endangered animal brought onchain to Base by the FCBC Club. 
@@ -40,8 +47,12 @@ Live on FCBCdotFUN.
 
 contract: ${CONTRACT_ADDRESS}`;
 
-  const handleShare = (url: string) => {
+  const handleShare = async (url: string, platform: string) => {
     addShare();
+    // Record share to database
+    if (address) {
+      await recordShare(species.id, address, platform);
+    }
     window.open(url, '_blank');
   };
 
@@ -90,7 +101,7 @@ contract: ${CONTRACT_ADDRESS}`;
       {shareLinks.map((link) => (
         <button
           key={link.name}
-          onClick={() => handleShare(link.url)}
+          onClick={() => handleShare(link.url, link.name.toLowerCase())}
           className="flex items-center gap-2 px-3 py-2 text-card/90 hover:text-card hover:bg-card/10 rounded transition-colors"
         >
           {link.icon}

@@ -2,8 +2,13 @@ import { useState, useRef, useEffect } from 'react';
 import { Wallet, LogOut, Vote, Copy, Check, Users, Share2, Moon, Sun, Volume2, VolumeX, Sparkles, HelpCircle } from 'lucide-react';
 import { useWallet } from '@/contexts/WalletContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useWalletIdentity } from '@/hooks/useWalletIdentity';
+import { useWalletBalances } from '@/hooks/useWalletBalances';
 import { cn } from '@/lib/utils';
 import OnboardingGuide from './OnboardingGuide';
+import { ConnectWallet, Wallet as OnchainWallet } from '@coinbase/onchainkit/wallet';
+import { Avatar, Name, Identity } from '@coinbase/onchainkit/identity';
+import { base } from 'viem/chains';
 
 interface WalletDropdownProps {
   animationEnabled?: boolean;
@@ -18,23 +23,11 @@ const WalletDropdown = ({
   onToggleAnimation,
   onToggleSound,
 }: WalletDropdownProps) => {
-  const {
-    isConnected,
-    address,
-    dnaBalance,
-    usdcBalance,
-    fcbccBalance,
-    votes,
-    shares,
-    invites,
-    connect,
-    disconnect,
-    inviteCode
-  } = useWallet();
-  const {
-    theme,
-    toggleTheme
-  } = useTheme();
+  const { votes, shares, invites, disconnect, inviteCode, totalVotes, totalShares } = useWallet();
+  const { address, shortAddress, basename, isConnected } = useWalletIdentity();
+  const { usdcBalance, fcbccBalance, isLoading: balancesLoading } = useWalletBalances();
+  const { theme, toggleTheme } = useTheme();
+  
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [inviteCopied, setInviteCopied] = useState(false);
@@ -67,10 +60,14 @@ const WalletDropdown = ({
   };
 
   if (!isConnected) {
-    return <button onClick={connect} className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-sans border border-border rounded-md hover:bg-muted transition-colors">
-        <Wallet className="w-3.5 h-3.5" />
-        <span className="hidden xs:inline">Connect</span>
-      </button>;
+    return (
+      <OnchainWallet>
+        <ConnectWallet className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-sans border border-border rounded-md hover:bg-muted transition-colors">
+          <Wallet className="w-3.5 h-3.5" />
+          <span className="hidden xs:inline">Connect</span>
+        </ConnectWallet>
+      </OnchainWallet>
+    );
   }
 
   return (
@@ -78,23 +75,31 @@ const WalletDropdown = ({
       <div ref={dropdownRef} className="relative">
         <button onClick={() => setIsOpen(!isOpen)} className="flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 transition-colors">
           <Wallet className="w-3.5 h-3.5 text-muted-foreground" />
-          <span className="text-xs font-sans text-foreground">349m</span>
+          <span className="text-xs font-sans text-foreground truncate max-w-[80px]">
+            {basename || shortAddress || '349m'}
+          </span>
         </button>
 
-        {isOpen && <div className="absolute right-0 top-full mt-2 w-72 bg-card border border-border rounded-lg shadow-lg z-50 animate-fade-in max-h-[80vh] overflow-y-auto">
-            {/* Wallet Address with Basename/Farcaster */}
+        {isOpen && (
+          <div className="absolute right-0 top-full mt-2 w-72 bg-card border border-border rounded-lg shadow-lg z-50 animate-fade-in max-h-[80vh] overflow-y-auto">
+            {/* Wallet Identity */}
             <div className="p-3 border-b border-border">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-[10px] text-muted-foreground font-sans">Wallet Address</span>
               </div>
               <div className="flex items-center justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <p className="font-mono text-xs text-foreground truncate">{address}</p>
-                  {/* Basename & Farcaster UID placeholders */}
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[10px] text-primary font-sans">basename.eth</span>
-                    <span className="text-[10px] text-muted-foreground font-sans">FID: 12345</span>
-                  </div>
+                  {address && (
+                    <Identity address={address} chain={base} className="!bg-transparent !p-0">
+                      <div className="flex items-center gap-2">
+                        <Avatar className="w-6 h-6" />
+                        <div className="flex-1 min-w-0">
+                          <Name className="text-xs font-medium text-foreground" />
+                          <p className="font-mono text-[10px] text-muted-foreground truncate">{shortAddress}</p>
+                        </div>
+                      </div>
+                    </Identity>
+                  )}
                 </div>
                 <button onClick={copyAddress} className="p-1.5 hover:bg-muted rounded transition-colors flex-shrink-0">
                   {copied ? <Check className="w-3 h-3 text-primary" /> : <Copy className="w-3 h-3 text-muted-foreground" />}
@@ -106,19 +111,25 @@ const WalletDropdown = ({
             <div className="p-3 space-y-2 border-b border-border">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-sans text-muted-foreground">Total DNA Tokens held:</span>
-                <span className="text-xs font-sans font-medium text-foreground">349m</span>
+                <span className="text-xs font-sans font-medium text-foreground">
+                  {balancesLoading ? '...' : '0'}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-sans text-muted-foreground">USDC Balance:</span>
-                <span className="text-xs font-sans font-medium text-foreground">${usdcBalance.toFixed(2)}</span>
+                <span className="text-xs font-sans font-medium text-foreground">
+                  ${balancesLoading ? '...' : usdcBalance}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-sans text-muted-foreground">$FCBCC balance:</span>
-                <span className="text-xs font-sans font-medium text-foreground">{fcbccBalance.toLocaleString()}</span>
+                <span className="text-xs font-sans font-medium text-foreground">
+                  {balancesLoading ? '...' : fcbccBalance}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-sans text-muted-foreground">Owned DNA genomes:</span>
-                <span className="text-xs font-sans font-medium text-foreground">{dnaBalance.toLocaleString()}</span>
+                <span className="text-xs font-sans font-medium text-foreground">0</span>
               </div>
             </div>
 
@@ -162,11 +173,11 @@ const WalletDropdown = ({
               </button>
               <button className="flex items-center gap-2 w-full px-2 py-1.5 text-xs font-sans text-foreground hover:bg-muted rounded-md transition-colors">
                 <Vote className="w-3.5 h-3.5" />
-                <span>Vote tickets ({votes.length})</span>
+                <span>Total Votes Cast: {totalVotes}</span>
               </button>
               <button className="flex items-center gap-2 w-full px-2 py-1.5 text-xs font-sans text-foreground hover:bg-muted rounded-md transition-colors">
                 <Share2 className="w-3.5 h-3.5" />
-                <span>My shares ({shares})</span>
+                <span>Total Shares: {totalShares}</span>
               </button>
             </div>
 
@@ -186,15 +197,19 @@ const WalletDropdown = ({
 
             {/* Disconnect */}
             <div className="p-3">
-              <button onClick={() => {
-            disconnect();
-            setIsOpen(false);
-          }} className="flex items-center gap-2 w-full px-2 py-1.5 text-xs font-sans text-destructive hover:bg-destructive/10 rounded-md transition-colors">
+              <button 
+                onClick={() => {
+                  disconnect();
+                  setIsOpen(false);
+                }} 
+                className="flex items-center gap-2 w-full px-2 py-1.5 text-xs font-sans text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+              >
                 <LogOut className="w-3.5 h-3.5" />
                 <span>Disconnect</span>
               </button>
             </div>
-          </div>}
+          </div>
+        )}
       </div>
       
       {showOnboarding && (

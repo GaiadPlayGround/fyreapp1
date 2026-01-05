@@ -4,7 +4,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import { WalletProvider, useWallet } from "@/contexts/WalletContext";
+import { WalletProvider } from "@/contexts/WalletContext";
+import { OnchainProvider } from "@/providers/OnchainProvider";
+import { useAccount } from "wagmi";
 import Index from "./pages/Index";
 import WalletGate from "./pages/WalletGate";
 import NotFound from "./pages/NotFound";
@@ -12,7 +14,7 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const ProtectedRoutes = () => {
-  const { isConnected } = useWallet();
+  const { isConnected } = useAccount();
 
   if (!isConnected) {
     return <WalletGate />;
@@ -30,15 +32,17 @@ const ProtectedRoutes = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
-      <WalletProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <ProtectedRoutes />
-          </BrowserRouter>
-        </TooltipProvider>
-      </WalletProvider>
+      <OnchainProvider>
+        <WalletProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <ProtectedRoutes />
+            </BrowserRouter>
+          </TooltipProvider>
+        </WalletProvider>
+      </OnchainProvider>
     </ThemeProvider>
   </QueryClientProvider>
 );

@@ -1,40 +1,52 @@
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { useWallet } from '@/contexts/WalletContext';
 import { toast } from '@/hooks/use-toast';
 import { useSpeciesStats } from '@/hooks/useSpeciesStats';
+import { useWalletIdentity } from '@/hooks/useWalletIdentity';
+import { useWalletBalances } from '@/hooks/useWalletBalances';
 
 interface VoteSquaresProps {
   speciesId: string;
   onVoteSubmit?: () => void;
 }
 
+const VOTE_COST = 0.2; // USDC per vote
+
 const VoteSquares = ({ speciesId, onVoteSubmit }: VoteSquaresProps) => {
-  const { isConnected, address, usdcBalance, connect } = useWallet();
+  const { isConnected, address } = useWalletIdentity();
+  const { usdcBalance } = useWalletBalances();
   const { getBaseSquares, recordVote, refetch } = useSpeciesStats();
   const [userVote, setUserVote] = useState<number>(0);
   const [totalVotes, setTotalVotes] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Parse USDC balance from formatted string
+  const parseBalance = (balanceStr: string): number => {
+    const value = parseFloat(balanceStr.replace(/[KM]/g, ''));
+    if (balanceStr.includes('M')) return value * 1000000;
+    if (balanceStr.includes('K')) return value * 1000;
+    return value;
+  };
 
   useEffect(() => {
     setTotalVotes(getBaseSquares(speciesId));
   }, [speciesId, getBaseSquares]);
 
   const handleVote = async (rating: number) => {
-    if (!isConnected) {
+    if (!isConnected || !address) {
       toast({
         title: "Wallet Required",
         description: "Connect your wallet to vote. Voting costs 0.2 USDC.",
         variant: "destructive",
       });
-      connect();
       return;
     }
 
-    if (usdcBalance < 0.2) {
+    const currentBalance = parseBalance(usdcBalance);
+    if (currentBalance < VOTE_COST) {
       toast({
         title: "Insufficient USDC",
-        description: "You need at least 0.2 USDC to vote.",
+        description: `You need at least ${VOTE_COST} USDC to vote. Current balance: $${usdcBalance}`,
         variant: "destructive",
       });
       return;
@@ -46,12 +58,14 @@ const VoteSquares = ({ speciesId, onVoteSubmit }: VoteSquaresProps) => {
     setUserVote(rating);
 
     try {
-      const success = await recordVote(speciesId, address || '', rating);
+      // Record vote in database
+      const success = await recordVote(speciesId, address, rating);
+      
       if (success) {
         setTotalVotes((prev) => prev + rating);
         toast({
           title: "Vote Submitted!",
-          description: `-0.2 USDC • +${rating} Base Squares`,
+          description: `-${VOTE_COST} USDC • +${rating} Base Squares`,
           duration: 1500,
         });
         
@@ -70,6 +84,11 @@ const VoteSquares = ({ speciesId, onVoteSubmit }: VoteSquaresProps) => {
       }
     } catch (err) {
       console.error('Vote error:', err);
+      toast({
+        title: "Vote Error",
+        description: "An error occurred. Please try again.",
+        variant: "destructive",
+      });
       setUserVote(0);
     } finally {
       setIsSubmitting(false);
@@ -100,7 +119,7 @@ const VoteSquares = ({ speciesId, onVoteSubmit }: VoteSquaresProps) => {
           {totalVotes.toLocaleString()} Base Squares
         </span>
         <span className="text-card/60 text-[10px] font-sans">
-          0.2 USDC/vote
+          {VOTE_COST} USDC/vote
         </span>
       </div>
     </div>
