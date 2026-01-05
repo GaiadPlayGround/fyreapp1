@@ -480,7 +480,9 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 safe-area-bottom z-10">
         <VoteSquares 
           key={`${currentSpecies.id}-${voteKey}`}
-          speciesId={currentSpecies.id} 
+          speciesId={currentSpecies.id}
+          onVoteStart={() => setIsPaused(true)}
+          onVoteEnd={() => setIsPaused(false)}
         />
       </div>
 

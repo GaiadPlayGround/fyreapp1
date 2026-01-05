@@ -4,18 +4,19 @@ import { toast } from '@/hooks/use-toast';
 import { useSpeciesStats } from '@/hooks/useSpeciesStats';
 import { useWalletIdentity } from '@/hooks/useWalletIdentity';
 import { useWalletBalances } from '@/hooks/useWalletBalances';
+import { useUsdcVote } from '@/hooks/useUsdcVote';
 
 interface VoteSquaresProps {
   speciesId: string;
-  onVoteSubmit?: () => void;
+  onVoteStart?: () => void;
+  onVoteEnd?: () => void;
 }
 
-const VOTE_COST = 0.2; // USDC per vote
-
-const VoteSquares = ({ speciesId, onVoteSubmit }: VoteSquaresProps) => {
+const VoteSquares = ({ speciesId, onVoteStart, onVoteEnd }: VoteSquaresProps) => {
   const { isConnected, address } = useWalletIdentity();
   const { usdcBalance } = useWalletBalances();
   const { getBaseSquares, recordVote, refetch } = useSpeciesStats();
+  const { sendVotePayment, isPending: isPaymentPending, voteCost } = useUsdcVote();
   const [userVote, setUserVote] = useState<number>(0);
   const [totalVotes, setTotalVotes] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -36,17 +37,17 @@ const VoteSquares = ({ speciesId, onVoteSubmit }: VoteSquaresProps) => {
     if (!isConnected || !address) {
       toast({
         title: "Wallet Required",
-        description: "Connect your wallet to vote. Voting costs 0.2 USDC.",
+        description: `Connect your wallet to vote. Voting costs ${voteCost} USDC.`,
         variant: "destructive",
       });
       return;
     }
 
     const currentBalance = parseBalance(usdcBalance);
-    if (currentBalance < VOTE_COST) {
+    if (currentBalance < voteCost) {
       toast({
         title: "Insufficient USDC",
-        description: `You need at least ${VOTE_COST} USDC to vote. Current balance: $${usdcBalance}`,
+        description: `You need at least ${voteCost} USDC to vote. Current balance: $${usdcBalance}`,
         variant: "destructive",
       });
       return;
@@ -56,42 +57,53 @@ const VoteSquares = ({ speciesId, onVoteSubmit }: VoteSquaresProps) => {
 
     setIsSubmitting(true);
     setUserVote(rating);
+    
+    // Notify parent to pause slideshow
+    onVoteStart?.();
 
     try {
-      // Record vote in database
+      // Send onchain USDC payment
+      await sendVotePayment();
+      
+      // Record vote in database after successful payment
       const success = await recordVote(speciesId, address, rating);
       
       if (success) {
         setTotalVotes((prev) => prev + rating);
         toast({
-          title: "Vote Submitted!",
-          description: `-${VOTE_COST} USDC • +${rating} Base Squares`,
+          title: "Vote Confirmed!",
+          description: `-${voteCost} USDC • +${rating} Base Squares`,
           duration: 1500,
         });
         
+        // Quick reset for rapid voting
         setTimeout(() => {
           setUserVote(0);
           refetch();
-          onVoteSubmit?.();
-        }, 500);
+        }, 300);
+      }
+    } catch (err: any) {
+      console.error('Vote error:', err);
+      
+      // User rejected transaction
+      if (err?.message?.includes('rejected') || err?.message?.includes('denied')) {
+        toast({
+          title: "Transaction Cancelled",
+          description: "You cancelled the transaction.",
+          duration: 2000,
+        });
       } else {
         toast({
           title: "Vote Failed",
-          description: "Please try again.",
+          description: "Transaction failed. Please try again.",
           variant: "destructive",
         });
-        setUserVote(0);
       }
-    } catch (err) {
-      console.error('Vote error:', err);
-      toast({
-        title: "Vote Error",
-        description: "An error occurred. Please try again.",
-        variant: "destructive",
-      });
       setUserVote(0);
     } finally {
       setIsSubmitting(false);
+      // Resume slideshow after transaction completes
+      onVoteEnd?.();
     }
   };
 
@@ -102,14 +114,14 @@ const VoteSquares = ({ speciesId, onVoteSubmit }: VoteSquaresProps) => {
           <button
             key={rating}
             onClick={() => handleVote(rating)}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isPaymentPending}
             className={cn(
-              "w-7 h-7 border-2 rounded-sm transition-all duration-200",
+              "w-7 h-7 border-2 rounded-sm transition-all duration-150",
               rating <= userVote
                 ? "bg-primary border-primary"
                 : "border-card/50 hover:border-card",
-              "hover:scale-110 cursor-pointer",
-              isSubmitting && "opacity-50 cursor-not-allowed"
+              "hover:scale-110 cursor-pointer active:scale-95",
+              (isSubmitting || isPaymentPending) && "opacity-50 cursor-not-allowed"
             )}
           />
         ))}
@@ -119,7 +131,7 @@ const VoteSquares = ({ speciesId, onVoteSubmit }: VoteSquaresProps) => {
           {totalVotes.toLocaleString()} Base Squares
         </span>
         <span className="text-card/60 text-[10px] font-sans">
-          {VOTE_COST} USDC/vote
+          {voteCost} USDC/vote
         </span>
       </div>
     </div>
