@@ -47,14 +47,11 @@ export const useSpeciesStats = () => {
 
   const recordVote = async (speciesId: string, walletAddress: string, rating: number) => {
     try {
-      // Normalize wallet address to lowercase
-      const normalizedAddress = walletAddress.toLowerCase();
-      
       const { error } = await supabase
         .from('species_votes')
         .insert({
           species_id: speciesId,
-          wallet_address: normalizedAddress,
+          wallet_address: walletAddress,
           rating,
           usdc_cost: 0.2
         });
@@ -72,14 +69,11 @@ export const useSpeciesStats = () => {
 
   const recordShare = async (speciesId: string, walletAddress: string, platform: string) => {
     try {
-      // Normalize wallet address to lowercase
-      const normalizedAddress = walletAddress.toLowerCase();
-      
       const { error } = await supabase
         .from('species_shares')
         .insert({
           species_id: speciesId,
-          wallet_address: normalizedAddress,
+          wallet_address: walletAddress,
           platform
         });
 

@@ -4,11 +4,28 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import { WalletProvider } from "@/contexts/WalletContext";
+import { WalletProvider, useWallet } from "@/contexts/WalletContext";
 import Index from "./pages/Index";
+import WalletGate from "./pages/WalletGate";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+const ProtectedRoutes = () => {
+  const { isConnected } = useWallet();
+
+  if (!isConnected) {
+    return <WalletGate />;
+  }
+
+  return (
+    <Routes>
+      <Route path="/" element={<Index />} />
+      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -18,10 +35,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <ProtectedRoutes />
           </BrowserRouter>
         </TooltipProvider>
       </WalletProvider>

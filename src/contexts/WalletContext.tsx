@@ -16,8 +16,6 @@ interface WalletState {
   shares: number;
   votes: Vote[];
   inviteCode: string | null;
-  totalVotes: number;
-  totalShares: number;
 }
 
 interface WalletContextType extends WalletState {
@@ -27,7 +25,6 @@ interface WalletContextType extends WalletState {
   addShare: () => void;
   hasVoted: (speciesId: string) => boolean;
   getVoteCount: (speciesId: string) => number;
-  refreshWalletData: () => Promise<void>;
 }
 
 const WalletContext = createContext<WalletContextType | null>(null);
@@ -40,55 +37,74 @@ export const useWallet = () => {
   return context;
 };
 
-const initialState: WalletState = {
-  isConnected: false,
-  address: null,
-  dnaBalance: 0,
-  usdcBalance: 0,
-  fcbccBalance: 0,
-  invites: 0,
-  shares: 0,
-  votes: [],
-  inviteCode: null,
-  totalVotes: 0,
-  totalShares: 0,
-};
+const VOTE_COST = 0.2; // USDC
 
 export const WalletProvider = ({ children }: { children: ReactNode }) => {
-  // Wallet connectivity is currently disabled; keep a lightweight local context so UI can still render.
-  const [state, setState] = useState<WalletState>(initialState);
-
-  const refreshWalletData = async () => {
-    // No-op while wallet is disabled.
-  };
+  const [state, setState] = useState<WalletState>({
+    isConnected: false,
+    address: null,
+    dnaBalance: 0,
+    usdcBalance: 0,
+    fcbccBalance: 0,
+    invites: 0,
+    shares: 0,
+    votes: [],
+    inviteCode: null,
+  });
 
   const connect = () => {
-    // No-op while wallet is disabled.
+    // Generate unique invite code based on address
+    const uniqueCode = `INV${Date.now().toString(36).toUpperCase()}`;
+    setState({
+      isConnected: true,
+      address: '0x1234...5678',
+      dnaBalance: 1250,
+      usdcBalance: 50.0,
+      fcbccBalance: 5000,
+      invites: 1,
+      shares: 0,
+      votes: [],
+      inviteCode: uniqueCode,
+    });
   };
 
   const disconnect = () => {
-    setState(initialState);
+    setState({
+      isConnected: false,
+      address: null,
+      dnaBalance: 0,
+      usdcBalance: 0,
+      fcbccBalance: 0,
+      invites: 0,
+      shares: 0,
+      votes: [],
+      inviteCode: null,
+    });
   };
 
   const addShare = () => {
     setState((prev) => ({
       ...prev,
       shares: prev.shares + 1,
-      totalShares: prev.totalShares + 1,
     }));
   };
 
   const addVote = (speciesId: string, rating: number): boolean => {
+    if (!state.isConnected || state.usdcBalance < VOTE_COST) {
+      return false;
+    }
+
     setState((prev) => ({
       ...prev,
+      usdcBalance: prev.usdcBalance - VOTE_COST,
       votes: [...prev.votes, { speciesId, rating, timestamp: new Date() }],
-      totalVotes: prev.totalVotes + 1,
     }));
     return true;
   };
 
-  const hasVoted = (_speciesId: string): boolean => {
-    return false;
+  // Users can vote multiple times now
+  const hasVoted = (speciesId: string): boolean => {
+    return false; // Always allow voting
   };
 
   const getVoteCount = (speciesId: string): number => {
@@ -105,11 +121,9 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         addShare,
         hasVoted,
         getVoteCount,
-        refreshWalletData,
       }}
     >
       {children}
     </WalletContext.Provider>
   );
 };
-

@@ -8,7 +8,7 @@ import SlideshowControls from './SlideshowControls';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { useElevenLabsVoice, ELEVENLABS_VOICES } from '@/hooks/useElevenLabsVoice';
 import { useSpeciesStats } from '@/hooks/useSpeciesStats';
-import { useWalletIdentity } from '@/hooks/useWalletIdentity';
+import { useWallet } from '@/contexts/WalletContext';
 
 interface SpeciesSlideshowProps {
   species: Species[];
@@ -51,7 +51,7 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
   const currentSpecies = species[currentIndex];
   const { speakSpeciesName, stopSpeaking, voices, selectedVoice, setSelectedVoice, isLoading: voiceLoading, useFallback } = useElevenLabsVoice();
   const { recordView } = useSpeciesStats();
-  const { address } = useWalletIdentity();
+  const { address } = useWallet();
 
   // Reset idle timer on any interaction
   const resetIdleTimer = useCallback(() => {
@@ -229,11 +229,7 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
   };
 
   const getFcbcUrl = () => {
-    // URL format: https://www.fcbc.fun/species/{symbol}?code={code}
-    // symbol is like "FCBC3", code is like "68005/12881238"
-    const symbol = currentSpecies.symbol || currentSpecies.id.replace('FCBC #', 'FCBC');
-    const code = currentSpecies.code || '';
-    return `https://www.fcbc.fun/species/${symbol}?code=${encodeURIComponent(code)}`;
+    return `https://www.fcbc.fun/species/FCBC${currentSpecies.id}?code=9406/136251508`;
   };
 
   // Dynamic text color based on position (bottom area is usually darker)
@@ -480,9 +476,7 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 safe-area-bottom z-10">
         <VoteSquares 
           key={`${currentSpecies.id}-${voteKey}`}
-          speciesId={currentSpecies.id}
-          onVoteStart={() => setIsPaused(true)}
-          onVoteEnd={() => setIsPaused(false)}
+          speciesId={currentSpecies.id} 
         />
       </div>
 

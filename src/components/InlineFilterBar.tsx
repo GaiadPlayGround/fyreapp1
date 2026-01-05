@@ -43,9 +43,8 @@ const InlineFilterBar = ({
     { value: 'NE', label: 'Near Extinct' },
   ];
 
-  // Sort options order: ID (1-1234), Trending (global last viewed), Votes (most base squares), Shares (most shares), Newest (1234-1)
   const sortOptions: { value: SortOption; label: string }[] = [
-    { value: 'id', label: 'ID (1→)' },
+    { value: 'id', label: 'ID' },
     { value: 'trending', label: 'Trending' },
     { value: 'votes', label: 'Votes' },
     { value: 'shares', label: 'Shares' },

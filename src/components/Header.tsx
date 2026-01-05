@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import FyreMissionsDialog from './FyreMissionsDialog';
+import TasksDrawer from './TasksDrawer';
 import WalletDropdown from './WalletDropdown';
 import LeaderboardDialog from './LeaderboardDialog';
 
@@ -46,7 +46,7 @@ const Header = ({
 
         {/* Right: Actions */}
         <div className="flex items-center gap-1.5">
-          <FyreMissionsDialog />
+          <TasksDrawer />
           <LeaderboardDialog />
 
           <WalletDropdown

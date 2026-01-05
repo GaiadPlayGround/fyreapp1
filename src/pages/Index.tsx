@@ -5,7 +5,6 @@ import InlineFilterBar from '@/components/InlineFilterBar';
 import SpeciesGrid from '@/components/SpeciesGrid';
 import SpeciesSlideshow from '@/components/SpeciesSlideshow';
 import OnboardingGuide from '@/components/OnboardingGuide';
-import AdPopup from '@/components/AdPopup';
 import { Species, ConservationStatus } from '@/data/species';
 import { useSpeciesApi } from '@/hooks/useSpeciesApi';
 import { useAnimalSounds } from '@/hooks/useAnimalSounds';
@@ -93,7 +92,6 @@ const Index = () => {
   return (
     <main className="min-h-screen bg-background">
       <OnboardingGuide />
-      <AdPopup />
       
       {/* Hero Section */}
       <HeroSection 
