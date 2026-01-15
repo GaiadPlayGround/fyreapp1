@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { ArrowLeft, Info, ChevronLeft, ChevronRight, Share2, ExternalLink, Volume2, VolumeX, Pause, Play, X } from 'lucide-react';
+import { ArrowLeft, Info, ChevronLeft, ChevronRight, Share2, ExternalLink, Volume2, VolumeX, Pause, Play, X, MousePointerClick, Copy, Check } from 'lucide-react';
 import { Species, getStatusColor, getStatusLabel } from '@/data/species';
 import { cn } from '@/lib/utils';
 import VoteSquares from './VoteSquares';
@@ -9,6 +9,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/t
 import { useElevenLabsVoice, ELEVENLABS_VOICES } from '@/hooks/useElevenLabsVoice';
 import { useSpeciesStats } from '@/hooks/useSpeciesStats';
 import { useWallet } from '@/contexts/WalletContext';
+import { toast } from '@/hooks/use-toast';
 
 interface SpeciesSlideshowProps {
   species: Species[];
@@ -28,6 +29,8 @@ const getTextColorForBackground = (brightness: 'light' | 'dark' = 'dark') => {
   return brightness === 'light' ? 'text-black' : 'text-white';
 };
 
+const CONTRACT_ADDRESS = '0xbfca039bbda0bd750c2b83d666810b1bb4d31b38';
+
 const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowProps) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [showInfo, setShowInfo] = useState(false);
@@ -40,6 +43,7 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
   const [showVoiceSelector, setShowVoiceSelector] = useState(false);
   const [iconsVisible, setIconsVisible] = useState(true);
   const [arrowsHoverActive, setArrowsHoverActive] = useState(false);
+  const [contractCopied, setContractCopied] = useState(false);
   
   const arrowHideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const autoPlayRef = useRef<NodeJS.Timeout | null>(null);
@@ -47,11 +51,31 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
   const touchStartRef = useRef<number | null>(null);
   const touchEndRef = useRef<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const lastTapRef = useRef<number>(0);
 
   const currentSpecies = species[currentIndex];
   const { speakSpeciesName, stopSpeaking, voices, selectedVoice, setSelectedVoice, isLoading: voiceLoading, useFallback } = useElevenLabsVoice();
   const { recordView } = useSpeciesStats();
   const { address } = useWallet();
+
+  const copyContractAddress = () => {
+    navigator.clipboard.writeText(CONTRACT_ADDRESS);
+    setContractCopied(true);
+    toast({
+      title: "Copied!",
+      description: "Contract address copied to clipboard",
+      duration: 1500,
+    });
+    setTimeout(() => setContractCopied(false), 2000);
+  };
+
+  const handleDoubleTap = () => {
+    toast({
+      title: "Coming Soon!",
+      description: "Double-tap to buy $1 USDC worth of DNA tokens",
+      duration: 2000,
+    });
+  };
 
   // Reset idle timer on any interaction
   const resetIdleTimer = useCallback(() => {
@@ -447,10 +471,14 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
             <p className={cn("font-sans text-sm mb-3", infoTextColorMuted)}>
               {truncateDescription(currentSpecies.description)}
             </p>
-            <div className={cn("flex gap-4 text-xs font-sans mb-3", infoTextColorMuted)}>
-              <span>Population: {currentSpecies.population}</span>
-              <span>Region: {currentSpecies.region}</span>
-            </div>
+            <button
+              onClick={copyContractAddress}
+              className={cn("flex items-center gap-2 text-xs font-sans mb-3 hover:opacity-80 transition-opacity", infoTextColorMuted)}
+            >
+              <span className="font-medium">Contract:</span>
+              <span className="font-mono text-[10px]">{CONTRACT_ADDRESS.slice(0, 6)}...{CONTRACT_ADDRESS.slice(-4)}</span>
+              {contractCopied ? <Check className="w-3 h-3 text-primary" /> : <Copy className="w-3 h-3" />}
+            </button>
             <a
               href={getFcbcUrl()}
               target="_blank"
@@ -475,14 +503,31 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
         />
       </div>
 
-      {/* Bottom center - Vote squares (always visible) */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 safe-area-bottom z-10">
+      {/* Bottom center - Vote squares and double-tap buy icon */}
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 safe-area-bottom z-10 flex flex-col items-center gap-2">
         <VoteSquares 
           key={`${currentSpecies.id}-${voteKey}`}
           speciesId={currentSpecies.id}
           onTransactionStart={() => setIsPaused(true)}
           onTransactionEnd={() => setIsPaused(false)}
         />
+        {/* Double-tap to buy $1 icon */}
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={handleDoubleTap}
+                className="relative p-2 bg-card/10 backdrop-blur-sm rounded-full hover:bg-card/20 transition-colors"
+              >
+                <MousePointerClick className="w-4 h-4 text-card" />
+                <span className="absolute -top-1 -right-1 px-1 py-0.5 text-[7px] bg-amber-500/90 text-white rounded font-sans">Soon</span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              <p>Double-tap to buy $1 (Coming Soon)</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       {/* Bottom right - Share button */}

@@ -35,32 +35,25 @@ const Explore = () => {
   // Wildlife sounds
   useAnimalSounds(soundEnabled && !slideshowOpen);
 
-  // DNA Enzymes popup logic: every 120s for first 10min, then every 30min
+  // DNA Enzymes popup logic: only at 120 seconds and 10 minutes (twice total)
   useEffect(() => {
-    const startTime = Date.now();
-    const tenMinutes = 10 * 60 * 1000;
     const twoMinutes = 120 * 1000;
-    const thirtyMinutes = 30 * 60 * 1000;
+    const tenMinutes = 10 * 60 * 1000;
 
-    let timeoutId: NodeJS.Timeout;
-
-    const scheduleNextPopup = () => {
-      const elapsed = Date.now() - startTime;
-      const interval = elapsed < tenMinutes ? twoMinutes : thirtyMinutes;
-
-      timeoutId = setTimeout(() => {
-        setShowEnzymeAd(true);
-        scheduleNextPopup();
-      }, interval);
-    };
-
-    // Initial popup after 120 seconds
-    timeoutId = setTimeout(() => {
+    // First popup at 120 seconds
+    const firstTimeout = setTimeout(() => {
       setShowEnzymeAd(true);
-      scheduleNextPopup();
     }, twoMinutes);
 
-    return () => clearTimeout(timeoutId);
+    // Second popup at 10 minutes
+    const secondTimeout = setTimeout(() => {
+      setShowEnzymeAd(true);
+    }, tenMinutes);
+
+    return () => {
+      clearTimeout(firstTimeout);
+      clearTimeout(secondTimeout);
+    };
   }, []);
 
   // Allow manual opening from Wallet dropdown
