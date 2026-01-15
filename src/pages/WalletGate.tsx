@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useWallet } from '@/contexts/WalletContext';
 import { Button } from '@/components/ui/button';
 import Cubes from '@/components/Cubes';
 import DecryptedText from '@/components/DecryptedText';
 
 const WalletGate = () => {
+  const navigate = useNavigate();
   const { connect } = useWallet();
   const [isConnecting, setIsConnecting] = useState(false);
   const [showDecryptedText, setShowDecryptedText] = useState(false);
@@ -16,7 +18,12 @@ const WalletGate = () => {
     // Slower delay to allow the decrypted text animation to complete
     setTimeout(() => {
       connect();
+      navigate('/explore');
     }, 4500);
+  };
+
+  const handleSkip = () => {
+    navigate('/explore');
   };
 
   return (
@@ -72,14 +79,25 @@ const WalletGate = () => {
                     <h1 className="font-mono text-xl sm:text-2xl font-bold text-white tracking-wider">
                       FYREAPP 1
                     </h1>
-                    <Button 
-                      onClick={handleConnect}
-                      disabled={isConnecting}
-                      size="lg"
-                      className="bg-[#005ae0] hover:bg-[#0047b3] text-white font-mono font-semibold px-8 py-3 rounded-lg shadow-lg shadow-[#005ae0]/30 transition-all"
+                    <div className="relative">
+                      <Button 
+                        onClick={handleConnect}
+                        disabled={isConnecting}
+                        size="lg"
+                        className="bg-[#005ae0] hover:bg-[#0047b3] text-white font-mono font-semibold px-8 py-3 rounded-lg shadow-lg shadow-[#005ae0]/30 transition-all"
+                      >
+                        {isConnecting ? 'CONNECTING...' : 'CONNECT WALLET'}
+                      </Button>
+                      <span className="absolute -top-1 -right-1 bg-amber-500 text-[8px] font-bold text-black px-1.5 py-0.5 rounded-sm">
+                        Soon
+                      </span>
+                    </div>
+                    <button
+                      onClick={handleSkip}
+                      className="text-white/60 hover:text-white text-sm font-mono underline underline-offset-4 transition-colors mt-2"
                     >
-                      {isConnecting ? 'CONNECTING...' : 'CONNECT WALLET'}
-                    </Button>
+                      Skip for now
+                    </button>
                   </>
                 )}
               </div>
