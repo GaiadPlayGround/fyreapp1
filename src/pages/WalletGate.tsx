@@ -59,7 +59,7 @@ const WalletGate = () => {
                       encryptedClassName="text-[#005ae0]/90 font-mono text-sm sm:text-base tracking-widest"
                     />
                     <DecryptedText
-                      text="and Base Square Voting"
+                      text="and Base Square Rankings"
                       speed={100}
                       maxIterations={18}
                       animateOn="view"

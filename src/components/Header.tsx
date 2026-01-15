@@ -16,7 +16,7 @@ interface HeaderProps {
   onToggleSound?: () => void;
 }
 
-const TITLE_OPTIONS = ['FyreApp 1', 'Slideshows and Votes'];
+const TITLE_OPTIONS = ['FyreApp 1', 'Slideshow and Rankings'];
 
 const Header = ({
   animationEnabled = true,

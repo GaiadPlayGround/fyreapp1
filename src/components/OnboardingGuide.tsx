@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, ChevronRight, Filter, Grid, List, Clock, Share2, Info, ArrowLeft, MousePointer2 } from 'lucide-react';
+import { X, ChevronRight, Filter, Grid, List, Clock, Share2, Info, ArrowLeft, MousePointer2, MousePointerClick } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface GuideStep {
@@ -13,6 +13,11 @@ const guideSteps: GuideStep[] = [
     icon: <MousePointer2 className="w-5 h-5" />,
     title: "Quick Tip",
     description: "Tap any icon twice to remove it from the screen. This helps keep your view clean!"
+  },
+  {
+    icon: <MousePointerClick className="w-5 h-5" />,
+    title: "Double-Tap to Buy",
+    description: "Double-tap any species image to instantly buy $1 USDC worth of DNA tokens. Quick and easy! (Coming Soon)"
   },
   {
     icon: <Filter className="w-5 h-5" />,

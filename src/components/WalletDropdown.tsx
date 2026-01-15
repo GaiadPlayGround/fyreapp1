@@ -77,10 +77,15 @@ const WalletDropdown = ({
   };
 
   if (!isConnected) {
-    return <button onClick={connect} className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-sans border border-border rounded-md hover:bg-muted transition-colors">
-        <Wallet className="w-3.5 h-3.5" />
-        <span className="hidden xs:inline">Connect</span>
-      </button>;
+    return (
+      <div className="relative">
+        <button onClick={connect} className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-sans border border-border rounded-md hover:bg-muted transition-colors">
+          <Wallet className="w-3.5 h-3.5" />
+          <span className="hidden xs:inline">Connect</span>
+        </button>
+        <span className="absolute -top-1 -right-1 px-1 py-0.5 text-[8px] bg-amber-500/90 text-white rounded font-sans">Soon</span>
+      </div>
+    );
   }
 
   return (
@@ -129,6 +134,10 @@ const WalletDropdown = ({
               <div className="flex items-center justify-between">
                 <span className="text-xs font-sans text-muted-foreground">Owned DNA genomes:</span>
                 <span className="text-xs font-sans font-medium text-foreground">{ownedGenomes.toLocaleString()}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-sans text-muted-foreground">Fyre Keys Balance:</span>
+                <span className="text-xs font-sans font-medium text-foreground">210</span>
               </div>
             </div>
 

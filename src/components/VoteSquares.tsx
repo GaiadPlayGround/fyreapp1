@@ -110,7 +110,7 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
 
   return (
     <div className="flex flex-col items-center gap-1">
-      <div className="flex gap-1.5">
+      <div className="relative flex gap-1.5">
         {[1, 2, 3, 4, 5].map((rating) => (
           <button
             key={rating}
@@ -126,6 +126,7 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
             )}
           />
         ))}
+        <span className="absolute -top-2 -right-3 px-1 py-0.5 text-[8px] bg-amber-500/90 text-white rounded font-sans whitespace-nowrap">Soon</span>
       </div>
       <div className="flex flex-col items-center text-center">
         <span className="text-card text-xs font-sans">
