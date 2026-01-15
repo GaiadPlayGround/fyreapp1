@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import InlineFilterBar from '@/components/InlineFilterBar';
 import SpeciesGrid from '@/components/SpeciesGrid';
-import SpeciesSlideshow from '@/components/SpeciesSlideshow';
 import Footer from '@/components/Footer';
 import EnzymeAdPopup from '@/components/EnzymeAdPopup';
 import { useSpeciesApi } from '@/hooks/useSpeciesApi';
@@ -13,15 +13,12 @@ import { SortOption, ViewMode } from '@/components/FilterDrawer';
 import type { Species } from '@/data/species';
 
 const Explore = () => {
+  const navigate = useNavigate();
   const { species, loading, error } = useSpeciesApi();
   const { recordView, getBaseSquares, getShareCount, getLastViewedAt } = useSpeciesStats();
   const [animationEnabled, setAnimationEnabled] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [showEnzymeAd, setShowEnzymeAd] = useState(false);
-  
-  // Slideshow state
-  const [slideshowOpen, setSlideshowOpen] = useState(false);
-  const [slideshowIndex, setSlideshowIndex] = useState(0);
   
   // Filter state
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
@@ -33,7 +30,7 @@ const Explore = () => {
   const gridRef = useRef<HTMLDivElement>(null);
 
   // Wildlife sounds
-  useAnimalSounds(soundEnabled && !slideshowOpen);
+  useAnimalSounds(soundEnabled);
 
   // DNA Enzymes popup logic: only at 120 seconds and 10 minutes (twice total)
   useEffect(() => {
@@ -102,9 +99,10 @@ const Explore = () => {
     }
   });
 
-  const handleSpeciesClick = async (clickedSpecies: Species, index: number) => {
-    setSlideshowIndex(index);
-    setSlideshowOpen(true);
+  const handleSpeciesClick = async (clickedSpecies: Species, _index: number) => {
+    // Navigate to species detail page using symbol
+    const speciesSymbol = clickedSpecies.symbol?.toLowerCase() || `fcbc${clickedSpecies.id.replace(/\D/g, '')}`;
+    navigate(`/explore/${speciesSymbol}`);
     await recordView(clickedSpecies.id);
   };
 
@@ -142,15 +140,6 @@ const Explore = () => {
       </main>
 
       <Footer />
-
-      {/* Slideshow */}
-      {slideshowOpen && (
-        <SpeciesSlideshow
-          species={sortedSpecies}
-          initialIndex={slideshowIndex}
-          onClose={() => setSlideshowOpen(false)}
-        />
-      )}
 
       {/* DNA Enzymes Ad Popup */}
       {showEnzymeAd && (

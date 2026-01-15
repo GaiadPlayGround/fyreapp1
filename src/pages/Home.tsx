@@ -46,7 +46,7 @@ const Home = () => {
   }, []);
 
   const handleExplore = () => {
-    navigate('/explore');
+    navigate('/connect');
   };
 
   return (

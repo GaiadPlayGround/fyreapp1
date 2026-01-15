@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { WalletProvider } from "@/contexts/WalletContext";
 import Home from "./pages/Home";
 import Explore from "./pages/Explore";
+import SpeciesDetail from "./pages/SpeciesDetail";
 import WalletGate from "./pages/WalletGate";
 import NotFound from "./pages/NotFound";
 
@@ -22,9 +23,9 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/explore" element={<Explore />} />
-              {/* Optional connect screen */}
               <Route path="/connect" element={<WalletGate />} />
+              <Route path="/explore" element={<Explore />} />
+              <Route path="/explore/:speciesId" element={<SpeciesDetail />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
