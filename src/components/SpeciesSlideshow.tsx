@@ -29,7 +29,7 @@ const getTextColorForBackground = (brightness: 'light' | 'dark' = 'dark') => {
   return brightness === 'light' ? 'text-black' : 'text-white';
 };
 
-const CONTRACT_ADDRESS = '0xbfca039bbda0bd750c2b83d666810b1bb4d31b38';
+const CONTRACT_ADDRESS = '0x17d8d3c956a9b2d72257d7c9624cfcfd8ba8672b';
 
 const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowProps) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
@@ -449,10 +449,10 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
         <div className="absolute bottom-32 left-4 right-4 z-10 animate-fade-in">
           <div className="p-4 bg-black/60 backdrop-blur-sm rounded-md">
             <h2 className={cn("font-serif text-xl font-semibold mb-1", infoTextColor)}>
-              {currentSpecies.name}
+              {currentSpecies.scientificName || currentSpecies.name}
             </h2>
             <p className={cn("font-sans text-sm italic mb-2", infoTextColorMuted)}>
-              {currentSpecies.scientificName}
+              {currentSpecies.name}
             </p>
             <div className="flex items-center gap-2 mb-2">
               <span

@@ -20,9 +20,12 @@ const Explore = () => {
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [showEnzymeAd, setShowEnzymeAd] = useState(false);
   
-  // Filter state
+  // Filter state - persist sortBy to localStorage
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
-  const [sortBy, setSortBy] = useState<SortOption>('id');
+  const [sortBy, setSortBy] = useState<SortOption>(() => {
+    const saved = localStorage.getItem('fyreapp-sort');
+    return (saved as SortOption) || 'id';
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [conservationFilter, setConservationFilter] = useState<ConservationStatus | null>(null);
   
@@ -52,6 +55,11 @@ const Explore = () => {
       clearTimeout(secondTimeout);
     };
   }, []);
+
+  // Persist sort preference
+  useEffect(() => {
+    localStorage.setItem('fyreapp-sort', sortBy);
+  }, [sortBy]);
 
   // Allow manual opening from Wallet dropdown
   useEffect(() => {
