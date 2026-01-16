@@ -448,11 +448,11 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
       {showInfo && (
         <div className="absolute bottom-32 left-4 right-4 z-10 animate-fade-in">
           <div className="p-4 bg-black/60 backdrop-blur-sm rounded-md">
-            <h2 className={cn("font-serif text-xl font-semibold mb-1", infoTextColor)}>
-              {currentSpecies.scientificName || currentSpecies.name}
+            <h2 className={cn("font-serif text-xl font-semibold", infoTextColor)}>
+              {currentSpecies.name}
             </h2>
             <p className={cn("font-sans text-sm italic mb-2", infoTextColorMuted)}>
-              {currentSpecies.name}
+              {currentSpecies.scientificName || currentSpecies.name}
             </p>
             <div className="flex items-center gap-2 mb-2">
               <span
@@ -465,7 +465,7 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
                 {getStatusLabel(currentSpecies.status)}
               </span>
               <span className={cn("font-sans text-xs", infoTextColorMuted)}>
-                {currentSpecies.ticker}
+                ${currentSpecies.symbol || `FCBC${currentSpecies.id.replace(/\D/g, '')}`}
               </span>
             </div>
             <p className={cn("font-sans text-sm mb-3", infoTextColorMuted)}>
