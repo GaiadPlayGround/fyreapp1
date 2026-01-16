@@ -40,12 +40,12 @@ const Header = ({
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border safe-area-top">
       <div className="px-3 h-14 flex items-center justify-between">
         {/* Left: Logo and Title */}
-        <div className="flex items-center gap-2">
+        <a href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
           <img src={currentLogo} alt="Fyre App 1" className="w-9 h-9 rounded-lg object-contain" />
           <h1 className="font-serif font-semibold text-foreground leading-tight text-base transition-all duration-300">
             {TITLE_OPTIONS[titleIndex]}
           </h1>
-        </div>
+        </a>
 
         {/* Right: Actions */}
         <div className="flex items-center gap-1.5">
