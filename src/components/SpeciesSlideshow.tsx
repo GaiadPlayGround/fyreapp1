@@ -472,7 +472,7 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
               onClick={copyContractAddress}
               className={cn("flex items-center gap-2 text-xs font-sans mb-3 hover:opacity-80 transition-opacity", infoTextColorMuted)}
             >
-              <span className="font-medium">Contract:</span>
+              <span className="font-medium">Creator Contract:</span>
               <span className="font-mono text-[10px]">{CONTRACT_ADDRESS.slice(0, 6)}...{CONTRACT_ADDRESS.slice(-4)}</span>
               {contractCopied ? <Check className="w-3 h-3 text-primary" /> : <Copy className="w-3 h-3" />}
             </button>
