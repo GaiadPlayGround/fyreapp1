@@ -17,7 +17,7 @@ const guideSteps: GuideStep[] = [
   {
     icon: <MousePointerClick className="w-5 h-5" />,
     title: "Double-Tap to Buy",
-    description: "Double-tap any species image to instantly buy $1 USDC worth of DNA tokens. Quick and easy! (Coming Soon)"
+    description: "Double-tap any species image to buy $1 USDC worth of this species DNA tokens. Quick and easy! (Coming Soon)"
   },
   {
     icon: <Filter className="w-5 h-5" />,

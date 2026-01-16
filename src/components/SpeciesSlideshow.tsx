@@ -72,7 +72,7 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
   const handleDoubleTap = () => {
     toast({
       title: "Coming Soon!",
-      description: "Double-tap to buy $1 USDC worth of DNA tokens",
+      description: "Double-tap to buy $1 USDC worth of this species DNA tokens.",
       duration: 2000,
     });
   };
@@ -521,7 +521,7 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
               </button>
             </TooltipTrigger>
             <TooltipContent side="top">
-              <p>Double-tap to buy $1 (Coming Soon)</p>
+              <p>Double-tap to buy $1 USDC worth of this species DNA tokens. (Coming Soon)</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
