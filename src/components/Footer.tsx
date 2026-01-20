@@ -1,5 +1,6 @@
 import React from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import PaymentSettings from './PaymentSettings';
 import socialZora from '@/assets/social-zora.png';
 import socialBaseapp from '@/assets/social-baseapp.png';
 import socialFarcaster from '@/assets/social-farcaster.png';
@@ -97,6 +98,14 @@ const Footer = () => {
             </div>
           </div>
         </TooltipProvider>
+
+        {/* Payment Settings */}
+        <div className="flex flex-col items-center mb-6">
+          <h4 className="text-xs font-sans text-muted-foreground mb-3 uppercase tracking-wider">
+            Quick Buy Settings
+          </h4>
+          <PaymentSettings />
+        </div>
 
         {/* Copyright */}
         <div className="text-center">

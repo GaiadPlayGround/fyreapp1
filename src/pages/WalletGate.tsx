@@ -15,13 +15,15 @@ const WalletGate = () => {
   // If already connected, show connected state (don't auto-navigate)
   // User can choose to continue or disconnect
 
-  const handleConnect = () => {
+  const handleConnect = async () => {
     setIsConnecting(true);
     setShowDecryptedText(true);
     
-    // Slower delay to allow the decrypted text animation to complete
+    // Connect wallet first
+    connect();
+    
+    // Wait for animation to complete, then navigate
     setTimeout(() => {
-      connect();
       navigate('/explore');
     }, 4500);
   };
