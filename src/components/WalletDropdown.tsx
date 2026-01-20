@@ -218,7 +218,7 @@ const WalletDropdown = ({
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-sans text-muted-foreground">Fyre Keys Balance:</span>
-                <span className="text-xs font-sans font-medium text-foreground">210</span>
+                <span className="text-xs font-sans font-medium text-foreground">0</span>
               </div>
             </div>
 
