@@ -60,12 +60,23 @@ interface FyreMissionsDialogProps {
 
 const FyreMissionsDialog = ({ children }: FyreMissionsDialogProps) => {
   const [clickedRedirects, setClickedRedirects] = useState<Set<string>>(new Set());
-  const { votes, shares } = useWallet();
+  const { votes, shares, ownedGenomes, totalDnaTokens } = useWallet();
   
-  // Mock values - in real app would come from context
-  const referrals = 0;
-  const genomes = 0;
-  const dna = 349000000;
+  // Get referrals from localStorage (invited users)
+  const getReferralCount = (): number => {
+    try {
+      const inviteCode = localStorage.getItem('fyreapp-invite-code');
+      if (!inviteCode) return 0;
+      // In a real app, this would query the database for users invited by this code
+      return 0;
+    } catch {
+      return 0;
+    }
+  };
+  
+  const referrals = getReferralCount();
+  const genomes = ownedGenomes || 0;
+  const dna = totalDnaTokens || 0;
 
   const getProgress = (key: 'votes' | 'shares' | 'referrals' | 'genomes' | 'dna'): number => {
     switch (key) {

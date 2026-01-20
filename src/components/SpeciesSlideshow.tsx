@@ -15,6 +15,30 @@ import { createWalletClient, custom } from 'viem';
 import { parseUnits, formatUnits, Address, erc20Abi } from 'viem';
 import { base } from 'wagmi/chains';
 import { setApiKey, tradeCoin } from '@zoralabs/coins-sdk';
+import { usePaymentSettings } from './PaymentSettings';
+
+// Quick buy button component that reflects payment settings
+const QuickBuyButton = ({ onClick }: { onClick: () => void }) => {
+  const { currency, amount } = usePaymentSettings();
+  
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            onClick={onClick}
+            className="relative p-2 bg-card/10 backdrop-blur-sm rounded-full hover:bg-card/20 transition-colors"
+          >
+            <MousePointerClick className="w-4 h-4 text-card" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="top">
+          <p>Double-tap to buy ${amount} {currency} worth of this species DNA tokens</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+};
 
 interface SpeciesSlideshowProps {
   species: Species[];
@@ -826,7 +850,7 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
             <h2 className={cn("font-serif text-xl font-semibold mb-2", infoTextColor)}>
               {currentSpecies.name}
             </h2>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-1">
               <span
                 className={cn(
                   "px-2 py-0.5 rounded-sm text-xs font-sans font-medium",
@@ -838,6 +862,15 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
               </span>
               <span className={cn("font-sans text-xs", infoTextColorMuted)}>
                 ${currentSpecies.symbol || `FCBC${currentSpecies.id.replace(/\D/g, '')}`}
+              </span>
+            </div>
+            {/* Mcap and Holders row */}
+            <div className="flex items-center gap-4 mb-2">
+              <span className={cn("font-sans text-xs", infoTextColorMuted)}>
+                Mcap: <span className="font-medium">--</span>
+              </span>
+              <span className={cn("font-sans text-xs", infoTextColorMuted)}>
+                Holders: <span className="font-medium">--</span>
               </span>
             </div>
             <p className={cn("font-sans text-sm mb-3", infoTextColorMuted)}>
@@ -895,22 +928,8 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
           onTransactionStart={() => setIsPaused(true)}
           onTransactionEnd={() => setIsPaused(false)}
         />
-        {/* Double-tap to buy $1 icon */}
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={handleDoubleTap}
-                className="relative p-2 bg-card/10 backdrop-blur-sm rounded-full hover:bg-card/20 transition-colors"
-              >
-                <MousePointerClick className="w-4 h-4 text-card" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="top">
-              <p>Double-tap to buy $1 USDC worth of this species DNA tokens</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        {/* Double-tap to buy icon - reflects quick buy settings */}
+        <QuickBuyButton onClick={handleDoubleTap} />
       </div>
 
       {/* Bottom right - Share button */}
