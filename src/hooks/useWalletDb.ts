@@ -1,7 +1,8 @@
+import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export const useWalletDb = () => {
-  const registerWallet = async (address: string, invitedBy?: string) => {
+  const registerWallet = useCallback(async (address: string, invitedBy?: string) => {
     try {
       // Check if wallet already exists
       const { data: existing } = await supabase
@@ -59,9 +60,9 @@ export const useWalletDb = () => {
       console.error('Error in registerWallet:', err);
       return null;
     }
-  };
+  }, []);
 
-  const getWalletByAddress = async (address: string) => {
+  const getWalletByAddress = useCallback(async (address: string) => {
     try {
       const { data, error } = await supabase
         .from('wallets')
@@ -75,9 +76,9 @@ export const useWalletDb = () => {
       console.error('Error getting wallet:', err);
       return null;
     }
-  };
+  }, []);
 
-  const getWalletByInviteCode = async (inviteCode: string) => {
+  const getWalletByInviteCode = useCallback(async (inviteCode: string) => {
     try {
       const { data, error } = await supabase
         .from('wallets')
@@ -91,7 +92,7 @@ export const useWalletDb = () => {
       console.error('Error getting wallet by invite code:', err);
       return null;
     }
-  };
+  }, []);
 
   return {
     registerWallet,

@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Wallet, LogOut, Vote, Copy, Check, Users, Share2, Moon, Sun, Volume2, VolumeX, Sparkles, HelpCircle, Ticket } from 'lucide-react';
 import { useWallet } from '@/contexts/WalletContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { cn } from '@/lib/utils';
+import { getDisplayName, formatAddressForDisplay } from '@/lib/nameResolution';
 import OnboardingGuide from './OnboardingGuide';
 
 interface WalletDropdownProps {
@@ -49,11 +51,52 @@ const WalletDropdown = ({
   const [copied, setCopied] = useState(false);
   const [inviteCopied, setInviteCopied] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [displayName, setDisplayName] = useState<{ displayName: string; type: 'base' | 'ens' | 'address' }>({ displayName: '', type: 'address' });
+  const [isLoadingName, setIsLoadingName] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; right: number } | null>(null);
+
+  // Resolve display name when address changes
+  useEffect(() => {
+    if (address) {
+      setIsLoadingName(true);
+      getDisplayName(address)
+        .then((name) => {
+          setDisplayName(name);
+        })
+        .catch((error) => {
+          console.error('Error resolving display name:', error);
+          setDisplayName({
+            displayName: formatAddressForDisplay(address),
+            type: 'address',
+          });
+        })
+        .finally(() => {
+          setIsLoadingName(false);
+        });
+    } else {
+      setDisplayName({ displayName: 'Not Connected', type: 'address' });
+    }
+  }, [address]);
   
+  // Calculate dropdown position when opening (fixed positioning relative to viewport)
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + 8, // 8px spacing below button
+        right: window.innerWidth - rect.right, // Distance from right edge
+      });
+    } else {
+      setDropdownPosition(null);
+    }
+  }, [isOpen]);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node) &&
+          buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
@@ -83,33 +126,71 @@ const WalletDropdown = ({
           <Wallet className="w-3.5 h-3.5" />
           <span className="hidden xs:inline">Connect</span>
         </button>
-        <span className="absolute -top-1 -right-1 px-1 py-0.5 text-[8px] bg-amber-500/90 text-white rounded font-sans">Soon</span>
       </div>
     );
   }
 
   return (
     <>
-      <div ref={dropdownRef} className="relative">
-        <button onClick={() => setIsOpen(!isOpen)} className="flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 transition-colors">
+      <div className="relative">
+        <button 
+          ref={buttonRef}
+          onClick={() => setIsOpen(!isOpen)} 
+          className="flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 transition-colors"
+        >
           <Wallet className="w-3.5 h-3.5 text-muted-foreground" />
-          <span className="text-xs font-sans text-foreground">{formatBalance(dnaBalance)}</span>
+          {isLoadingName ? (
+            <span className="text-xs font-sans text-muted-foreground">...</span>
+          ) : displayName.type !== 'address' ? (
+            <span className={cn(
+              "text-xs font-sans truncate max-w-[100px]",
+              displayName.type === 'base' && "text-primary",
+              displayName.type === 'ens' && "text-primary"
+            )}>
+              {displayName.displayName}
+            </span>
+          ) : (
+            <span className="text-xs font-sans text-foreground">{formatBalance(dnaBalance)}</span>
+          )}
         </button>
 
-        {isOpen && <div className="absolute right-0 top-full mt-2 w-72 bg-card border border-border rounded-lg shadow-lg z-50 animate-fade-in max-h-[80vh] overflow-y-auto">
-            {/* Wallet Address with Basename/Farcaster */}
+        {isOpen && dropdownPosition && createPortal(
+          <div 
+            ref={dropdownRef}
+            className="fixed w-72 bg-card border border-border rounded-lg shadow-lg z-[100] animate-fade-in max-h-[80vh] overflow-y-auto"
+            style={{
+              top: `${dropdownPosition.top}px`,
+              right: `${dropdownPosition.right}px`,
+            }}
+          >
+            {/* Wallet Address with Base name/ENS */}
             <div className="p-3 border-b border-border">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-[10px] text-muted-foreground font-sans">Wallet Address</span>
               </div>
               <div className="flex items-center justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <p className="font-mono text-xs text-foreground truncate">{address}</p>
-                  {/* Basename & Farcaster UID placeholders */}
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[10px] text-primary font-sans">basename.eth</span>
-                    <span className="text-[10px] text-muted-foreground font-sans">FID: 12345</span>
-                  </div>
+                  {isLoadingName ? (
+                    <p className="text-xs text-muted-foreground font-sans">Loading...</p>
+                  ) : (
+                    <>
+                      {/* Display name with priority: Base name > ENS name > truncated address */}
+                      <p className={cn(
+                        "text-xs font-sans truncate",
+                        displayName.type === 'base' && "text-primary font-medium",
+                        displayName.type === 'ens' && "text-primary",
+                        displayName.type === 'address' && "font-mono text-foreground"
+                      )}>
+                        {displayName.displayName}
+                      </p>
+                      {/* Show full address below if we have a name */}
+                      {displayName.type !== 'address' && address && (
+                        <p className="font-mono text-[10px] text-muted-foreground truncate mt-0.5">
+                          {formatAddressForDisplay(address)}
+                        </p>
+                      )}
+                    </>
+                  )}
                 </div>
                 <button onClick={copyAddress} className="p-1.5 hover:bg-muted rounded transition-colors flex-shrink-0">
                   {copied ? <Check className="w-3 h-3 text-primary" /> : <Copy className="w-3 h-3 text-muted-foreground" />}
@@ -224,7 +305,9 @@ const WalletDropdown = ({
                 <span>Disconnect</span>
               </button>
             </div>
-          </div>}
+          </div>,
+          document.body
+        )}
       </div>
       
       {showOnboarding && (

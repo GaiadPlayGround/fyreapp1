@@ -1,4 +1,7 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useAccount, useConnect, useDisconnect } from 'wagmi';
+import { base } from 'wagmi/chains';
+import { useWalletDb } from '@/hooks/useWalletDb';
 
 interface Vote {
   speciesId: string;
@@ -43,13 +46,19 @@ export const useWallet = () => {
 const VOTE_COST = 0.2; // USDC
 
 export const WalletProvider = ({ children }: { children: ReactNode }) => {
+  // useAccount will detect if wallet is already connected, but won't auto-connect
+  const { address: wagmiAddress, isConnected: wagmiIsConnected } = useAccount();
+  const { connect: wagmiConnect, connectors } = useConnect();
+  const { disconnect: wagmiDisconnect } = useDisconnect();
+  const walletDb = useWalletDb();
+
   const [state, setState] = useState<WalletState>({
     isConnected: false,
     address: null,
-    dnaBalance: 349000000, // 349m
-    usdcBalance: 5747.00,
-    fcbccBalance: 8400000, // 8.4m
-    ownedGenomes: 174,
+    dnaBalance: 0,
+    usdcBalance: 0,
+    fcbccBalance: 0,
+    ownedGenomes: 0,
     voteTickets: 0,
     invites: 0,
     shares: 0,
@@ -57,25 +66,105 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     inviteCode: null,
   });
 
-  const connect = () => {
-    // Generate unique invite code based on address
-    const uniqueCode = `INV${Date.now().toString(36).toUpperCase()}`;
-    setState({
-      isConnected: true,
-      address: '0x1234...5678',
-      dnaBalance: 349000000, // 349m
-      usdcBalance: 5747.00,
-      fcbccBalance: 8400000, // 8.4m
-      ownedGenomes: 174,
-      voteTickets: 0,
-      invites: 1,
-      shares: 0,
-      votes: [],
-      inviteCode: uniqueCode,
+  // Sync wagmi connection state with local state
+  // Only run when wallet is actually connected (not on initial mount)
+  useEffect(() => {
+    // Don't run if wallet is not connected
+    if (!wagmiIsConnected || !wagmiAddress) {
+      setState((prev) => ({
+        ...prev,
+        isConnected: false,
+        address: null,
+        inviteCode: null,
+      }));
+      return;
+    }
+
+    // Only fetch wallet data when actually connected
+    let cancelled = false;
+    
+    walletDb.getWalletByAddress(wagmiAddress).then((walletData) => {
+      if (cancelled) return;
+      if (walletData) {
+        setState((prev) => ({
+          ...prev,
+          isConnected: true,
+          address: wagmiAddress,
+          inviteCode: walletData.invite_code || null,
+          // Keep existing balances/votes if already set, otherwise initialize
+          dnaBalance: prev.dnaBalance || 0,
+          usdcBalance: prev.usdcBalance || 0,
+          fcbccBalance: prev.fcbccBalance || 0,
+          ownedGenomes: prev.ownedGenomes || 0,
+          votes: prev.votes || [],
+          shares: prev.shares || 0,
+          invites: prev.invites || 0,
+          voteTickets: prev.voteTickets || 0,
+        }));
+      } else {
+        // Register new wallet
+        walletDb.registerWallet(wagmiAddress).then((newWalletData) => {
+          if (cancelled) return;
+          if (newWalletData) {
+            setState((prev) => ({
+              ...prev,
+              isConnected: true,
+              address: wagmiAddress,
+              inviteCode: newWalletData.invite_code || null,
+              // Keep existing balances/votes if already set, otherwise initialize
+              dnaBalance: prev.dnaBalance || 0,
+              usdcBalance: prev.usdcBalance || 0,
+              fcbccBalance: prev.fcbccBalance || 0,
+              ownedGenomes: prev.ownedGenomes || 0,
+              votes: prev.votes || [],
+              shares: prev.shares || 0,
+              invites: prev.invites || 0,
+              voteTickets: prev.voteTickets || 0,
+            }));
+          } else {
+            // Fallback if registration fails
+            const uniqueCode = `INV${Date.now().toString(36).toUpperCase()}`;
+            setState((prev) => ({
+              ...prev,
+              isConnected: true,
+              address: wagmiAddress,
+              inviteCode: uniqueCode,
+            }));
+          }
+        });
+      }
     });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [wagmiIsConnected, wagmiAddress, walletDb.getWalletByAddress, walletDb.registerWallet]);
+
+  const connect = async () => {
+    try {
+      // Try to connect with injected connector (MetaMask, etc.) on Base network
+      const injectedConnector = connectors.find((c) => c.id === 'injected');
+      if (injectedConnector) {
+        wagmiConnect({ 
+          connector: injectedConnector,
+          chainId: base.id, // Connect to Base network
+        });
+      } else {
+        // Fallback: try first available connector
+        if (connectors.length > 0) {
+          wagmiConnect({ 
+            connector: connectors[0],
+            chainId: base.id, // Connect to Base network
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Failed to connect wallet:', error);
+    }
   };
 
   const disconnect = () => {
+    wagmiDisconnect();
     setState({
       isConnected: false,
       address: null,

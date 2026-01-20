@@ -17,6 +17,14 @@ interface ApiSpecies {
   description?: string;
   tokenId?: string;
   slug?: string;
+  tokenAddress?: string;
+  poolCurrencyToken?: {
+    address: string;
+    name: string;
+    decimals: number;
+  };
+  chainId?: number;
+  tradable?: boolean;
 }
 
 interface ApiResponse {
@@ -69,7 +77,20 @@ export const useSpeciesApi = () => {
         }
 
         const mappedSpecies: Species[] = json.data.map((s, index) => {
-          const fcbcId = s.id || String(index + 1);
+          // Extract numeric ID from "FCBC #190" format or use symbol
+          let fcbcId: string;
+          if (s.id) {
+            // Extract number from "FCBC #190" -> "190"
+            const match = s.id.match(/#(\d+)/);
+            fcbcId = match ? match[1] : (s.symbol?.match(/(\d+)/)?.[1] || s.id.replace(/\D/g, '') || String(index + 1));
+          } else if (s.symbol) {
+            // Extract number from symbol like "FCBC190" -> "190"
+            const symbolMatch = s.symbol.match(/(\d+)/);
+            fcbcId = symbolMatch ? symbolMatch[1] : String(index + 1);
+          } else {
+            fcbcId = String(index + 1);
+          }
+          
           const symbol = s.symbol || `FCBC${fcbcId}`;
           const code = s.code || symbol;
           const iucnCode = mapStatusToCode(s.status, s.iucnStatus);
@@ -96,6 +117,13 @@ export const useSpeciesApi = () => {
             region: s.region || 'Unknown',
             votes: Math.floor(Math.random() * 3000),
             description: s.description || generateDescription(s.name),
+            
+            // Zora/Onchain data
+            tokenAddress: s.tokenAddress,
+            poolCurrencyToken: s.poolCurrencyToken,
+            chainId: s.chainId,
+            // If tokenAddress exists, it's tradable (API tradable field may be outdated)
+            tradable: s.tokenAddress ? true : (s.tradable || false),
           };
         });
 

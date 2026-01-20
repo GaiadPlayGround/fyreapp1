@@ -46,19 +46,33 @@ const SpeciesDetail = () => {
 
   useEffect(() => {
     if (sortedSpecies.length > 0 && speciesId) {
-      // Find species by symbol (e.g., fcbc1, FCBC1) or by id
-      const normalizedId = speciesId.toLowerCase();
-      const index = sortedSpecies.findIndex(s => 
-        s.symbol?.toLowerCase() === normalizedId ||
-        s.id.toLowerCase() === normalizedId ||
-        s.symbol?.toLowerCase() === `fcbc${normalizedId.replace(/\D/g, '')}` ||
-        `fcbc${s.id.replace(/\D/g, '')}`.toLowerCase() === normalizedId
-      );
+      // Find species by symbol (e.g., fcbc99, FCBC99) or by id
+      // The URL uses symbol like "fcbc99", but we need to match against the actual symbol
+      const normalizedId = speciesId.toLowerCase().trim();
+      
+      const index = sortedSpecies.findIndex(s => {
+        // Match by symbol (e.g., "FCBC99" matches "fcbc99")
+        if (s.symbol?.toLowerCase() === normalizedId) return true;
+        
+        // Match by ID format (e.g., "FCBC #99" matches "fcbc99" or "99")
+        const idNumber = s.id.replace(/\D/g, '');
+        if (idNumber && (normalizedId === idNumber || normalizedId === `fcbc${idNumber}`)) return true;
+        
+        // Match symbol without FCBC prefix
+        const symbolNumber = s.symbol?.replace(/FCBC/gi, '').replace(/\D/g, '');
+        if (symbolNumber && normalizedId === symbolNumber) return true;
+        
+        // Direct ID match
+        if (s.id.toLowerCase() === normalizedId || s.id.toLowerCase() === `fcbc #${normalizedId}`) return true;
+        
+        return false;
+      });
       
       if (index !== -1) {
         setInitialIndex(index);
       } else {
         // Species not found, redirect to explore
+        console.warn(`Species not found: ${speciesId}. Available species:`, sortedSpecies.map(s => s.symbol));
         navigate('/explore', { replace: true });
       }
     }

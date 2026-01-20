@@ -22,6 +22,16 @@ export interface Species {
   region: string;
   votes: number;
   description: string;
+  
+  // Zora/Onchain data (optional)
+  tokenAddress?: string;          // ERC-20 token contract address
+  poolCurrencyToken?: {           // Currency token for trading
+    address: string;
+    name: string;
+    decimals: number;
+  };
+  chainId?: number;                // Chain ID (8453 for Base)
+  tradable?: boolean;              // Whether token is tradable
 }
 
 export const speciesData: Species[] = [
