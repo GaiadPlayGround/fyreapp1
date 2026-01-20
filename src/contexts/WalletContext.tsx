@@ -1,7 +1,8 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useAccount, useConnect, useDisconnect } from 'wagmi';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { useAccount, useConnect, useDisconnect, usePublicClient } from 'wagmi';
 import { base } from 'wagmi/chains';
 import { useWalletDb } from '@/hooks/useWalletDb';
+import { useWalletBalances } from '@/hooks/useWalletBalances';
 
 interface Vote {
   speciesId: string;
@@ -51,6 +52,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const { connect: wagmiConnect, connectors } = useConnect();
   const { disconnect: wagmiDisconnect } = useDisconnect();
   const walletDb = useWalletDb();
+  const { fetchBalances } = useWalletBalances();
 
   const [state, setState] = useState<WalletState>({
     isConnected: false,
@@ -66,7 +68,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     inviteCode: null,
   });
 
-  // Sync wagmi connection state with local state
+  // Sync wagmi connection state with local state and fetch balances
   // Only run when wallet is actually connected (not on initial mount)
   useEffect(() => {
     // Don't run if wallet is not connected
@@ -76,6 +78,10 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         isConnected: false,
         address: null,
         inviteCode: null,
+        dnaBalance: 0,
+        usdcBalance: 0,
+        fcbccBalance: 0,
+        ownedGenomes: 0,
       }));
       return;
     }
@@ -83,6 +89,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     // Only fetch wallet data when actually connected
     let cancelled = false;
     
+    // Fetch wallet data from database
     walletDb.getWalletByAddress(wagmiAddress).then((walletData) => {
       if (cancelled) return;
       if (walletData) {
@@ -91,15 +98,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
           isConnected: true,
           address: wagmiAddress,
           inviteCode: walletData.invite_code || null,
-          // Keep existing balances/votes if already set, otherwise initialize
-          dnaBalance: prev.dnaBalance || 0,
-          usdcBalance: prev.usdcBalance || 0,
-          fcbccBalance: prev.fcbccBalance || 0,
-          ownedGenomes: prev.ownedGenomes || 0,
-          votes: prev.votes || [],
-          shares: prev.shares || 0,
-          invites: prev.invites || 0,
-          voteTickets: prev.voteTickets || 0,
+          // Balances will be updated by fetchBalances below
         }));
       } else {
         // Register new wallet
@@ -111,15 +110,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
               isConnected: true,
               address: wagmiAddress,
               inviteCode: newWalletData.invite_code || null,
-              // Keep existing balances/votes if already set, otherwise initialize
-              dnaBalance: prev.dnaBalance || 0,
-              usdcBalance: prev.usdcBalance || 0,
-              fcbccBalance: prev.fcbccBalance || 0,
-              ownedGenomes: prev.ownedGenomes || 0,
-              votes: prev.votes || [],
-              shares: prev.shares || 0,
-              invites: prev.invites || 0,
-              voteTickets: prev.voteTickets || 0,
+              // Balances will be updated by fetchBalances below
             }));
           } else {
             // Fallback if registration fails
@@ -135,10 +126,43 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       }
     });
 
+    // Fetch real balances from blockchain
+    fetchBalances().then((balances) => {
+      if (cancelled) return;
+      setState((prev) => ({
+        ...prev,
+        usdcBalance: balances.usdcBalance,
+        fcbccBalance: balances.fcbccBalance,
+        dnaBalance: balances.dnaBalance,
+        ownedGenomes: balances.ownedGenomes,
+      }));
+    }).catch((error) => {
+      console.error('Failed to fetch balances:', error);
+    });
+
+    // Refresh balances every 30 seconds
+    const balanceInterval = setInterval(() => {
+      if (!cancelled && wagmiIsConnected && wagmiAddress) {
+        fetchBalances().then((balances) => {
+          if (cancelled) return;
+          setState((prev) => ({
+            ...prev,
+            usdcBalance: balances.usdcBalance,
+            fcbccBalance: balances.fcbccBalance,
+            dnaBalance: balances.dnaBalance,
+            ownedGenomes: balances.ownedGenomes,
+          }));
+        }).catch((error) => {
+          console.error('Failed to refresh balances:', error);
+        });
+      }
+    }, 30000); // Refresh every 30 seconds
+
     return () => {
       cancelled = true;
+      clearInterval(balanceInterval);
     };
-  }, [wagmiIsConnected, wagmiAddress, walletDb.getWalletByAddress, walletDb.registerWallet]);
+  }, [wagmiIsConnected, wagmiAddress, walletDb.getWalletByAddress, walletDb.registerWallet, fetchBalances]);
 
   const connect = async () => {
     try {

@@ -150,31 +150,45 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
       const swapAmount = parseUnits('1', USDC_DECIMALS);
       
       // Check user's balance before attempting trade
-      // try {
-      //   if (publicClient && wagmiAddress) {
-      //     const balance = (await publicClient.readContract({
-      //       address: currencyTokenAddress,
-      //       abi: erc20Abi,
-      //       functionName: 'balanceOf',
-      //       args: [wagmiAddress as Address],
-      //     } as any)) as bigint;
+      console.log('=== BALANCE CHECK ===');
+      console.log('Wallet address:', wagmiAddress);
+      console.log('USDC address:', currencyTokenAddress);
+      console.log('Swap amount:', swapAmount.toString());
+      console.log('Swap amount (formatted):', formatUnits(swapAmount, USDC_DECIMALS));
+      
+      try {
+        if (publicClient && wagmiAddress) {
+          const balance = (await publicClient.readContract({
+            address: currencyTokenAddress,
+            abi: erc20Abi,
+            functionName: 'balanceOf',
+            args: [wagmiAddress as Address],
+            chain: base,
+          } as any)) as bigint;
           
-      //     const balanceUSD = parseFloat(formatUnits(balance, currentSpecies.poolCurrencyToken.decimals));
-      //     const requiredUSD = 1.0;
+          const balanceUSD = parseFloat(formatUnits(balance, USDC_DECIMALS));
+          const requiredUSD = 1.0;
           
-      //     if (balance < swapAmount) {
-      //       toast({
-      //         title: "Insufficient Balance",
-      //         description: `You need at least $${requiredUSD.toFixed(2)} USD worth of tokens. Your current balance is $${balanceUSD.toFixed(2)} USD.`,
-      //         variant: "destructive",
-      //       });
-      //       return;
-      //     }
-      //   }
-      // } catch (balanceError) {
-      //   console.warn('Could not check balance:', balanceError);
-      //   // Continue anyway - the transaction will fail with a better error if balance is insufficient
-      // }
+          console.log('Balance (raw):', balance.toString());
+          console.log('Balance (USD):', balanceUSD);
+          console.log('Required (USD):', requiredUSD);
+          console.log('Has enough?', balance >= swapAmount);
+          
+          if (balance < swapAmount) {
+            toast({
+              title: "Insufficient Balance",
+              description: `You need at least $${requiredUSD.toFixed(2)} USD worth of tokens. Your current balance is $${balanceUSD.toFixed(2)} USD.`,
+              variant: "destructive",
+            });
+            return;
+          }
+        }
+      } catch (balanceError) {
+        console.error('Balance check error:', balanceError);
+        console.warn('Could not check balance:', balanceError);
+        // Continue anyway - the transaction will fail with a better error if balance is insufficient
+      }
+      console.log('=== END BALANCE CHECK ===');
       
       toast({
         title: "Preparing Purchase...",
@@ -230,15 +244,25 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
         account: wagmiAddress as Address,
       });
 
+      // Execute the trade using Zora SDK in a single transaction
+      // The SDK uses Permit2 signatures which allow approval + trade in one transaction
+      // No separate approval needed - Permit2 signature handles it all
       toast({
-        title: "Confirm Transaction",
-        description: "Please confirm the purchase in your wallet",
-        duration: 3000,
+        title: "Preparing Purchase",
+        description: "This will complete in one transaction",
+        duration: 2000,
       });
 
-      // Execute the trade using Zora SDK
-      // This handles the swap: currency token -> DNA token
       try {
+        // The tradeCoin function uses Permit2 signatures for a single transaction
+        // It handles approval + trade in one transaction using Permit2
+        toast({
+          title: "Confirm Purchase",
+          description: "Please confirm the transaction in your wallet",
+          duration: 3000,
+        });
+
+        // Execute the trade - SDK handles Permit2 signature creation and execution
         const result = await tradeCoin({
           tradeParameters: {
             sell: {
@@ -258,134 +282,133 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
           publicClient: publicClient as any, // Zora SDK expects GenericPublicClient
         });
 
-        if (!result || !result.success) {
-          throw new Error(result?.error?.message || 'Trade failed');
+        // tradeCoin may return a hash or receipt - check what we got
+        let transactionHash: string | undefined;
+        if (typeof result === 'string') {
+          transactionHash = result;
+        } else if (result?.transactionHash) {
+          transactionHash = result.transactionHash;
+        } else if (result?.hash) {
+          transactionHash = result.hash;
+        }
+
+        if (!transactionHash) {
+          throw new Error('Transaction failed - no transaction hash received');
+        }
+
+        // Wait for transaction confirmation
+        toast({
+          title: "Transaction Submitted",
+          description: "Waiting for confirmation...",
+          duration: 2000,
+        });
+
+        // Wait for the transaction to be confirmed
+        const receipt = await publicClient.waitForTransactionReceipt({
+          hash: transactionHash as `0x${string}`,
+          timeout: 120_000, // 2 minute timeout
+        });
+
+        if (receipt.status === 'reverted') {
+          throw new Error('Transaction was reverted');
         }
 
         toast({
-          title: "Transaction Submitted!",
-          description: "Waiting for confirmation...",
-          duration: 2000,
+          title: "Purchase Successful!",
+          description: "Your DNA tokens have been purchased",
+          duration: 3000,
         });
         
         triggerHaptic();
       } catch (tradeError: any) {
-        // Log the full error for debugging
-        console.error('Trade error (full):', tradeError);
-        console.error('Trade error (stringified):', JSON.stringify(tradeError, null, 2));
-        console.error('Trade error (details):', tradeError?.details);
-        console.error('Trade error (cause):', tradeError?.cause);
-        console.error('Trade error (shortMessage):', tradeError?.shortMessage);
-        console.error('Trade error (error):', tradeError?.error);
-        
-        // Extract transaction error from API response
-        const extractTransactionError = (error: any): string | null => {
-          if (error?.details) return error.details;
-          if (error?.shortMessage) return error.shortMessage;
-          if (error?.message) return error.message;
-          if (error?.error?.message) return error.error.message;
-          if (error?.cause?.message) return error.cause.message;
-          if (error?.cause?.details) return error.cause.details;
-          if (error?.cause?.shortMessage) return error.cause.shortMessage;
-          return null;
-        };
-        
-        const transactionError = extractTransactionError(tradeError);
-        console.error('Extracted transaction error:', transactionError);
-        
+        // Log the FULL error for debugging
+        console.error('=== FULL TRADE ERROR ===');
+        console.error('Error object:', tradeError);
+        console.error('Error type:', typeof tradeError);
+        console.error('Error constructor:', tradeError?.constructor?.name);
+        console.error('Error name:', tradeError?.name);
+        console.error('Error code:', tradeError?.code);
+        console.error('Error message:', tradeError?.message);
+        console.error('Error shortMessage:', tradeError?.shortMessage);
+        console.error('Error details:', tradeError?.details);
+        console.error('Error cause:', tradeError?.cause);
+        console.error('Error error:', tradeError?.error);
+        console.error('Error stack:', tradeError?.stack);
+        console.error('Error stringified:', JSON.stringify(tradeError, null, 2));
+        console.error('Error keys:', Object.keys(tradeError || {}));
+        console.error('Error values:', Object.values(tradeError || {}));
+        console.error('=== END ERROR LOG ===');
+
+        // Handle user rejection gracefully
+        if (tradeError?.name === 'UserRejectedRequestError' || 
+            tradeError?.code === 4001 ||
+            tradeError?.message?.toLowerCase().includes('user rejected') ||
+            tradeError?.message?.toLowerCase().includes('user denied')) {
+          toast({
+            title: "Transaction Cancelled",
+            description: "You cancelled the transaction. No tokens were purchased.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Extract error message for user-friendly display
         let errorTitle = "Purchase Failed";
         let errorMessage = "Please try again.";
-        
-        // Parse different error types
+
         const errorString = JSON.stringify(tradeError).toLowerCase();
         const errorMessageLower = (tradeError?.message || '').toLowerCase();
-        const errorDetails = (tradeError?.details || transactionError || '').toLowerCase();
-        
+        const errorDetails = (tradeError?.details || '').toLowerCase();
+        const shortMessage = (tradeError?.shortMessage || '').toLowerCase();
+
         // Check for specific error types
-        if (errorString.includes('transfer_from_failed') || 
+        if (errorString.includes('transfer_from_failed') ||
             errorMessageLower.includes('transfer_from_failed') ||
             errorDetails.includes('transfer_from_failed')) {
           errorTitle = "Insufficient Balance";
-          errorMessage = "You don't have enough USDC. Please ensure you have at least $1 USDC in your wallet to buy DNA tokens.";
-        } else if (errorString.includes('insufficient') || errorMessageLower.includes('insufficient')) {
+          errorMessage = "You don't have enough USDC. Please ensure you have at least $1 USDC in your wallet.";
+        } else if (errorString.includes('insufficient') || 
+                   errorMessageLower.includes('insufficient') ||
+                   errorMessageLower.includes('insufficient balance')) {
           errorTitle = "Insufficient Balance";
-          errorMessage = "You don't have enough tokens to complete this purchase. Please check your wallet balance.";
-        } else if (errorString.includes('user rejected') || 
-                   errorMessageLower.includes('user rejected') ||
-                   errorMessageLower.includes('user denied')) {
-          errorTitle = "Transaction Cancelled";
-          errorMessage = "You cancelled the transaction. No tokens were purchased.";
-        } else if (errorString.includes('approval') || errorMessageLower.includes('approval')) {
-          errorTitle = "Approval Failed";
-          errorMessage = "Failed to approve token spending. Please try again.";
-        } else if (errorString.includes('slippage') || errorMessageLower.includes('slippage')) {
+          errorMessage = "You don't have enough USDC to complete this purchase. Please check your wallet balance.";
+        } else if (errorString.includes('slippage') || 
+                   errorMessageLower.includes('slippage') ||
+                   errorMessageLower.includes('price changed')) {
           errorTitle = "Price Changed";
           errorMessage = "The token price changed during the transaction. Please try again.";
-        } else if (errorString.includes('network') || errorMessageLower.includes('network')) {
+        } else if (errorString.includes('network') || 
+                   errorMessageLower.includes('network') ||
+                   errorMessageLower.includes('connection')) {
           errorTitle = "Network Error";
           errorMessage = "Network error occurred. Please check your connection and try again.";
-        } else if (transactionError) {
-          // Use extracted transaction error
-          errorMessage = transactionError;
+        } else if (shortMessage) {
+          errorMessage = shortMessage;
         } else if (tradeError?.message) {
-          // Use the error message if available
           errorMessage = tradeError.message;
         } else if (tradeError?.error?.message) {
           errorMessage = tradeError.error.message;
         }
-        
+
         toast({
           title: errorTitle,
           description: errorMessage,
           variant: "destructive",
         });
-        return; // Don't throw, just return
+        return;
       }
     } catch (error: any) {
-      // Log the full error for debugging
-      console.error('Purchase error (full):', error);
-      console.error('Purchase error (stringified):', JSON.stringify(error, null, 2));
-      console.error('Purchase error (details):', error?.details);
-      console.error('Purchase error (cause):', error?.cause);
-      console.error('Purchase error (shortMessage):', error?.shortMessage);
-      console.error('Purchase error (error):', error?.error);
-      
-      // Extract transaction error from API response
-      const extractTransactionError = (err: any): string | null => {
-        if (err?.details) return err.details;
-        if (err?.shortMessage) return err.shortMessage;
-        if (err?.message) return err.message;
-        if (err?.error?.message) return err.error.message;
-        if (err?.cause?.message) return err.cause.message;
-        if (err?.cause?.details) return err.cause.details;
-        if (err?.cause?.shortMessage) return err.cause.shortMessage;
-        return null;
-      };
-      
-      const transactionError = extractTransactionError(error);
-      console.error('Extracted transaction error:', transactionError);
-      
+      // This catch handles any errors outside the tradeCoin call
       let errorTitle = "Purchase Failed";
       let errorMessage = "Please try again.";
-      
-      const errorString = JSON.stringify(error).toLowerCase();
-      const errorMessageLower = (error?.message || '').toLowerCase();
-      const errorDetails = (error?.details || transactionError || '').toLowerCase();
-      
-      if (errorString.includes('transfer_from_failed') || 
-          errorMessageLower.includes('transfer_from_failed') ||
-          errorDetails.includes('transfer_from_failed')) {
-        errorTitle = "Insufficient USDC Balance";
-        errorMessage = "You don't have enough USDC. Please ensure you have at least $1 USDC in your wallet to buy DNA tokens.";
-      } else if (errorString.includes('user rejected') || errorMessageLower.includes('user rejected')) {
+
+      if (error?.name === 'UserRejectedRequestError' || error?.code === 4001) {
         errorTitle = "Transaction Cancelled";
         errorMessage = "You cancelled the transaction. No tokens were purchased.";
-      } else if (transactionError) {
-        errorMessage = transactionError;
       } else if (error?.message) {
         errorMessage = error.message;
       }
-      
+
       toast({
         title: errorTitle,
         description: errorMessage,
