@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Wallet, LogOut, Vote, Copy, Check, Users, Share2, Moon, Sun, Volume2, VolumeX, Sparkles, HelpCircle, Ticket } from 'lucide-react';
 import { useWallet } from '@/contexts/WalletContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -53,6 +54,8 @@ const WalletDropdown = ({
   const [displayName, setDisplayName] = useState<{ displayName: string; type: 'base' | 'ens' | 'address' }>({ displayName: '', type: 'address' });
   const [isLoadingName, setIsLoadingName] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; right: number } | null>(null);
 
   // Resolve display name when address changes
   useEffect(() => {
@@ -77,9 +80,23 @@ const WalletDropdown = ({
     }
   }, [address]);
   
+  // Calculate dropdown position when opening (fixed positioning relative to viewport)
+  useEffect(() => {
+    if (isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + 8, // 8px spacing below button
+        right: window.innerWidth - rect.right, // Distance from right edge
+      });
+    } else {
+      setDropdownPosition(null);
+    }
+  }, [isOpen]);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node) &&
+          buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };
@@ -115,13 +132,13 @@ const WalletDropdown = ({
 
   return (
     <>
-      <div ref={dropdownRef} className="relative">
-        <button onClick={() => setIsOpen(!isOpen)} className="flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 transition-colors relative">
-          <div className="relative">
-            <Wallet className="w-3.5 h-3.5 text-muted-foreground" />
-            {/* Connection indicator dot */}
-            <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-primary rounded-full border border-background" />
-          </div>
+      <div className="relative">
+        <button 
+          ref={buttonRef}
+          onClick={() => setIsOpen(!isOpen)} 
+          className="flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 transition-colors"
+        >
+          <Wallet className="w-3.5 h-3.5 text-muted-foreground" />
           {isLoadingName ? (
             <span className="text-xs font-sans text-muted-foreground">...</span>
           ) : displayName.type !== 'address' ? (
@@ -137,7 +154,15 @@ const WalletDropdown = ({
           )}
         </button>
 
-        {isOpen && <div className="absolute right-0 top-full mt-2 w-72 bg-card border border-border rounded-lg shadow-lg z-50 animate-fade-in max-h-[80vh] overflow-y-auto">
+        {isOpen && dropdownPosition && createPortal(
+          <div 
+            ref={dropdownRef}
+            className="fixed w-72 bg-card border border-border rounded-lg shadow-lg z-[100] animate-fade-in max-h-[80vh] overflow-y-auto"
+            style={{
+              top: `${dropdownPosition.top}px`,
+              right: `${dropdownPosition.right}px`,
+            }}
+          >
             {/* Wallet Address with Base name/ENS */}
             <div className="p-3 border-b border-border">
               <div className="flex items-center justify-between mb-1.5">
@@ -280,7 +305,9 @@ const WalletDropdown = ({
                 <span>Disconnect</span>
               </button>
             </div>
-          </div>}
+          </div>,
+          document.body
+        )}
       </div>
       
       {showOnboarding && (
