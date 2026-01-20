@@ -41,8 +41,8 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="border-t border-border bg-card/50 mt-8">
-      <div className="max-w-6xl mx-auto px-4 py-8">
+    <footer className="border-t border-border bg-card/50 mt-8 w-full overflow-x-hidden">
+      <div className="max-w-6xl mx-auto px-4 py-8 w-full">
         {/* FCBC CLUB with Social Icons */}
         <div className="flex flex-col items-center mb-6">
           <h3 className="font-serif text-lg font-semibold text-foreground mb-3">
@@ -91,7 +91,6 @@ const Footer = () => {
                   </TooltipTrigger>
                   <TooltipContent side="top">
                     <p>{link.fullName}</p>
-                    {!link.active && <p className="text-xs text-muted-foreground">Coming Soon</p>}
                   </TooltipContent>
                 </Tooltip>
               ))}

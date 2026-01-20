@@ -71,24 +71,25 @@ const InlineFilterBar = ({
   const hasActiveFilters = selectedStatus !== null || sortBy !== 'id' || searchTicker !== '' || viewMode !== 'grid';
 
   return (
-    <div className="flex items-center gap-2 px-3 py-3 bg-background">
+    <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 sm:py-3 bg-background w-full overflow-x-auto scrollbar-hide">
       {/* Search Input */}
-      <div className="flex-1 relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+      <div className="flex-1 min-w-0 relative">
+        <Search className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-3.5 sm:w-4 h-3.5 sm:h-4 text-muted-foreground" />
         <input
           type="text"
           value={searchTicker}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Search by ID or Name..."
-          className="w-full pl-9 pr-3 py-2 text-sm font-sans bg-muted border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
+          placeholder="Search..."
+          className="w-full pl-7 sm:pl-9 pr-2 sm:pr-3 py-1.5 sm:py-2 text-xs sm:text-sm font-sans bg-muted border border-border rounded-lg focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
         />
       </div>
 
       {/* Sort Dropdown */}
       <DropdownMenu>
-        <DropdownMenuTrigger className="flex items-center gap-1.5 px-3 py-2 text-sm font-sans text-foreground hover:bg-muted rounded-lg transition-colors whitespace-nowrap">
-          {getSortLabel()}
-          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+        <DropdownMenuTrigger className="flex items-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-sans text-foreground hover:bg-muted rounded-lg transition-colors whitespace-nowrap shrink-0">
+          <span className="hidden sm:inline">{getSortLabel()}</span>
+          <span className="sm:hidden">Sort</span>
+          <ChevronDown className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-muted-foreground" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="min-w-[120px]">
           {sortOptions.map((option) => (
@@ -108,9 +109,10 @@ const InlineFilterBar = ({
 
       {/* Status Dropdown */}
       <DropdownMenu>
-        <DropdownMenuTrigger className="flex items-center gap-1.5 px-3 py-2 text-sm font-sans text-foreground hover:bg-muted rounded-lg transition-colors whitespace-nowrap">
-          {getStatusLabel()}
-          <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+        <DropdownMenuTrigger className="flex items-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-sans text-foreground hover:bg-muted rounded-lg transition-colors whitespace-nowrap shrink-0">
+          <span className="hidden sm:inline">{getStatusLabel()}</span>
+          <span className="sm:hidden">Status</span>
+          <ChevronDown className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-muted-foreground" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="min-w-[180px]">
           {statuses.map((status) => (
@@ -129,28 +131,28 @@ const InlineFilterBar = ({
       </DropdownMenu>
 
       {/* View Mode Toggle */}
-      <div className="flex items-center bg-muted rounded-lg p-0.5">
+      <div className="flex items-center bg-muted rounded-lg p-0.5 shrink-0">
         <button
           onClick={() => onViewModeChange('grid')}
           className={cn(
-            "p-2 rounded-md transition-colors",
+            "p-1.5 sm:p-2 rounded-md transition-colors",
             viewMode === 'grid'
               ? "bg-primary text-primary-foreground"
               : "text-muted-foreground hover:text-foreground"
           )}
         >
-          <LayoutGrid className="w-4 h-4" />
+          <LayoutGrid className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
         </button>
         <button
           onClick={() => onViewModeChange('list')}
           className={cn(
-            "p-2 rounded-md transition-colors",
+            "p-1.5 sm:p-2 rounded-md transition-colors",
             viewMode === 'list'
               ? "bg-primary text-primary-foreground"
               : "text-muted-foreground hover:text-foreground"
           )}
         >
-          <List className="w-4 h-4" />
+          <List className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
         </button>
       </div>
 
@@ -158,9 +160,10 @@ const InlineFilterBar = ({
       {hasActiveFilters && (
         <button
           onClick={clearAll}
-          className="flex items-center gap-1 px-3 py-2 text-sm font-sans text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+          className="flex items-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-sans text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap shrink-0"
         >
-          Clear All
+          <span className="hidden sm:inline">Clear All</span>
+          <span className="sm:hidden">Clear</span>
         </button>
       )}
     </div>

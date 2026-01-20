@@ -10,6 +10,11 @@ import { useElevenLabsVoice, ELEVENLABS_VOICES } from '@/hooks/useElevenLabsVoic
 import { useSpeciesStats } from '@/hooks/useSpeciesStats';
 import { useWallet } from '@/contexts/WalletContext';
 import { toast } from '@/hooks/use-toast';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, usePublicClient, useSwitchChain, useReadContract } from 'wagmi';
+import { createWalletClient, custom } from 'viem';
+import { parseUnits, formatUnits, Address, erc20Abi } from 'viem';
+import { base } from 'wagmi/chains';
+import { setApiKey, tradeCoin } from '@zoralabs/coins-sdk';
 
 interface SpeciesSlideshowProps {
   species: Species[];
@@ -56,7 +61,23 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
   const currentSpecies = species[currentIndex];
   const { speakSpeciesName, stopSpeaking, voices, selectedVoice, setSelectedVoice, isLoading: voiceLoading, useFallback } = useElevenLabsVoice();
   const { recordView } = useSpeciesStats();
-  const { address } = useWallet();
+  const { address, isConnected, usdcBalance, connect } = useWallet();
+  const { address: wagmiAddress, connector, chainId } = useAccount();
+  const publicClient = usePublicClient();
+  const { switchChain } = useSwitchChain();
+  const { writeContract, data: hash, isPending: isBuying } = useWriteContract();
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    hash,
+  });
+
+  console.log('current species', currentSpecies);
+  // Set Zora API key if available (optional but recommended)
+  useEffect(() => {
+    const zoraApiKey = import.meta.env.VITE_ZORA_API_KEY;
+    if (zoraApiKey) {
+      setApiKey(zoraApiKey);
+    }
+  }, []);
 
   const copyContractAddress = () => {
     navigator.clipboard.writeText(CONTRACT_ADDRESS);
@@ -69,12 +90,310 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
     setTimeout(() => setContractCopied(false), 2000);
   };
 
-  const handleDoubleTap = () => {
-    toast({
-      title: "Coming Soon!",
-      description: "Double-tap to buy $1 USDC worth of this species DNA tokens.",
-      duration: 2000,
-    });
+  const handleDoubleTap = async () => {
+    if (!isConnected || !wagmiAddress) {
+      toast({
+        title: "Wallet Required",
+        description: "Connect your wallet to buy DNA tokens.",
+        variant: "destructive",
+      });
+      connect();
+      return;
+    }
+
+    // Check if species has token address (ERC-20 coin address from Zora)
+    // Each DNA species has its own unique tokenAddress from the API
+    if (!currentSpecies.tokenAddress) {
+      toast({
+        title: "Token Not Available",
+        description: `${currentSpecies.name} token address not found. This species may not be on-chain yet.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // We use USDC for purchases, so no need to check poolCurrencyToken
+
+    // Check if tradable - if tokenAddress exists, it should be tradable
+    const isTradable = currentSpecies.tradable !== false && currentSpecies.tokenAddress;
+    if (!isTradable) {
+      toast({
+        title: "Not Tradable",
+        description: "This token is not currently available for trading.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (isBuying || isConfirming) {
+      return; // Already processing
+    }
+
+    try {
+      setIsPaused(true);
+      
+      // Use the tokenAddress from API - this is the ERC-20 coin address for this specific species
+      // Each DNA species has its own unique tokenAddress (e.g., 0x73f71321ceb926c189332bb0f1b334858a27a36d)
+      const tokenAddress = currentSpecies.tokenAddress as Address;
+      
+      // USDC on Base network (we're buying with USDC, not warplette)
+      const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' as Address;
+      const USDC_DECIMALS = 6; // USDC has 6 decimals
+      const currencyTokenAddress = USDC_ADDRESS;
+      
+      // Validate addresses are properly formatted
+      if (!tokenAddress || !tokenAddress.startsWith('0x') || tokenAddress.length !== 42) {
+        throw new Error(`Invalid token address: ${tokenAddress}`);
+      }
+      
+      // Amount to swap: $1 worth of USDC
+      const swapAmount = parseUnits('1', USDC_DECIMALS);
+      
+      // Check user's balance before attempting trade
+      // try {
+      //   if (publicClient && wagmiAddress) {
+      //     const balance = (await publicClient.readContract({
+      //       address: currencyTokenAddress,
+      //       abi: erc20Abi,
+      //       functionName: 'balanceOf',
+      //       args: [wagmiAddress as Address],
+      //     } as any)) as bigint;
+          
+      //     const balanceUSD = parseFloat(formatUnits(balance, currentSpecies.poolCurrencyToken.decimals));
+      //     const requiredUSD = 1.0;
+          
+      //     if (balance < swapAmount) {
+      //       toast({
+      //         title: "Insufficient Balance",
+      //         description: `You need at least $${requiredUSD.toFixed(2)} USD worth of tokens. Your current balance is $${balanceUSD.toFixed(2)} USD.`,
+      //         variant: "destructive",
+      //       });
+      //       return;
+      //     }
+      //   }
+      // } catch (balanceError) {
+      //   console.warn('Could not check balance:', balanceError);
+      //   // Continue anyway - the transaction will fail with a better error if balance is insufficient
+      // }
+      
+      toast({
+        title: "Preparing Purchase...",
+        description: "Generating transaction...",
+        duration: 2000,
+      });
+
+      // Use Zora Coins SDK to execute trade
+      // This will handle approvals and swap in one transaction
+      if (!publicClient || !wagmiAddress || !connector) {
+        throw new Error('Wallet not properly connected');
+      }
+
+      // Check if wallet is on the correct chain (Base)
+      if (chainId !== base.id) {
+        toast({
+          title: "Switching Network",
+          description: "Please switch to Base network to continue",
+          duration: 2000,
+        });
+        
+        try {
+          await switchChain({ chainId: base.id });
+          // Wait a bit for chain switch to complete
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        } catch (switchError: any) {
+          if (switchError?.code === 4902 || switchError?.name === 'UserRejectedRequestError') {
+            // User rejected chain switch
+            toast({
+              title: "Network Switch Required",
+              description: "Please switch to Base network in your wallet to buy DNA tokens",
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "Network Switch Failed",
+              description: switchError?.message || "Failed to switch to Base network",
+              variant: "destructive",
+            });
+          }
+          return;
+        }
+      }
+
+      // Create wallet client from connector
+      const provider = await connector.getProvider();
+      if (!provider) {
+        throw new Error('Provider not available');
+      }
+      const walletClient = createWalletClient({
+        chain: base,
+        transport: custom(provider as any),
+        account: wagmiAddress as Address,
+      });
+
+      toast({
+        title: "Confirm Transaction",
+        description: "Please confirm the purchase in your wallet",
+        duration: 3000,
+      });
+
+      // Execute the trade using Zora SDK
+      // This handles the swap: currency token -> DNA token
+      try {
+        const result = await tradeCoin({
+          tradeParameters: {
+            sell: {
+              type: 'erc20',
+              address: currencyTokenAddress,
+            },
+            buy: {
+              type: 'erc20',
+              address: tokenAddress,
+            },
+            amountIn: swapAmount,
+            sender: wagmiAddress as Address,
+            slippage: 0.5, // 0.5% slippage tolerance
+          },
+          walletClient: walletClient,
+          account: wagmiAddress as Address,
+          publicClient: publicClient as any, // Zora SDK expects GenericPublicClient
+        });
+
+        if (!result || !result.success) {
+          throw new Error(result?.error?.message || 'Trade failed');
+        }
+
+        toast({
+          title: "Transaction Submitted!",
+          description: "Waiting for confirmation...",
+          duration: 2000,
+        });
+        
+        triggerHaptic();
+      } catch (tradeError: any) {
+        // Log the full error for debugging
+        console.error('Trade error (full):', tradeError);
+        console.error('Trade error (stringified):', JSON.stringify(tradeError, null, 2));
+        console.error('Trade error (details):', tradeError?.details);
+        console.error('Trade error (cause):', tradeError?.cause);
+        console.error('Trade error (shortMessage):', tradeError?.shortMessage);
+        console.error('Trade error (error):', tradeError?.error);
+        
+        // Extract transaction error from API response
+        const extractTransactionError = (error: any): string | null => {
+          if (error?.details) return error.details;
+          if (error?.shortMessage) return error.shortMessage;
+          if (error?.message) return error.message;
+          if (error?.error?.message) return error.error.message;
+          if (error?.cause?.message) return error.cause.message;
+          if (error?.cause?.details) return error.cause.details;
+          if (error?.cause?.shortMessage) return error.cause.shortMessage;
+          return null;
+        };
+        
+        const transactionError = extractTransactionError(tradeError);
+        console.error('Extracted transaction error:', transactionError);
+        
+        let errorTitle = "Purchase Failed";
+        let errorMessage = "Please try again.";
+        
+        // Parse different error types
+        const errorString = JSON.stringify(tradeError).toLowerCase();
+        const errorMessageLower = (tradeError?.message || '').toLowerCase();
+        const errorDetails = (tradeError?.details || transactionError || '').toLowerCase();
+        
+        // Check for specific error types
+        if (errorString.includes('transfer_from_failed') || 
+            errorMessageLower.includes('transfer_from_failed') ||
+            errorDetails.includes('transfer_from_failed')) {
+          errorTitle = "Insufficient Balance";
+          errorMessage = "You don't have enough USDC. Please ensure you have at least $1 USDC in your wallet to buy DNA tokens.";
+        } else if (errorString.includes('insufficient') || errorMessageLower.includes('insufficient')) {
+          errorTitle = "Insufficient Balance";
+          errorMessage = "You don't have enough tokens to complete this purchase. Please check your wallet balance.";
+        } else if (errorString.includes('user rejected') || 
+                   errorMessageLower.includes('user rejected') ||
+                   errorMessageLower.includes('user denied')) {
+          errorTitle = "Transaction Cancelled";
+          errorMessage = "You cancelled the transaction. No tokens were purchased.";
+        } else if (errorString.includes('approval') || errorMessageLower.includes('approval')) {
+          errorTitle = "Approval Failed";
+          errorMessage = "Failed to approve token spending. Please try again.";
+        } else if (errorString.includes('slippage') || errorMessageLower.includes('slippage')) {
+          errorTitle = "Price Changed";
+          errorMessage = "The token price changed during the transaction. Please try again.";
+        } else if (errorString.includes('network') || errorMessageLower.includes('network')) {
+          errorTitle = "Network Error";
+          errorMessage = "Network error occurred. Please check your connection and try again.";
+        } else if (transactionError) {
+          // Use extracted transaction error
+          errorMessage = transactionError;
+        } else if (tradeError?.message) {
+          // Use the error message if available
+          errorMessage = tradeError.message;
+        } else if (tradeError?.error?.message) {
+          errorMessage = tradeError.error.message;
+        }
+        
+        toast({
+          title: errorTitle,
+          description: errorMessage,
+          variant: "destructive",
+        });
+        return; // Don't throw, just return
+      }
+    } catch (error: any) {
+      // Log the full error for debugging
+      console.error('Purchase error (full):', error);
+      console.error('Purchase error (stringified):', JSON.stringify(error, null, 2));
+      console.error('Purchase error (details):', error?.details);
+      console.error('Purchase error (cause):', error?.cause);
+      console.error('Purchase error (shortMessage):', error?.shortMessage);
+      console.error('Purchase error (error):', error?.error);
+      
+      // Extract transaction error from API response
+      const extractTransactionError = (err: any): string | null => {
+        if (err?.details) return err.details;
+        if (err?.shortMessage) return err.shortMessage;
+        if (err?.message) return err.message;
+        if (err?.error?.message) return err.error.message;
+        if (err?.cause?.message) return err.cause.message;
+        if (err?.cause?.details) return err.cause.details;
+        if (err?.cause?.shortMessage) return err.cause.shortMessage;
+        return null;
+      };
+      
+      const transactionError = extractTransactionError(error);
+      console.error('Extracted transaction error:', transactionError);
+      
+      let errorTitle = "Purchase Failed";
+      let errorMessage = "Please try again.";
+      
+      const errorString = JSON.stringify(error).toLowerCase();
+      const errorMessageLower = (error?.message || '').toLowerCase();
+      const errorDetails = (error?.details || transactionError || '').toLowerCase();
+      
+      if (errorString.includes('transfer_from_failed') || 
+          errorMessageLower.includes('transfer_from_failed') ||
+          errorDetails.includes('transfer_from_failed')) {
+        errorTitle = "Insufficient USDC Balance";
+        errorMessage = "You don't have enough USDC. Please ensure you have at least $1 USDC in your wallet to buy DNA tokens.";
+      } else if (errorString.includes('user rejected') || errorMessageLower.includes('user rejected')) {
+        errorTitle = "Transaction Cancelled";
+        errorMessage = "You cancelled the transaction. No tokens were purchased.";
+      } else if (transactionError) {
+        errorMessage = transactionError;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      toast({
+        title: errorTitle,
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsPaused(false);
+    }
   };
 
   // Reset idle timer on any interaction
@@ -126,6 +445,23 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
     
     const distance = touchStartRef.current - touchEndRef.current;
     const minSwipeDistance = 50;
+
+    // Check for double-tap (if swipe distance is small, it might be a tap)
+    if (Math.abs(distance) < 10) {
+      const now = Date.now();
+      const timeSinceLastTap = now - lastTapRef.current;
+      
+      if (timeSinceLastTap < 300 && timeSinceLastTap > 0) {
+        // Double-tap detected
+        handleDoubleTap();
+        lastTapRef.current = 0; // Reset to prevent triple-tap
+        touchStartRef.current = null;
+        touchEndRef.current = null;
+        return;
+      }
+      
+      lastTapRef.current = now;
+    }
 
     if (Math.abs(distance) > minSwipeDistance) {
       if (distance > 0) {
@@ -277,11 +613,13 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         onClick={handleBackgroundClick}
+        onDoubleClick={handleDoubleTap}
       >
         <img
           src={currentSpecies.image}
           alt={currentSpecies.name}
           className="w-full h-full object-contain gallery-transition"
+          draggable={false}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-transparent to-foreground/30" />
       </div>
@@ -517,11 +855,10 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
                 className="relative p-2 bg-card/10 backdrop-blur-sm rounded-full hover:bg-card/20 transition-colors"
               >
                 <MousePointerClick className="w-4 h-4 text-card" />
-                <span className="absolute -top-1 -right-1 px-1 py-0.5 text-[7px] bg-amber-500/90 text-white rounded font-sans">Soon</span>
               </button>
             </TooltipTrigger>
             <TooltipContent side="top">
-              <p>Double-tap to buy $1 USDC worth of this species DNA tokens. (Coming Soon)</p>
+              <p>Double-tap to buy $1 USDC worth of this species DNA tokens</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

@@ -115,7 +115,7 @@ const Explore = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground">
+    <div className="min-h-screen flex flex-col bg-background text-foreground overflow-x-hidden">
       <Header 
         animationEnabled={animationEnabled}
         soundEnabled={soundEnabled}
@@ -123,9 +123,9 @@ const Explore = () => {
         onToggleSound={() => setSoundEnabled(!soundEnabled)}
       />
       
-      <main className="flex-1 pt-14">
+      <main className="flex-1 pt-14 w-full overflow-x-hidden">
         {/* Sticky Filter Bar */}
-        <div ref={gridRef} className="sticky top-14 z-30 bg-background/95 backdrop-blur-sm border-b border-border">
+        <div ref={gridRef} className="sticky top-14 z-30 bg-background/95 backdrop-blur-sm border-b border-border w-full overflow-x-hidden">
           <InlineFilterBar
             viewMode={viewMode}
             onViewModeChange={setViewMode}
@@ -139,12 +139,14 @@ const Explore = () => {
         </div>
 
         {/* Species Grid */}
-        <SpeciesGrid
-          species={sortedSpecies}
-          viewMode={viewMode}
-          onSpeciesClick={handleSpeciesClick}
-          animationEnabled={animationEnabled}
-        />
+        <div className="w-full overflow-x-hidden px-0">
+          <SpeciesGrid
+            species={sortedSpecies}
+            viewMode={viewMode}
+            onSpeciesClick={handleSpeciesClick}
+            animationEnabled={animationEnabled}
+          />
+        </div>
       </main>
 
       <Footer />

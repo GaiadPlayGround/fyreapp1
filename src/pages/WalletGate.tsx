@@ -1,15 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '@/contexts/WalletContext';
 import { Button } from '@/components/ui/button';
 import Cubes from '@/components/Cubes';
 import DecryptedText from '@/components/DecryptedText';
+import { formatAddressForDisplay } from '@/lib/nameResolution';
 
 const WalletGate = () => {
   const navigate = useNavigate();
-  const { connect } = useWallet();
+  const { connect, disconnect, isConnected, address } = useWallet();
   const [isConnecting, setIsConnecting] = useState(false);
   const [showDecryptedText, setShowDecryptedText] = useState(false);
+
+  // If already connected, show connected state (don't auto-navigate)
+  // User can choose to continue or disconnect
 
   const handleConnect = () => {
     setIsConnecting(true);
@@ -20,6 +24,11 @@ const WalletGate = () => {
       connect();
       navigate('/explore');
     }, 4500);
+  };
+
+  const handleDisconnect = () => {
+    disconnect();
+    // Stay on this page after disconnect
   };
 
   const handleSkip = () => {
@@ -74,24 +83,47 @@ const WalletGate = () => {
                       encryptedClassName="text-[#005ae0]/80 font-mono text-sm sm:text-base tracking-widest"
                     />
                   </div>
+                ) : isConnected && address ? (
+                  <>
+                    <h1 className="font-mono text-xl sm:text-2xl font-bold text-white tracking-wider">
+                      WALLET CONNECTED
+                    </h1>
+                    <div className="space-y-3">
+                      <p className="text-white/80 font-mono text-sm">
+                        {formatAddressForDisplay(address)}
+                      </p>
+                      <div className="flex flex-col gap-2">
+                        <Button 
+                          onClick={() => navigate('/explore')}
+                          size="lg"
+                          className="bg-[#005ae0] hover:bg-[#0047b3] text-white font-mono font-semibold px-8 py-3 rounded-lg shadow-lg shadow-[#005ae0]/30 transition-all"
+                        >
+                          CONTINUE TO EXPLORE
+                        </Button>
+                        <Button 
+                          onClick={handleDisconnect}
+                          variant="outline"
+                          size="lg"
+                          className="border-white/20 text-white hover:bg-white/10 font-mono font-semibold px-8 py-3 rounded-lg transition-all"
+                        >
+                          DISCONNECT
+                        </Button>
+                      </div>
+                    </div>
+                  </>
                 ) : (
                   <>
                     <h1 className="font-mono text-xl sm:text-2xl font-bold text-white tracking-wider">
                       FYREAPP 1
                     </h1>
-                    <div className="relative">
-                      <Button 
-                        onClick={handleConnect}
-                        disabled={isConnecting}
-                        size="lg"
-                        className="bg-[#005ae0] hover:bg-[#0047b3] text-white font-mono font-semibold px-8 py-3 rounded-lg shadow-lg shadow-[#005ae0]/30 transition-all"
-                      >
-                        {isConnecting ? 'CONNECTING...' : 'CONNECT WALLET'}
-                      </Button>
-                      <span className="absolute -top-1 -right-1 bg-amber-500 text-[8px] font-bold text-black px-1.5 py-0.5 rounded-sm">
-                        Soon
-                      </span>
-                    </div>
+                    <Button 
+                      onClick={handleConnect}
+                      disabled={isConnecting}
+                      size="lg"
+                      className="bg-[#005ae0] hover:bg-[#0047b3] text-white font-mono font-semibold px-8 py-3 rounded-lg shadow-lg shadow-[#005ae0]/30 transition-all"
+                    >
+                      {isConnecting ? 'CONNECTING...' : 'CONNECT WALLET'}
+                    </Button>
                     <button
                       onClick={handleSkip}
                       className="text-white/60 hover:text-white text-sm font-mono underline underline-offset-4 transition-colors mt-2"

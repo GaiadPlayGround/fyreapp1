@@ -106,10 +106,10 @@ const SpeciesGrid = ({
   }
 
   return (
-    <div className="relative">
+    <div className="relative w-full overflow-x-hidden">
       {/* Grid View - Mobile optimized 4 columns */}
       {viewMode === 'grid' && (
-        <div className="grid grid-cols-4 gap-1">
+        <div className="grid grid-cols-4 gap-1 w-full max-w-full">
           {paginatedSpecies.map((s, index) => (
             <div 
               key={s.id} 

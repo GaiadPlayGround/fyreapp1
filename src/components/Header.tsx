@@ -8,6 +8,7 @@ import logo from '@/assets/logo.png';
 import logoLight from '@/assets/logo-light.png';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useWallet } from '@/contexts/WalletContext';
+import { cn } from '@/lib/utils';
 
 interface HeaderProps {
   animationEnabled?: boolean;
@@ -25,7 +26,7 @@ const Header = ({
   onToggleSound,
 }: HeaderProps) => {
   const { theme } = useTheme();
-  const { votes, shares } = useWallet();
+  const { votes, shares, isConnected } = useWallet();
   const currentLogo = theme === 'dark' ? logo : logoLight;
   const [titleIndex, setTitleIndex] = useState(0);
 
@@ -37,8 +38,8 @@ const Header = ({
   }, []);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border safe-area-top">
-      <div className="px-3 h-14 flex items-center justify-between">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border safe-area-top w-full max-w-full overflow-x-hidden">
+      <div className="px-3 h-14 flex items-center justify-between w-full max-w-full">
         {/* Left: Logo and Title */}
         <a href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
           <img src={currentLogo} alt="Fyre App 1" className="w-9 h-9 rounded-lg object-contain" />
@@ -57,6 +58,17 @@ const Header = ({
           </FyreMissionsDialog>
           
           <LeaderboardDialog />
+
+          {/* Connection Status Indicator */}
+          {isConnected && (
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-primary/10 border border-primary/20">
+              <div className="relative">
+                <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                <div className="absolute inset-0 w-2 h-2 bg-primary rounded-full animate-ping opacity-75" />
+              </div>
+              <span className="text-[10px] font-sans text-primary font-medium hidden xs:inline">Connected</span>
+            </div>
+          )}
 
           <WalletDropdown
             animationEnabled={animationEnabled}
