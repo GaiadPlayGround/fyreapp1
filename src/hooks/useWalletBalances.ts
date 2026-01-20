@@ -14,6 +14,7 @@ export interface WalletBalances {
   fcbccBalance: number;
   dnaBalance: number; // Total DNA tokens across all species
   ownedGenomes: number; // Number of unique DNA tokens with balance > 0
+  totalDnaTokens: number; // Raw total DNA units (without decimals conversion)
 }
 
 export const useWalletBalances = () => {
@@ -28,6 +29,7 @@ export const useWalletBalances = () => {
         fcbccBalance: 0,
         dnaBalance: 0,
         ownedGenomes: 0,
+        totalDnaTokens: 0,
       };
     }
 
@@ -37,6 +39,7 @@ export const useWalletBalances = () => {
       fcbccBalance: 0,
       dnaBalance: 0,
       ownedGenomes: 0,
+      totalDnaTokens: 0,
     };
 
     try {
@@ -119,6 +122,7 @@ export const useWalletBalances = () => {
 
       balances.dnaBalance = totalDnaBalance;
       balances.ownedGenomes = ownedGenomesCount;
+      balances.totalDnaTokens = Math.round(totalDnaBalance); // Store as integer units
     } catch (error) {
       console.error('Error fetching wallet balances:', error);
     }

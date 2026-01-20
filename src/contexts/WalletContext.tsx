@@ -17,6 +17,7 @@ interface WalletState {
   usdcBalance: number;
   fcbccBalance: number;
   ownedGenomes: number;
+  totalDnaTokens: number;
   voteTickets: number;
   invites: number;
   shares: number;
@@ -61,6 +62,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     usdcBalance: 0,
     fcbccBalance: 0,
     ownedGenomes: 0,
+    totalDnaTokens: 0,
     voteTickets: 0,
     invites: 0,
     shares: 0,
@@ -82,6 +84,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         usdcBalance: 0,
         fcbccBalance: 0,
         ownedGenomes: 0,
+        totalDnaTokens: 0,
       }));
       return;
     }
@@ -135,6 +138,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         fcbccBalance: balances.fcbccBalance,
         dnaBalance: balances.dnaBalance,
         ownedGenomes: balances.ownedGenomes,
+        totalDnaTokens: balances.totalDnaTokens || balances.dnaBalance,
       }));
     }).catch((error) => {
       console.error('Failed to fetch balances:', error);
@@ -151,6 +155,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
             fcbccBalance: balances.fcbccBalance,
             dnaBalance: balances.dnaBalance,
             ownedGenomes: balances.ownedGenomes,
+            totalDnaTokens: balances.totalDnaTokens || balances.dnaBalance,
           }));
         }).catch((error) => {
           console.error('Failed to refresh balances:', error);
@@ -196,6 +201,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       usdcBalance: 0,
       fcbccBalance: 0,
       ownedGenomes: 0,
+      totalDnaTokens: 0,
       voteTickets: 0,
       invites: 0,
       shares: 0,
