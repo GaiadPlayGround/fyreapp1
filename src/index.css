@@ -286,3 +286,12 @@
   background-clip: padding-box, padding-box, padding-box, padding-box;
   border: 3px solid transparent;
 }
+
+/* Prevent pull-to-refresh on mobile */
+html, body {
+  overscroll-behavior-y: none;
+}
+
+.overscroll-none {
+  overscroll-behavior: none;
+}

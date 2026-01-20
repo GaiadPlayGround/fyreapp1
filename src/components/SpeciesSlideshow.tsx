@@ -49,6 +49,7 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
   const [iconsVisible, setIconsVisible] = useState(true);
   const [arrowsHoverActive, setArrowsHoverActive] = useState(false);
   const [contractCopied, setContractCopied] = useState(false);
+  const [speciesContractCopied, setSpeciesContractCopied] = useState(false);
   
   const arrowHideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const autoPlayRef = useRef<NodeJS.Timeout | null>(null);
@@ -84,10 +85,23 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
     setContractCopied(true);
     toast({
       title: "Copied!",
-      description: "Contract address copied to clipboard",
+      description: "Creator contract address copied to clipboard",
       duration: 1500,
     });
     setTimeout(() => setContractCopied(false), 2000);
+  };
+
+  const copySpeciesContractAddress = () => {
+    if (currentSpecies.tokenAddress) {
+      navigator.clipboard.writeText(currentSpecies.tokenAddress);
+      setSpeciesContractCopied(true);
+      toast({
+        title: "Copied!",
+        description: "Species contract address copied to clipboard",
+        duration: 1500,
+      });
+      setTimeout(() => setSpeciesContractCopied(false), 2000);
+    }
   };
 
   const handleDoubleTap = async () => {
@@ -829,6 +843,18 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
             <p className={cn("font-sans text-sm mb-3", infoTextColorMuted)}>
               {truncateDescription(currentSpecies.description)}
             </p>
+            {/* Species Contract - individual token address */}
+            {currentSpecies.tokenAddress && (
+              <button
+                onClick={copySpeciesContractAddress}
+                className={cn("flex items-center gap-2 text-xs font-sans mb-2 hover:opacity-80 transition-opacity", infoTextColorMuted)}
+              >
+                <span className="font-medium">Species Contract:</span>
+                <span className="font-mono text-[10px]">{currentSpecies.tokenAddress.slice(0, 6)}...{currentSpecies.tokenAddress.slice(-4)}</span>
+                {speciesContractCopied ? <Check className="w-3 h-3 text-primary" /> : <Copy className="w-3 h-3" />}
+              </button>
+            )}
+            {/* Creator Contract */}
             <button
               onClick={copyContractAddress}
               className={cn("flex items-center gap-2 text-xs font-sans mb-3 hover:opacity-80 transition-opacity", infoTextColorMuted)}
