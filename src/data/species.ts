@@ -32,6 +32,11 @@ export interface Species {
   };
   chainId?: number;                // Chain ID (8453 for Base)
   tradable?: boolean;              // Whether token is tradable
+  marketCap?: number;              // Market cap in USD
+  marketCapFormatted?: string;    // Formatted market cap (e.g., "$309.56")
+  holders?: number;                // Number of token holders
+  circulatingSupply?: number;      // Circulating supply
+  totalSupply?: number;            // Total supply
 }
 
 export const speciesData: Species[] = [

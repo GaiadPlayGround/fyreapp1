@@ -102,7 +102,9 @@ export const useWalletBalances = () => {
             // For now, assume 18 decimals
             const balanceFormatted = parseFloat(formatUnits(balance, 18));
             
-            if (balanceFormatted > 0) {
+            // Only add to total if balance is meaningful (greater than 0.000001 to avoid dust)
+            // This prevents summing tiny amounts that might be rounding errors
+            if (balanceFormatted > 0.000001) {
               totalDnaBalance += balanceFormatted;
               ownedGenomesCount++;
             }

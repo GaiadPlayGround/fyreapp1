@@ -124,8 +124,8 @@ const Explore = () => {
       />
       
       <main className="flex-1 pt-14 w-full overflow-x-hidden">
-        {/* Sticky Filter Bar */}
-        <div ref={gridRef} className="sticky top-14 z-30 bg-background/95 backdrop-blur-sm border-b border-border w-full overflow-x-hidden">
+        {/* Fixed Filter Bar - matches navbar styling */}
+        <div ref={gridRef} className="fixed top-14 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border w-full max-w-full overflow-x-hidden">
           <InlineFilterBar
             viewMode={viewMode}
             onViewModeChange={setViewMode}
@@ -138,8 +138,8 @@ const Explore = () => {
           />
         </div>
 
-        {/* Species Grid */}
-        <div className="w-full overflow-x-hidden px-0">
+        {/* Species Grid - add top padding to account for fixed filter bar (header h-14 = 56px + filter bar ~48px) */}
+        <div className="w-full overflow-x-hidden px-0 pt-[104px]">
           <SpeciesGrid
             species={sortedSpecies}
             viewMode={viewMode}
