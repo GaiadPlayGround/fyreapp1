@@ -44,8 +44,6 @@ interface SpeciesSlideshowProps {
   species: Species[];
   initialIndex: number;
   onClose: () => void;
-  paymentCurrency?: PaymentCurrency;
-  quickBuyAmount?: number;
 }
 
 // Trigger haptic feedback on mobile
@@ -67,9 +65,7 @@ type PaymentCurrency = 'USDC' | 'ETH';
 const SpeciesSlideshow = ({ 
   species, 
   initialIndex, 
-  onClose, 
-  paymentCurrency: initialPaymentCurrency = 'USDC',
-  quickBuyAmount: initialQuickBuyAmount = 1
+  onClose
 }: SpeciesSlideshowProps) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [showInfo, setShowInfo] = useState(false);
@@ -98,6 +94,7 @@ const SpeciesSlideshow = ({
   const { recordView } = useSpeciesStats();
   const { address, isConnected, usdcBalance, connect } = useWallet();
   const { address: wagmiAddress, connector, chainId } = useAccount();
+  const { currency: paymentCurrency, amount: quickBuyAmount } = usePaymentSettings();
   const publicClient = usePublicClient();
   const { switchChain } = useSwitchChain();
   const { writeContract, data: hash, isPending: isBuying } = useWriteContract();
@@ -898,14 +895,20 @@ const SpeciesSlideshow = ({
               </span>
             </div>
             {/* Mcap and Holders row */}
-            <div className="flex items-center gap-4 mb-2">
-              <span className={cn("font-sans text-xs", infoTextColorMuted)}>
-                Mcap: <span className="font-medium">--</span>
-              </span>
-              <span className={cn("font-sans text-xs", infoTextColorMuted)}>
-                Holders: <span className="font-medium">--</span>
-              </span>
-            </div>
+            {(currentSpecies.marketCapFormatted || currentSpecies.holders !== undefined) && (
+              <div className="flex items-center gap-4 mb-2">
+                {currentSpecies.marketCapFormatted && (
+                  <span className={cn("font-sans text-xs", infoTextColorMuted)}>
+                    Mcap: <span className={cn("font-medium", infoTextColor)}>{currentSpecies.marketCapFormatted}</span>
+                  </span>
+                )}
+                {currentSpecies.holders !== undefined && (
+                  <span className={cn("font-sans text-xs", infoTextColorMuted)}>
+                    Holders: <span className={cn("font-medium", infoTextColor)}>{currentSpecies.holders.toLocaleString()}</span>
+                  </span>
+                )}
+              </div>
+            )}
             <p className={cn("font-sans text-sm mb-3", infoTextColorMuted)}>
               {truncateDescription(currentSpecies.description)}
             </p>

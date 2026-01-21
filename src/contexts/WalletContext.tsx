@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
 import { useAccount, useConnect, useDisconnect, usePublicClient } from 'wagmi';
 import { base } from 'wagmi/chains';
 import { useWalletDb } from '@/hooks/useWalletDb';
@@ -54,6 +54,12 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const { disconnect: wagmiDisconnect } = useDisconnect();
   const walletDb = useWalletDb();
   const { fetchBalances } = useWalletBalances();
+  
+  // Use ref to store latest fetchBalances to avoid dependency issues
+  const fetchBalancesRef = useRef(fetchBalances);
+  useEffect(() => {
+    fetchBalancesRef.current = fetchBalances;
+  }, [fetchBalances]);
 
   const [state, setState] = useState<WalletState>({
     isConnected: false,
@@ -91,6 +97,28 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
 
     // Only fetch wallet data when actually connected
     let cancelled = false;
+    let balanceInterval: NodeJS.Timeout | null = null;
+    
+    const updateBalances = async () => {
+      if (cancelled) return;
+      try {
+        const balances = await fetchBalancesRef.current();
+        if (cancelled) return;
+        setState((prev) => ({
+          ...prev,
+          usdcBalance: balances.usdcBalance,
+          fcbccBalance: balances.fcbccBalance,
+          dnaBalance: balances.dnaBalance,
+          ownedGenomes: balances.ownedGenomes,
+          totalDnaTokens: balances.totalDnaTokens || balances.dnaBalance,
+        }));
+      } catch (error) {
+        // Silently handle errors to prevent disconnections
+        if (!cancelled) {
+          console.error('Failed to fetch balances:', error);
+        }
+      }
+    };
     
     // Fetch wallet data from database
     walletDb.getWalletByAddress(wagmiAddress).then((walletData) => {
@@ -101,8 +129,9 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
           isConnected: true,
           address: wagmiAddress,
           inviteCode: walletData.invite_code || null,
-          // Balances will be updated by fetchBalances below
         }));
+        // Fetch balances after wallet data is loaded
+        updateBalances();
       } else {
         // Register new wallet
         walletDb.registerWallet(wagmiAddress).then((newWalletData) => {
@@ -113,7 +142,6 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
               isConnected: true,
               address: wagmiAddress,
               inviteCode: newWalletData.invite_code || null,
-              // Balances will be updated by fetchBalances below
             }));
           } else {
             // Fallback if registration fails
@@ -125,49 +153,26 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
               inviteCode: uniqueCode,
             }));
           }
+          // Fetch balances after wallet registration
+          updateBalances();
         });
       }
     });
 
-    // Fetch real balances from blockchain
-    fetchBalances().then((balances) => {
-      if (cancelled) return;
-      setState((prev) => ({
-        ...prev,
-        usdcBalance: balances.usdcBalance,
-        fcbccBalance: balances.fcbccBalance,
-        dnaBalance: balances.dnaBalance,
-        ownedGenomes: balances.ownedGenomes,
-        totalDnaTokens: balances.totalDnaTokens || balances.dnaBalance,
-      }));
-    }).catch((error) => {
-      console.error('Failed to fetch balances:', error);
-    });
-
-    // Refresh balances every 30 seconds
-    const balanceInterval = setInterval(() => {
+    // Refresh balances every 60 seconds (less frequent to avoid disconnections)
+    balanceInterval = setInterval(() => {
       if (!cancelled && wagmiIsConnected && wagmiAddress) {
-        fetchBalances().then((balances) => {
-          if (cancelled) return;
-          setState((prev) => ({
-            ...prev,
-            usdcBalance: balances.usdcBalance,
-            fcbccBalance: balances.fcbccBalance,
-            dnaBalance: balances.dnaBalance,
-            ownedGenomes: balances.ownedGenomes,
-            totalDnaTokens: balances.totalDnaTokens || balances.dnaBalance,
-          }));
-        }).catch((error) => {
-          console.error('Failed to refresh balances:', error);
-        });
+        updateBalances();
       }
-    }, 30000); // Refresh every 30 seconds
+    }, 60000); // Refresh every 60 seconds
 
     return () => {
       cancelled = true;
-      clearInterval(balanceInterval);
+      if (balanceInterval) {
+        clearInterval(balanceInterval);
+      }
     };
-  }, [wagmiIsConnected, wagmiAddress, walletDb.getWalletByAddress, walletDb.registerWallet, fetchBalances]);
+  }, [wagmiIsConnected, wagmiAddress, walletDb.getWalletByAddress, walletDb.registerWallet]); // Removed fetchBalances from deps
 
   const connect = async () => {
     try {
