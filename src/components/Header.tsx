@@ -43,7 +43,7 @@ const Header = ({
         {/* Left: Logo and Title */}
         <a href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
           <img src={currentLogo} alt="Fyre App 1" className="w-9 h-9 rounded-lg object-contain" />
-          <h1 className="font-serif font-semibold text-foreground leading-tight text-base transition-all duration-300">
+          <h1 className="font-serif font-semibold text-foreground leading-tight text-[0.7em] sm:text-base transition-all duration-300">
             {TITLE_OPTIONS[titleIndex]}
           </h1>
         </a>

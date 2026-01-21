@@ -135,7 +135,7 @@ const Explore = () => {
         onToggleSound={() => setSoundEnabled(!soundEnabled)}
       />
       
-      <main className="flex-1 pt-14 w-full overflow-x-hidden">
+      <main className="flex-1 pt-6 sm:p-14 w-full overflow-x-hidden">
         {/* Fixed Filter Bar - matches navbar styling */}
         <div ref={gridRef} className="fixed top-14 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border w-full max-w-full overflow-x-hidden">
           <InlineFilterBar
