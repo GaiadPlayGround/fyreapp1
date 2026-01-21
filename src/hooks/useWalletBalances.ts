@@ -165,14 +165,23 @@ export const useWalletBalances = () => {
           fcbccBalance = balanceFormatted;
           console.log(`✓ FCBCC: ${fcbccBalance}`);
         } else if (balanceFormatted > 0.000001) {
-          // This is a DNA token (any other token with balance > 0)
-          totalDnaBalance += balanceFormatted;
-          ownedGenomesCount++;
-          // Track the ticker (symbol) of this DNA token
-          if (coinSymbol) {
-            ownedDnaTickers.push(coinSymbol);
+          // Check if this is a DNA token - must match pattern FCBC followed by numbers (e.g., FCBC1, FCBC121)
+          // Pattern: FCBC (case-insensitive) followed by one or more digits
+          const isDnaToken = /^FCBC\d+$/i.test(coinSymbol);
+          
+          if (isDnaToken) {
+            // This is a DNA token (matches FCBC pattern)
+            totalDnaBalance += balanceFormatted;
+            ownedGenomesCount++;
+            // Track the ticker (symbol) of this DNA token
+            if (coinSymbol) {
+              ownedDnaTickers.push(coinSymbol);
+            }
+            console.log(`✓ DNA Token ${coinSymbol || coinAddress}: ${balanceFormatted} (count: ${ownedGenomesCount})`);
+          } else {
+            // Not a DNA token - skip it
+            console.log(`✗ Skipped (not DNA token): ${coinSymbol || coinAddress} - ${balanceFormatted}`);
           }
-          console.log(`✓ DNA Token ${coinSymbol || coinAddress}: ${balanceFormatted} (count: ${ownedGenomesCount})`);
         }
       });
 
