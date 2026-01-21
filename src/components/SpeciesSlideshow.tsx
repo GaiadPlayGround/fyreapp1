@@ -870,6 +870,43 @@ const SpeciesSlideshow = ({
                 ${currentSpecies.symbol || `FCBC${currentSpecies.id.replace(/\D/g, '')}`}
               </span>
             </div>
+            
+            {/* Market Cap and Holders */}
+            {(currentSpecies.marketCap !== undefined || currentSpecies.holders !== undefined) && (
+              <div className="flex items-center gap-4 mb-3">
+                {currentSpecies.marketCapFormatted && (
+                  <div className="flex flex-col">
+                    <span className={cn("text-[10px] font-sans uppercase tracking-wider", infoTextColorMuted)}>
+                      Market Cap
+                    </span>
+                    <span className={cn("text-sm font-sans font-semibold", infoTextColor)}>
+                      {currentSpecies.marketCapFormatted}
+                    </span>
+                  </div>
+                )}
+                {currentSpecies.holders !== undefined && (
+                  <div className="flex flex-col">
+                    <span className={cn("text-[10px] font-sans uppercase tracking-wider", infoTextColorMuted)}>
+                      Holders
+                    </span>
+                    <span className={cn("text-sm font-sans font-semibold", infoTextColor)}>
+                      {currentSpecies.holders.toLocaleString()}
+                    </span>
+                  </div>
+                )}
+                {currentSpecies.circulatingSupply !== undefined && (
+                  <div className="flex flex-col">
+                    <span className={cn("text-[10px] font-sans uppercase tracking-wider", infoTextColorMuted)}>
+                      Supply
+                    </span>
+                    <span className={cn("text-sm font-sans font-semibold", infoTextColor)}>
+                      {currentSpecies.circulatingSupply.toLocaleString()}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+            
             <p className={cn("font-sans text-sm mb-3", infoTextColorMuted)}>
               {truncateDescription(currentSpecies.description)}
             </p>
