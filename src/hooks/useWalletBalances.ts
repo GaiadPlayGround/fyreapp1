@@ -87,6 +87,28 @@ export const useWalletBalances = () => {
         setApiKey(zoraApiKey);
       }
 
+      // Fetch valid DNA token addresses from FCBC species API
+      // This ensures we only count tokens that are actually from the FCBC collection
+      const validDnaTokenAddresses = new Set<string>();
+      try {
+        const speciesResponse = await fetch('https://server.fcbc.fun/api/v1/zora/species?count=1234');
+        const speciesData = await speciesResponse.json();
+        
+        if (speciesData?.data && Array.isArray(speciesData.data)) {
+          speciesData.data.forEach((species: any) => {
+            if (species.tokenAddress) {
+              validDnaTokenAddresses.add(species.tokenAddress.toLowerCase());
+            }
+          });
+        }
+        
+        console.log('=== VALID DNA TOKEN ADDRESSES ===');
+        console.log(`Fetched ${validDnaTokenAddresses.size} valid DNA token addresses from FCBC API`);
+      } catch (error) {
+        console.error('Error fetching species data for validation:', error);
+        // Continue anyway - we'll still filter by symbol pattern as fallback
+      }
+
       // Use Zora SDK getProfileBalances with pagination to get ALL actual holdings
       let allBalances: any[] = [];
       let cursor: string | undefined = undefined;
@@ -165,12 +187,15 @@ export const useWalletBalances = () => {
           fcbccBalance = balanceFormatted;
           console.log(`✓ FCBCC: ${fcbccBalance}`);
         } else if (balanceFormatted > 0.000001) {
-          // Check if this is a DNA token - must match pattern FCBC followed by numbers (e.g., FCBC1, FCBC121)
-          // Pattern: FCBC (case-insensitive) followed by one or more digits
-          const isDnaToken = /^FCBC\d+$/i.test(coinSymbol);
+          // Check if this is a DNA token by verifying:
+          // 1. Token address matches a valid DNA token address from FCBC API
+          // 2. Symbol matches FCBC pattern (as additional validation)
+          const isValidDnaAddress = coinAddress && validDnaTokenAddresses.has(coinAddress.toLowerCase());
+          const matchesDnaPattern = /^FCBC\d+$/i.test(coinSymbol);
           
-          if (isDnaToken) {
-            // This is a DNA token (matches FCBC pattern)
+          // Only count if it's a valid DNA token address from FCBC collection
+          if (isValidDnaAddress && matchesDnaPattern) {
+            // This is a verified DNA token from FCBC collection
             totalDnaBalance += balanceFormatted;
             ownedGenomesCount++;
             // Track the ticker (symbol) of this DNA token
@@ -179,8 +204,8 @@ export const useWalletBalances = () => {
             }
             console.log(`✓ DNA Token ${coinSymbol || coinAddress}: ${balanceFormatted} (count: ${ownedGenomesCount})`);
           } else {
-            // Not a DNA token - skip it
-            console.log(`✗ Skipped (not DNA token): ${coinSymbol || coinAddress} - ${balanceFormatted}`);
+            // Not a valid DNA token from FCBC collection - skip it
+            console.log(`✗ Skipped (not FCBC DNA token): ${coinSymbol || coinAddress} - ${balanceFormatted} (valid address: ${isValidDnaAddress}, matches pattern: ${matchesDnaPattern})`);
           }
         }
       });
