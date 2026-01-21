@@ -153,7 +153,7 @@ const Explore = () => {
         </div>
 
         {/* Species Grid - add top padding to account for fixed filter bar (header h-14 = 56px + filter bar ~48px) */}
-        <div className="w-full overflow-x-hidden px-0 pt-[104px]">
+        <div className="w-full overflow-x-hidden px-0 pt-[80px] sm:pt-[104px]">
           <SpeciesGrid
             species={sortedSpecies}
             viewMode={viewMode}
