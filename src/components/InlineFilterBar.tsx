@@ -1,4 +1,4 @@
-import { Search, LayoutGrid, List, X, ChevronDown } from 'lucide-react';
+import { Search, LayoutGrid, List, X, ChevronDown, Coins } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ConservationStatus } from '@/data/species';
 import { SortOption, ViewMode } from './FilterDrawer';
@@ -9,6 +9,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
+export type PaymentCurrency = 'USDC' | 'ETH';
+
 interface InlineFilterBarProps {
   selectedStatus: ConservationStatus | null;
   onStatusChange: (status: ConservationStatus | null) => void;
@@ -18,6 +20,8 @@ interface InlineFilterBarProps {
   onSearchChange: (search: string) => void;
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
+  paymentCurrency?: PaymentCurrency;
+  onPaymentCurrencyChange?: (currency: PaymentCurrency) => void;
 }
 
 const InlineFilterBar = ({
@@ -29,6 +33,8 @@ const InlineFilterBar = ({
   onSearchChange,
   viewMode,
   onViewModeChange,
+  paymentCurrency = 'USDC',
+  onPaymentCurrencyChange,
 }: InlineFilterBarProps) => {
   const statuses: { value: ConservationStatus | null; label: string }[] = [
     { value: null, label: 'All Status' },
@@ -129,6 +135,38 @@ const InlineFilterBar = ({
           ))}
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {/* Payment Currency Selector */}
+      {onPaymentCurrencyChange && (
+        <DropdownMenu>
+          <DropdownMenuTrigger className="flex items-center gap-1 px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm font-sans text-foreground hover:bg-muted rounded-lg transition-colors whitespace-nowrap shrink-0">
+            <Coins className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-muted-foreground" />
+            <span className="hidden sm:inline">{paymentCurrency}</span>
+            <span className="sm:hidden">{paymentCurrency === 'USDC' ? 'USD' : 'ETH'}</span>
+            <ChevronDown className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-muted-foreground" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="min-w-[120px]">
+            <DropdownMenuItem
+              onClick={() => onPaymentCurrencyChange('USDC')}
+              className={cn(
+                "text-sm font-sans cursor-pointer",
+                paymentCurrency === 'USDC' && "bg-muted"
+              )}
+            >
+              USDC (Base)
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => onPaymentCurrencyChange('ETH')}
+              className={cn(
+                "text-sm font-sans cursor-pointer",
+                paymentCurrency === 'ETH' && "bg-muted"
+              )}
+            >
+              ETH (Base)
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
 
       {/* View Mode Toggle */}
       <div className="flex items-center bg-muted rounded-lg p-0.5 shrink-0">

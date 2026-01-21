@@ -20,6 +20,8 @@ interface SpeciesSlideshowProps {
   species: Species[];
   initialIndex: number;
   onClose: () => void;
+  paymentCurrency?: PaymentCurrency;
+  quickBuyAmount?: number;
 }
 
 // Trigger haptic feedback on mobile
@@ -38,7 +40,13 @@ const CONTRACT_ADDRESS = '0x17d8d3c956a9b2d72257d7c9624cfcfd8ba8672b';
 
 type PaymentCurrency = 'USDC' | 'ETH';
 
-const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowProps) => {
+const SpeciesSlideshow = ({ 
+  species, 
+  initialIndex, 
+  onClose, 
+  paymentCurrency: initialPaymentCurrency = 'USDC',
+  quickBuyAmount: initialQuickBuyAmount = 1
+}: SpeciesSlideshowProps) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [showInfo, setShowInfo] = useState(false);
   const [showArrows, setShowArrows] = useState(true);
@@ -51,7 +59,17 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
   const [iconsVisible, setIconsVisible] = useState(true);
   const [arrowsHoverActive, setArrowsHoverActive] = useState(false);
   const [contractCopied, setContractCopied] = useState(false);
-  const [paymentCurrency, setPaymentCurrency] = useState<PaymentCurrency>('USDC');
+  const [paymentCurrency, setPaymentCurrency] = useState<PaymentCurrency>(initialPaymentCurrency);
+  const [quickBuyAmount, setQuickBuyAmount] = useState<number>(initialQuickBuyAmount);
+  
+  // Update payment currency and amount when props change
+  useEffect(() => {
+    setPaymentCurrency(initialPaymentCurrency);
+  }, [initialPaymentCurrency]);
+
+  useEffect(() => {
+    setQuickBuyAmount(initialQuickBuyAmount);
+  }, [initialQuickBuyAmount]);
   
   const arrowHideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const autoPlayRef = useRef<NodeJS.Timeout | null>(null);
@@ -154,11 +172,11 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
         throw new Error(`Invalid token address: ${tokenAddress}`);
       }
       
-      // Amount to swap: $1 worth of selected currency
-      // For ETH, approximate $1 = ~0.0003 ETH (assuming ~$3000/ETH)
+      // Amount to swap: user-selected amount worth of selected currency
+      // For ETH, approximate price (assuming ~$3000/ETH)
       // In production, you'd fetch real-time ETH price
       const ethPriceApprox = 3000; // Approximate ETH price in USD
-      const swapAmountUSD = 1;
+      const swapAmountUSD = quickBuyAmount;
       const swapAmount = paymentCurrency === 'ETH' 
         ? parseUnits((swapAmountUSD / ethPriceApprox).toFixed(6), currencyDecimals)
         : parseUnits(swapAmountUSD.toString(), currencyDecimals);
@@ -392,7 +410,7 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
             errorMessageLower.includes('transfer_from_failed') ||
             errorDetails.includes('transfer_from_failed')) {
           errorTitle = "Insufficient Balance";
-          errorMessage = "You don't have enough USDC. Please ensure you have at least $1 USDC in your wallet.";
+          errorMessage = `You don't have enough ${paymentCurrency}. Please ensure you have at least $${quickBuyAmount} ${paymentCurrency} in your wallet.`;
         } else if (errorString.includes('insufficient') || 
                    errorMessageLower.includes('insufficient') ||
                    errorMessageLower.includes('insufficient balance')) {
@@ -907,7 +925,7 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
               </button>
             </TooltipTrigger>
             <TooltipContent side="top">
-              <p>Double-tap to buy $1 USDC worth of this species DNA tokens</p>
+              <p>Double-tap to buy ${quickBuyAmount} {paymentCurrency} worth of this species DNA tokens</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

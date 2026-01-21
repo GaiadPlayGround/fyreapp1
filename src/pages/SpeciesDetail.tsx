@@ -4,6 +4,7 @@ import { useSpeciesApi } from '@/hooks/useSpeciesApi';
 import { useSpeciesStats } from '@/hooks/useSpeciesStats';
 import SpeciesSlideshow from '@/components/SpeciesSlideshow';
 import { SortOption } from '@/components/FilterDrawer';
+import type { PaymentCurrency } from '@/components/InlineFilterBar';
 
 const SpeciesDetail = () => {
   const { speciesId } = useParams<{ speciesId: string }>();
@@ -16,6 +17,18 @@ const SpeciesDetail = () => {
   const sortBy = useMemo(() => {
     const saved = localStorage.getItem('fyreapp-sort');
     return (saved as SortOption) || 'id';
+  }, []);
+
+  // Get payment currency preference from localStorage
+  const paymentCurrency = useMemo(() => {
+    const saved = localStorage.getItem('fyreapp-payment-currency');
+    return (saved as PaymentCurrency) || 'USDC';
+  }, []);
+
+  // Get quick buy amount preference from localStorage
+  const quickBuyAmount = useMemo(() => {
+    const saved = localStorage.getItem('fyreapp-quick-buy-amount');
+    return saved ? parseFloat(saved) : 1;
   }, []);
 
   // Sort species based on saved preference
@@ -95,6 +108,8 @@ const SpeciesDetail = () => {
       species={sortedSpecies}
       initialIndex={initialIndex}
       onClose={handleClose}
+      paymentCurrency={paymentCurrency}
+      quickBuyAmount={quickBuyAmount}
     />
   );
 };
