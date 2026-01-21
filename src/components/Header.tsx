@@ -26,7 +26,7 @@ const Header = ({
   onToggleSound,
 }: HeaderProps) => {
   const { theme } = useTheme();
-  const { votes, shares, isConnected } = useWallet();
+  const { votes, shares, isConnected, ownedDnaTickers } = useWallet();
   const currentLogo = theme === 'dark' ? logo : logoLight;
   const [titleIndex, setTitleIndex] = useState(0);
 
@@ -53,7 +53,14 @@ const Header = ({
           <FyreMissionsDialog>
             <button className="flex items-center gap-1.5 px-2 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
               <Flame className="w-3.5 h-3.5" />
-              <span className="font-sans">{votes.length + shares}/27</span>
+              {ownedDnaTickers.length > 0 ? (
+                <span className="font-mono">
+                  {ownedDnaTickers.slice(0, 5).join(', ')}
+                  {ownedDnaTickers.length > 5 && '...'}
+                </span>
+              ) : (
+                <span className="font-sans">{votes.length + shares}/27</span>
+              )}
             </button>
           </FyreMissionsDialog>
           

@@ -35,6 +35,7 @@ const WalletDropdown = ({
     usdcBalance,
     fcbccBalance,
     ownedGenomes,
+    ownedDnaTickers,
     voteTickets,
     votes,
     shares,
@@ -150,7 +151,7 @@ const WalletDropdown = ({
               {displayName.displayName}
             </span>
           ) : (
-            <span className="text-xs font-sans text-foreground">{formatBalance(dnaBalance)}</span>
+            <span className="text-xs font-sans text-foreground">{formatBalance(fcbccBalance)}</span>
           )}
         </button>
 
@@ -201,7 +202,7 @@ const WalletDropdown = ({
             {/* Balances */}
             <div className="p-3 space-y-2 border-b border-border">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-sans text-muted-foreground">Total DNA Tokens held:</span>
+                <span className="text-xs font-sans text-muted-foreground">Total DNA Tokens:</span>
                 <span className="text-xs font-sans font-medium text-foreground">{formatBalance(dnaBalance)}</span>
               </div>
               <div className="flex items-center justify-between">
@@ -216,6 +217,25 @@ const WalletDropdown = ({
                 <span className="text-xs font-sans text-muted-foreground">Owned DNA genomes:</span>
                 <span className="text-xs font-sans font-medium text-foreground">{ownedGenomes.toLocaleString()}</span>
               </div>
+              {ownedDnaTickers.length > 0 && (
+                <div className="flex flex-col gap-1 pt-1 border-t border-border">
+                  <span className="text-[10px] font-sans text-muted-foreground">
+                    DNA Tickers ({ownedDnaTickers.length}):
+                  </span>
+                  <div className="flex flex-wrap gap-1">
+                    {ownedDnaTickers.slice(0, 5).map((ticker, idx) => (
+                      <span key={idx} className="text-[10px] font-mono font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                        {ticker}
+                      </span>
+                    ))}
+                    {ownedDnaTickers.length > 5 && (
+                      <span className="text-[10px] font-sans text-muted-foreground px-1.5 py-0.5">
+                        +{ownedDnaTickers.length - 5} more
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
               <div className="flex items-center justify-between">
                 <span className="text-xs font-sans text-muted-foreground">Fyre Keys Balance:</span>
                 <span className="text-xs font-sans font-medium text-foreground">0</span>

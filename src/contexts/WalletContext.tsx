@@ -18,6 +18,7 @@ interface WalletState {
   fcbccBalance: number;
   ownedGenomes: number;
   totalDnaTokens: number;
+  ownedDnaTickers: string[];
   voteTickets: number;
   invites: number;
   shares: number;
@@ -69,6 +70,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     fcbccBalance: 0,
     ownedGenomes: 0,
     totalDnaTokens: 0,
+    ownedDnaTickers: [],
     voteTickets: 0,
     invites: 0,
     shares: 0,
@@ -81,17 +83,18 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // Don't run if wallet is not connected
     if (!wagmiIsConnected || !wagmiAddress) {
-      setState((prev) => ({
-        ...prev,
-        isConnected: false,
-        address: null,
-        inviteCode: null,
-        dnaBalance: 0,
-        usdcBalance: 0,
-        fcbccBalance: 0,
-        ownedGenomes: 0,
-        totalDnaTokens: 0,
-      }));
+        setState((prev) => ({
+          ...prev,
+          isConnected: false,
+          address: null,
+          inviteCode: null,
+          dnaBalance: 0,
+          usdcBalance: 0,
+          fcbccBalance: 0,
+          ownedGenomes: 0,
+          totalDnaTokens: 0,
+          ownedDnaTickers: [],
+        }));
       return;
     }
 
@@ -111,6 +114,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
           dnaBalance: balances.dnaBalance,
           ownedGenomes: balances.ownedGenomes,
           totalDnaTokens: balances.totalDnaTokens || balances.dnaBalance,
+          ownedDnaTickers: balances.ownedDnaTickers || [],
         }));
       } catch (error) {
         // Silently handle errors to prevent disconnections

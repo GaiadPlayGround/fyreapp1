@@ -38,6 +38,7 @@ export interface WalletBalances {
   dnaBalance: number;
   ownedGenomes: number;
   totalDnaTokens: number;
+  ownedDnaTickers: string[]; // Array of DNA token tickers (e.g., ["FCBC121", "FCBC123", "FCBC164"])
 }
 
 export const useWalletBalances = () => {
@@ -52,6 +53,7 @@ export const useWalletBalances = () => {
         dnaBalance: 0,
         ownedGenomes: 0,
         totalDnaTokens: 0,
+        ownedDnaTickers: [],
       };
     }
 
@@ -62,6 +64,7 @@ export const useWalletBalances = () => {
       dnaBalance: 0,
       ownedGenomes: 0,
       totalDnaTokens: 0,
+      ownedDnaTickers: [],
     };
 
     try {
@@ -129,6 +132,7 @@ export const useWalletBalances = () => {
       let totalDnaBalance = 0;
       let ownedGenomesCount = 0;
       let fcbccBalance = 0;
+      const ownedDnaTickers: string[] = [];
 
       allBalances.forEach((balanceNode: any) => {
         const coinAddress = balanceNode?.coin?.address;
@@ -142,7 +146,7 @@ export const useWalletBalances = () => {
 
         const balanceFormatted = parseFloat(formatUnits(BigInt(balance), 18));
 
-        // Check if this is FCBCC/warplette
+        // Check if this is FCBCC/warplette (main coin)
         const isFcbcc = coinAddress?.toLowerCase() === FCBCC_ADDRESS.toLowerCase() ||
                         coinSymbol?.toLowerCase().includes('fcbcc') ||
                         coinSymbol?.toLowerCase().includes('warplette') ||
@@ -164,6 +168,10 @@ export const useWalletBalances = () => {
           // This is a DNA token (any other token with balance > 0)
           totalDnaBalance += balanceFormatted;
           ownedGenomesCount++;
+          // Track the ticker (symbol) of this DNA token
+          if (coinSymbol) {
+            ownedDnaTickers.push(coinSymbol);
+          }
           console.log(`✓ DNA Token ${coinSymbol || coinAddress}: ${balanceFormatted} (count: ${ownedGenomesCount})`);
         }
       });
@@ -177,6 +185,12 @@ export const useWalletBalances = () => {
       balances.ownedGenomes = ownedGenomesCount;
       balances.fcbccBalance = fcbccBalance;
       balances.totalDnaTokens = totalDnaBalance;
+      balances.ownedDnaTickers = ownedDnaTickers.sort((a, b) => {
+        // Sort tickers by number (FCBC121 < FCBC123)
+        const numA = parseInt(a.replace(/\D/g, '')) || 0;
+        const numB = parseInt(b.replace(/\D/g, '')) || 0;
+        return numA - numB;
+      });
     } catch (error) {
       console.error('Error fetching wallet balances:', error);
     }
