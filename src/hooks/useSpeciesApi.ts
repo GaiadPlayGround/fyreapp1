@@ -74,7 +74,7 @@ export const useSpeciesApi = () => {
   useEffect(() => {
     const fetchSpecies = async () => {
       try {
-        const response = await fetch('https://server.fcbc.fun/api/v1/zora/species?count=150');
+        const response = await fetch('https://server.fcbc.fun/api/v1/zora/species?count=1234');
         const json: ApiResponse = await response.json();
         
         if (!json || !json.data) {

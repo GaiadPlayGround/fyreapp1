@@ -184,5 +184,8 @@ export const useWalletBalances = () => {
     return balances;
   }, [address, publicClient]);
 
+
+
+  // console.log('fetchBalances', fetchBalances());
   return { fetchBalances };
 };
