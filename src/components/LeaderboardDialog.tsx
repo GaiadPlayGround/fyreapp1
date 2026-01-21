@@ -13,22 +13,9 @@ import {
 
 const LeaderboardDialog = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [tab, setTab] = useState<'votes' | 'shares' | 'dna'>('votes');
-  const { topVoters, topSharers, loading } = useWalletLeaderboard(50);
+  const [tab, setTab] = useState<'votes' | 'shares' | 'dna'>('dna');
+  const { topVoters, topSharers, topDnaHolders, loading } = useWalletLeaderboard(50);
 
-  // Mock DNA holders data (in real app, this would come from on-chain data)
-  const mockDnaHolders = [
-    { address: '0xD7305c73f62B7713B74316613795C77E814Dea0f', dna_balance: 892000000 },
-    { address: '0xae28916f0bc703fccbaf9502d15f838a1caa01b3', dna_balance: 456000000 },
-    { address: '0x1234567890abcdef1234567890abcdef12345678', dna_balance: 234000000 },
-    { address: '0xabcdef1234567890abcdef1234567890abcdef12', dna_balance: 189000000 },
-    { address: '0x9876543210fedcba9876543210fedcba98765432', dna_balance: 145000000 },
-    { address: '0xfedcba9876543210fedcba9876543210fedcba98', dna_balance: 98000000 },
-    { address: '0x5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a', dna_balance: 76000000 },
-    { address: '0xb0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0', dna_balance: 54000000 },
-    { address: '0xc1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1', dna_balance: 32000000 },
-    { address: '0xd2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2d2', dna_balance: 21000000 },
-  ];
 
   const truncateAddress = (address: string) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
@@ -56,11 +43,11 @@ const LeaderboardDialog = () => {
         count: s.total_shares,
       }));
     }
-    // DNA holders
-    return mockDnaHolders.map((h, i) => ({
+    // Top DNA holders - aggregated across all DNA tokens
+    return topDnaHolders.map((h, i) => ({
       rank: i + 1,
       address: h.address,
-      count: h.dna_balance,
+      count: h.totalDnaBalance,
     }));
   };
 
@@ -123,7 +110,7 @@ const LeaderboardDialog = () => {
 
         {/* Leaderboard List */}
         <div className="flex-1 overflow-y-auto space-y-1.5 pr-2">
-          {loading && tab !== 'dna' ? (
+          {loading ? (
             <div className="text-center text-muted-foreground text-sm py-8">
               Loading...
             </div>
@@ -170,7 +157,9 @@ const LeaderboardDialog = () => {
                     transition={{ delay: index * 0.03 + 0.2 }}
                     className="font-sans text-sm font-medium text-foreground"
                   >
-                    {tab === 'dna' ? formatBalance(item.count) : item.count.toLocaleString()}
+                    {tab === 'dna' 
+                      ? formatBalance(item.count) 
+                      : item.count.toLocaleString()}
                   </motion.span>
                 </motion.div>
               ))}
