@@ -42,20 +42,20 @@ const Explore = () => {
   // Wildlife sounds
   useAnimalSounds(soundEnabled);
 
-  // DNA Enzymes popup logic: only at 120 seconds and 10 minutes (twice total)
+  // DNA Enzymes popup logic: only at 180 seconds and 45 minutes (twice total)
   useEffect(() => {
-    const twoMinutes = 120 * 1000;
-    const tenMinutes = 10 * 60 * 1000;
+    const threeMinutes = 180 * 1000;
+    const fortyFiveMinutes = 45 * 60 * 1000;
 
-    // First popup at 120 seconds
+    // First popup at 180 seconds
     const firstTimeout = setTimeout(() => {
       setShowEnzymeAd(true);
-    }, twoMinutes);
+    }, threeMinutes);
 
-    // Second popup at 10 minutes
+    // Second popup at 45 minutes
     const secondTimeout = setTimeout(() => {
       setShowEnzymeAd(true);
-    }, tenMinutes);
+    }, fortyFiveMinutes);
 
     return () => {
       clearTimeout(firstTimeout);
@@ -127,7 +127,7 @@ const Explore = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground overflow-x-hidden">
+    <div className="min-h-screen flex flex-col bg-background text-foreground overflow-x-hidden overscroll-none touch-pan-y">
       <Header 
         animationEnabled={animationEnabled}
         soundEnabled={soundEnabled}

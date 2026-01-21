@@ -104,29 +104,38 @@ const Footer = () => {
               Quicklinks/Roadmap
             </h4>
             <div className="flex flex-wrap justify-center gap-2">
-              {quickLinks.map((link) => (
-                <Tooltip key={link.id}>
-                  <TooltipTrigger asChild>
-                    {link.active ? (
-                      <a
-                        href={link.url}
-                        target={link.url.startsWith('http') ? '_blank' : undefined}
-                        rel={link.url.startsWith('http') ? 'noopener noreferrer' : undefined}
-                        className="flex items-center gap-1 px-3 py-1.5 text-xs font-sans text-foreground bg-muted hover:bg-primary/20 hover:scale-105 rounded-full transition-all"
-                      >
-                        {link.name}
-                      </a>
-                    ) : (
-                      <span className="flex items-center gap-1 px-3 py-1.5 text-xs font-sans text-muted-foreground/50 bg-muted/50 rounded-full cursor-not-allowed">
-                        {link.name}
-                      </span>
-                    )}
-                  </TooltipTrigger>
-                  <TooltipContent side="top">
-                    <p>{link.fullName}</p>
-                  </TooltipContent>
-                </Tooltip>
-              ))}
+              {quickLinks.map((link) => {
+                const isCurrentApp = link.id === 1;
+                return (
+                  <Tooltip key={link.id}>
+                    <TooltipTrigger asChild>
+                      {link.active ? (
+                        <a
+                          href={link.url}
+                          target={link.url.startsWith('http') ? '_blank' : undefined}
+                          rel={link.url.startsWith('http') ? 'noopener noreferrer' : undefined}
+                          className={cn(
+                            "flex items-center gap-1 px-3 py-1.5 text-xs font-sans rounded-full transition-all",
+                            isCurrentApp 
+                              ? "text-primary-foreground bg-primary font-medium ring-2 ring-primary/50" 
+                              : "text-foreground bg-muted hover:bg-primary/20 hover:scale-105"
+                          )}
+                        >
+                          {link.name}
+                          {isCurrentApp && <span className="ml-1 text-[10px] opacity-80">(Active)</span>}
+                        </a>
+                      ) : (
+                        <span className="flex items-center gap-1 px-3 py-1.5 text-xs font-sans text-muted-foreground/50 bg-muted/50 rounded-full cursor-not-allowed">
+                          {link.name}
+                        </span>
+                      )}
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      <p>{link.fullName}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
             </div>
           </div>
         </TooltipProvider>

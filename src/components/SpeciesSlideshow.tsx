@@ -15,6 +15,30 @@ import { createWalletClient, custom } from 'viem';
 import { parseUnits, formatUnits, Address, erc20Abi } from 'viem';
 import { base } from 'wagmi/chains';
 import { setApiKey, tradeCoin } from '@zoralabs/coins-sdk';
+import { usePaymentSettings } from './PaymentSettings';
+
+// Quick buy button component that reflects payment settings
+const QuickBuyButton = ({ onClick }: { onClick: () => void }) => {
+  const { currency, amount } = usePaymentSettings();
+  
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            onClick={onClick}
+            className="relative p-2 bg-card/10 backdrop-blur-sm rounded-full hover:bg-card/20 transition-colors"
+          >
+            <MousePointerClick className="w-4 h-4 text-card" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="top">
+          <p>Double-tap to buy ${amount} {currency} worth of this species DNA tokens</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+};
 
 interface SpeciesSlideshowProps {
   species: Species[];
@@ -59,17 +83,7 @@ const SpeciesSlideshow = ({
   const [iconsVisible, setIconsVisible] = useState(true);
   const [arrowsHoverActive, setArrowsHoverActive] = useState(false);
   const [contractCopied, setContractCopied] = useState(false);
-  const [paymentCurrency, setPaymentCurrency] = useState<PaymentCurrency>(initialPaymentCurrency);
-  const [quickBuyAmount, setQuickBuyAmount] = useState<number>(initialQuickBuyAmount);
-  
-  // Update payment currency and amount when props change
-  useEffect(() => {
-    setPaymentCurrency(initialPaymentCurrency);
-  }, [initialPaymentCurrency]);
-
-  useEffect(() => {
-    setQuickBuyAmount(initialQuickBuyAmount);
-  }, [initialQuickBuyAmount]);
+  const [speciesContractCopied, setSpeciesContractCopied] = useState(false);
   
   const arrowHideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const autoPlayRef = useRef<NodeJS.Timeout | null>(null);
@@ -105,10 +119,23 @@ const SpeciesSlideshow = ({
     setContractCopied(true);
     toast({
       title: "Copied!",
-      description: "Contract address copied to clipboard",
+      description: "Creator contract address copied to clipboard",
       duration: 1500,
     });
     setTimeout(() => setContractCopied(false), 2000);
+  };
+
+  const copySpeciesContractAddress = () => {
+    if (currentSpecies.tokenAddress) {
+      navigator.clipboard.writeText(currentSpecies.tokenAddress);
+      setSpeciesContractCopied(true);
+      toast({
+        title: "Copied!",
+        description: "Species contract address copied to clipboard",
+        duration: 1500,
+      });
+      setTimeout(() => setSpeciesContractCopied(false), 2000);
+    }
   };
 
   const handleDoubleTap = async () => {
@@ -856,7 +883,7 @@ const SpeciesSlideshow = ({
             <h2 className={cn("font-serif text-xl font-semibold mb-2", infoTextColor)}>
               {currentSpecies.name}
             </h2>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-1">
               <span
                 className={cn(
                   "px-2 py-0.5 rounded-sm text-xs font-sans font-medium",
@@ -870,46 +897,30 @@ const SpeciesSlideshow = ({
                 ${currentSpecies.symbol || `FCBC${currentSpecies.id.replace(/\D/g, '')}`}
               </span>
             </div>
-            
-            {/* Market Cap and Holders */}
-            {(currentSpecies.marketCap !== undefined || currentSpecies.holders !== undefined) && (
-              <div className="flex items-center gap-4 mb-3">
-                {currentSpecies.marketCapFormatted && (
-                  <div className="flex flex-col">
-                    <span className={cn("text-[10px] font-sans uppercase tracking-wider", infoTextColorMuted)}>
-                      Market Cap
-                    </span>
-                    <span className={cn("text-sm font-sans font-semibold", infoTextColor)}>
-                      {currentSpecies.marketCapFormatted}
-                    </span>
-                  </div>
-                )}
-                {currentSpecies.holders !== undefined && (
-                  <div className="flex flex-col">
-                    <span className={cn("text-[10px] font-sans uppercase tracking-wider", infoTextColorMuted)}>
-                      Holders
-                    </span>
-                    <span className={cn("text-sm font-sans font-semibold", infoTextColor)}>
-                      {currentSpecies.holders.toLocaleString()}
-                    </span>
-                  </div>
-                )}
-                {currentSpecies.circulatingSupply !== undefined && (
-                  <div className="flex flex-col">
-                    <span className={cn("text-[10px] font-sans uppercase tracking-wider", infoTextColorMuted)}>
-                      Supply
-                    </span>
-                    <span className={cn("text-sm font-sans font-semibold", infoTextColor)}>
-                      {currentSpecies.circulatingSupply.toLocaleString()}
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
-            
+            {/* Mcap and Holders row */}
+            <div className="flex items-center gap-4 mb-2">
+              <span className={cn("font-sans text-xs", infoTextColorMuted)}>
+                Mcap: <span className="font-medium">--</span>
+              </span>
+              <span className={cn("font-sans text-xs", infoTextColorMuted)}>
+                Holders: <span className="font-medium">--</span>
+              </span>
+            </div>
             <p className={cn("font-sans text-sm mb-3", infoTextColorMuted)}>
               {truncateDescription(currentSpecies.description)}
             </p>
+            {/* Species Contract - individual token address */}
+            {currentSpecies.tokenAddress && (
+              <button
+                onClick={copySpeciesContractAddress}
+                className={cn("flex items-center gap-2 text-xs font-sans mb-2 hover:opacity-80 transition-opacity", infoTextColorMuted)}
+              >
+                <span className="font-medium">Species Contract:</span>
+                <span className="font-mono text-[10px]">{currentSpecies.tokenAddress.slice(0, 6)}...{currentSpecies.tokenAddress.slice(-4)}</span>
+                {speciesContractCopied ? <Check className="w-3 h-3 text-primary" /> : <Copy className="w-3 h-3" />}
+              </button>
+            )}
+            {/* Creator Contract */}
             <button
               onClick={copyContractAddress}
               className={cn("flex items-center gap-2 text-xs font-sans mb-3 hover:opacity-80 transition-opacity", infoTextColorMuted)}
@@ -950,22 +961,8 @@ const SpeciesSlideshow = ({
           onTransactionStart={() => setIsPaused(true)}
           onTransactionEnd={() => setIsPaused(false)}
         />
-        {/* Double-tap to buy $1 icon */}
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={handleDoubleTap}
-                className="relative p-2 bg-card/10 backdrop-blur-sm rounded-full hover:bg-card/20 transition-colors"
-              >
-                <MousePointerClick className="w-4 h-4 text-card" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="top">
-              <p>Double-tap to buy ${quickBuyAmount} {paymentCurrency} worth of this species DNA tokens</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        {/* Double-tap to buy icon - reflects quick buy settings */}
+        <QuickBuyButton onClick={handleDoubleTap} />
       </div>
 
       {/* Bottom right - Share button */}
