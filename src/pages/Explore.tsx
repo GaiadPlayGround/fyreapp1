@@ -10,6 +10,7 @@ import { useAnimalSounds } from '@/hooks/useAnimalSounds';
 import { useSpeciesStats } from '@/hooks/useSpeciesStats';
 import { ConservationStatus } from '@/data/species';
 import { SortOption, ViewMode } from '@/components/FilterDrawer';
+import type { PaymentCurrency } from '@/components/InlineFilterBar';
 import type { Species } from '@/data/species';
 
 const Explore = () => {
@@ -28,6 +29,12 @@ const Explore = () => {
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [conservationFilter, setConservationFilter] = useState<ConservationStatus | null>(null);
+  
+  // Payment currency state - persist to localStorage
+  const [paymentCurrency, setPaymentCurrency] = useState<PaymentCurrency>(() => {
+    const saved = localStorage.getItem('fyreapp-payment-currency');
+    return (saved as PaymentCurrency) || 'USDC';
+  });
   
   // Ref for scrolling
   const gridRef = useRef<HTMLDivElement>(null);
@@ -60,6 +67,11 @@ const Explore = () => {
   useEffect(() => {
     localStorage.setItem('fyreapp-sort', sortBy);
   }, [sortBy]);
+
+  // Persist payment currency preference
+  useEffect(() => {
+    localStorage.setItem('fyreapp-payment-currency', paymentCurrency);
+  }, [paymentCurrency]);
 
   // Allow manual opening from Wallet dropdown
   useEffect(() => {
@@ -123,9 +135,9 @@ const Explore = () => {
         onToggleSound={() => setSoundEnabled(!soundEnabled)}
       />
       
-      <main className="flex-1 pt-14 w-full overflow-x-hidden overscroll-none">
-        {/* Sticky Filter Bar - at top of screen */}
-        <div ref={gridRef} className="sticky top-14 z-40 bg-background/95 backdrop-blur-sm border-b border-border w-full overflow-x-hidden">
+      <main className="flex-1 pt-14 w-full overflow-x-hidden">
+        {/* Fixed Filter Bar - matches navbar styling */}
+        <div ref={gridRef} className="fixed top-14 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border w-full max-w-full overflow-x-hidden">
           <InlineFilterBar
             viewMode={viewMode}
             onViewModeChange={setViewMode}
@@ -135,11 +147,13 @@ const Explore = () => {
             onSearchChange={setSearchQuery}
             selectedStatus={conservationFilter}
             onStatusChange={setConservationFilter}
+            paymentCurrency={paymentCurrency}
+            onPaymentCurrencyChange={setPaymentCurrency}
           />
         </div>
 
-        {/* Species Grid */}
-        <div className="w-full overflow-x-hidden px-0">
+        {/* Species Grid - add top padding to account for fixed filter bar (header h-14 = 56px + filter bar ~48px) */}
+        <div className="w-full overflow-x-hidden px-0 pt-[104px]">
           <SpeciesGrid
             species={sortedSpecies}
             viewMode={viewMode}

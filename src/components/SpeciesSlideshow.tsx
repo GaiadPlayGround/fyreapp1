@@ -60,7 +60,13 @@ const getTextColorForBackground = (brightness: 'light' | 'dark' = 'dark') => {
 
 const CONTRACT_ADDRESS = '0x17d8d3c956a9b2d72257d7c9624cfcfd8ba8672b';
 
-const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowProps) => {
+type PaymentCurrency = 'USDC' | 'ETH';
+
+const SpeciesSlideshow = ({ 
+  species, 
+  initialIndex, 
+  onClose
+}: SpeciesSlideshowProps) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [showInfo, setShowInfo] = useState(false);
   const [showArrows, setShowArrows] = useState(true);
@@ -88,6 +94,7 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
   const { recordView } = useSpeciesStats();
   const { address, isConnected, usdcBalance, connect } = useWallet();
   const { address: wagmiAddress, connector, chainId } = useAccount();
+  const { currency: paymentCurrency, amount: quickBuyAmount } = usePaymentSettings();
   const publicClient = usePublicClient();
   const { switchChain } = useSwitchChain();
   const { writeContract, data: hash, isPending: isBuying } = useWriteContract();
@@ -174,48 +181,67 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
       // Each DNA species has its own unique tokenAddress (e.g., 0x73f71321ceb926c189332bb0f1b334858a27a36d)
       const tokenAddress = currentSpecies.tokenAddress as Address;
       
-      // USDC on Base network (we're buying with USDC, not warplette)
+      // Payment token addresses on Base
       const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' as Address;
-      const USDC_DECIMALS = 6; // USDC has 6 decimals
-      const currencyTokenAddress = USDC_ADDRESS;
+      const USDC_DECIMALS = 6;
+      const WETH_ADDRESS = '0x4200000000000000000000000000000000000006' as Address; // Wrapped ETH on Base
+      const ETH_DECIMALS = 18;
+      
+      // Determine currency based on user selection
+      const currencyTokenAddress = paymentCurrency === 'ETH' ? WETH_ADDRESS : USDC_ADDRESS;
+      const currencyDecimals = paymentCurrency === 'ETH' ? ETH_DECIMALS : USDC_DECIMALS;
       
       // Validate addresses are properly formatted
       if (!tokenAddress || !tokenAddress.startsWith('0x') || tokenAddress.length !== 42) {
         throw new Error(`Invalid token address: ${tokenAddress}`);
       }
       
-      // Amount to swap: $1 worth of USDC
-      const swapAmount = parseUnits('1', USDC_DECIMALS);
+      // Amount to swap: user-selected amount worth of selected currency
+      // For ETH, approximate price (assuming ~$3000/ETH)
+      // In production, you'd fetch real-time ETH price
+      const ethPriceApprox = 3000; // Approximate ETH price in USD
+      const swapAmountUSD = quickBuyAmount;
+      const swapAmount = paymentCurrency === 'ETH' 
+        ? parseUnits((swapAmountUSD / ethPriceApprox).toFixed(6), currencyDecimals)
+        : parseUnits(swapAmountUSD.toString(), currencyDecimals);
       
       // Check user's balance before attempting trade
       console.log('=== BALANCE CHECK ===');
       console.log('Wallet address:', wagmiAddress);
-      console.log('USDC address:', currencyTokenAddress);
+      console.log('Currency:', paymentCurrency);
+      console.log('Currency address:', currencyTokenAddress);
       console.log('Swap amount:', swapAmount.toString());
-      console.log('Swap amount (formatted):', formatUnits(swapAmount, USDC_DECIMALS));
+      console.log('Swap amount (formatted):', formatUnits(swapAmount, currencyDecimals));
       
       try {
         if (publicClient && wagmiAddress) {
-          const balance = (await publicClient.readContract({
-            address: currencyTokenAddress,
-            abi: erc20Abi,
-            functionName: 'balanceOf',
-            args: [wagmiAddress as Address],
-            chain: base,
-          } as any)) as bigint;
+          let balance: bigint;
           
-          const balanceUSD = parseFloat(formatUnits(balance, USDC_DECIMALS));
-          const requiredUSD = 1.0;
+          if (paymentCurrency === 'ETH') {
+            // For native ETH, get balance directly
+            balance = await publicClient.getBalance({ address: wagmiAddress as Address });
+          } else {
+            // For ERC-20 tokens (USDC), use readContract
+            balance = (await publicClient.readContract({
+              address: currencyTokenAddress,
+              abi: erc20Abi,
+              functionName: 'balanceOf',
+              args: [wagmiAddress as Address],
+            } as any)) as bigint;
+          }
+
+          const balanceFormatted = parseFloat(formatUnits(balance, currencyDecimals));
+          const requiredFormatted = parseFloat(formatUnits(swapAmount, currencyDecimals));
           
           console.log('Balance (raw):', balance.toString());
-          console.log('Balance (USD):', balanceUSD);
-          console.log('Required (USD):', requiredUSD);
+          console.log('Balance (formatted):', balanceFormatted);
+          console.log('Required (formatted):', requiredFormatted);
           console.log('Has enough?', balance >= swapAmount);
           
           if (balance < swapAmount) {
             toast({
               title: "Insufficient Balance",
-              description: `You need at least $${requiredUSD.toFixed(2)} USD worth of tokens. Your current balance is $${balanceUSD.toFixed(2)} USD.`,
+              description: `You need at least ${requiredFormatted.toFixed(6)} ${paymentCurrency}. Your current balance is ${balanceFormatted.toFixed(6)} ${paymentCurrency}.`,
               variant: "destructive",
             });
             return;
@@ -301,12 +327,16 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
         });
 
         // Execute the trade - SDK handles Permit2 signature creation and execution
+        // For native ETH, we need to handle it differently
+        // Zora SDK supports native ETH via 'eth' type
         const result = await tradeCoin({
           tradeParameters: {
-            sell: {
-              type: 'erc20',
-              address: currencyTokenAddress,
-            },
+            sell: paymentCurrency === 'ETH'
+              ? { type: 'eth' as const }
+              : {
+                  type: 'erc20',
+                  address: currencyTokenAddress,
+                },
             buy: {
               type: 'erc20',
               address: tokenAddress,
@@ -404,7 +434,7 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
             errorMessageLower.includes('transfer_from_failed') ||
             errorDetails.includes('transfer_from_failed')) {
           errorTitle = "Insufficient Balance";
-          errorMessage = "You don't have enough USDC. Please ensure you have at least $1 USDC in your wallet.";
+          errorMessage = `You don't have enough ${paymentCurrency}. Please ensure you have at least $${quickBuyAmount} ${paymentCurrency} in your wallet.`;
         } else if (errorString.includes('insufficient') || 
                    errorMessageLower.includes('insufficient') ||
                    errorMessageLower.includes('insufficient balance')) {
@@ -865,14 +895,20 @@ const SpeciesSlideshow = ({ species, initialIndex, onClose }: SpeciesSlideshowPr
               </span>
             </div>
             {/* Mcap and Holders row */}
-            <div className="flex items-center gap-4 mb-2">
-              <span className={cn("font-sans text-xs", infoTextColorMuted)}>
-                Mcap: <span className="font-medium">--</span>
-              </span>
-              <span className={cn("font-sans text-xs", infoTextColorMuted)}>
-                Holders: <span className="font-medium">--</span>
-              </span>
-            </div>
+            {(currentSpecies.marketCapFormatted || currentSpecies.holders !== undefined) && (
+              <div className="flex items-center gap-4 mb-2">
+                {currentSpecies.marketCapFormatted && (
+                  <span className={cn("font-sans text-xs", infoTextColorMuted)}>
+                    Mcap: <span className={cn("font-medium", infoTextColor)}>{currentSpecies.marketCapFormatted}</span>
+                  </span>
+                )}
+                {currentSpecies.holders !== undefined && (
+                  <span className={cn("font-sans text-xs", infoTextColorMuted)}>
+                    Holders: <span className={cn("font-medium", infoTextColor)}>{currentSpecies.holders.toLocaleString()}</span>
+                  </span>
+                )}
+              </div>
+            )}
             <p className={cn("font-sans text-sm mb-3", infoTextColorMuted)}>
               {truncateDescription(currentSpecies.description)}
             </p>

@@ -52,7 +52,7 @@ const SpeciesCard = ({ species, onClick, compact = false, animationEnabled = tru
             {species.name}
           </h3>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-wrap">
             {/* Status badge */}
             <span
               className={cn(
@@ -75,6 +75,22 @@ const SpeciesCard = ({ species, onClick, compact = false, animationEnabled = tru
               {species.ticker}
             </span>
           </div>
+          
+          {/* Market Cap and Holders - only show on non-compact cards */}
+          {!compact && (species.marketCapFormatted || species.holders !== undefined) && (
+            <div className="flex items-center gap-2 mt-1">
+              {species.marketCapFormatted && (
+                <span className="text-[8px] font-sans text-card/70">
+                  MCap: {species.marketCapFormatted}
+                </span>
+              )}
+              {species.holders !== undefined && (
+                <span className="text-[8px] font-sans text-card/70">
+                  Holders: {species.holders}
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* FCBC Link - hide on compact */}

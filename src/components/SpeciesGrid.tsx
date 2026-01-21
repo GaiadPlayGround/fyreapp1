@@ -138,32 +138,47 @@ const SpeciesGrid = ({
                 className="flex items-center gap-3 p-2.5 bg-card rounded-lg active:bg-muted/50 cursor-pointer transition-colors"
               >
                 <img src={s.image} alt={s.name} className="w-12 h-12 object-cover rounded-md" />
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-serif text-sm font-medium text-foreground truncate">
-                    {s.name}
-                  </h3>
-                  <p className="font-sans text-[10px] text-muted-foreground italic truncate">
-                    {s.scientificName}
-                  </p>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className={cn(
-                      "px-1 py-0.5 rounded-sm text-[8px] font-sans font-medium", 
-                      getStatusColor(s.status), 
-                      s.status === 'CR' ? 'text-card' : 'text-foreground'
-                    )}>
-                      {s.status}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground font-sans">
-                      {s.ticker}
-                    </span>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs font-sans font-medium text-foreground">
-                    {getBaseSquares(s.id).toLocaleString()}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground">Base Squares</p>
-                </div>
+                       <div className="flex-1 min-w-0">
+                         <h3 className="font-serif text-sm font-medium text-foreground truncate">
+                           {s.name}
+                         </h3>
+                         <p className="font-sans text-[10px] text-muted-foreground italic truncate">
+                           {s.scientificName}
+                         </p>
+                         <div className="flex items-center gap-1.5 mt-0.5">
+                           <span className={cn(
+                             "px-1 py-0.5 rounded-sm text-[8px] font-sans font-medium",
+                             getStatusColor(s.status),
+                             s.status === 'CR' ? 'text-card' : 'text-foreground'
+                           )}>
+                             {s.status}
+                           </span>
+                           <span className="text-[10px] text-muted-foreground font-sans">
+                             {s.ticker}
+                           </span>
+                         </div>
+                         {/* Market Cap and Holders */}
+                         {(s.marketCapFormatted || s.holders !== undefined) && (
+                           <div className="flex items-center gap-2 mt-1">
+                             {s.marketCapFormatted && (
+                               <span className="text-[9px] font-sans text-muted-foreground">
+                                 MCap: {s.marketCapFormatted}
+                               </span>
+                             )}
+                             {s.holders !== undefined && (
+                               <span className="text-[9px] font-sans text-muted-foreground">
+                                 Holders: {s.holders}
+                               </span>
+                             )}
+                           </div>
+                         )}
+                       </div>
+                       <div className="text-right">
+                         <p className="text-xs font-sans font-medium text-foreground">
+                           {getBaseSquares(s.id).toLocaleString()}
+                         </p>
+                         <p className="text-[10px] text-muted-foreground">Base Squares</p>
+                       </div>
               </div>
             );
 

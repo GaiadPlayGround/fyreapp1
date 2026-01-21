@@ -25,6 +25,11 @@ interface ApiSpecies {
   };
   chainId?: number;
   tradable?: boolean;
+  marketCap?: number;
+  marketCapFormatted?: string;
+  holders?: number;
+  circulatingSupply?: number;
+  totalSupply?: number;
 }
 
 interface ApiResponse {
@@ -124,6 +129,11 @@ export const useSpeciesApi = () => {
             chainId: s.chainId,
             // If tokenAddress exists, it's tradable (API tradable field may be outdated)
             tradable: s.tokenAddress ? true : (s.tradable || false),
+            marketCap: s.marketCap,
+            marketCapFormatted: s.marketCapFormatted,
+            holders: s.holders,
+            circulatingSupply: s.circulatingSupply,
+            totalSupply: s.totalSupply,
           };
         });
 
