@@ -16,9 +16,10 @@ import { parseUnits, formatUnits, Address, erc20Abi } from 'viem';
 import { base } from 'wagmi/chains';
 import { setApiKey, tradeCoin } from '@zoralabs/coins-sdk';
 import { usePaymentSettings } from './PaymentSettings';
+import { AdaptiveBackdrop } from './AdaptiveBackdrop';
 
 // Quick buy button component that reflects payment settings
-const QuickBuyButton = ({ onClick }: { onClick: () => void }) => {
+const BuyDnaButton = ({ onClick }: { onClick: () => void }) => {
   const { currency, amount } = usePaymentSettings();
   
   return (
@@ -27,9 +28,9 @@ const QuickBuyButton = ({ onClick }: { onClick: () => void }) => {
         <TooltipTrigger asChild>
           <button
             onClick={onClick}
-            className="relative p-2 bg-card/10 backdrop-blur-sm rounded-full hover:bg-card/20 transition-colors"
+            className="relative px-3 py-1.5 bg-card/10 backdrop-blur-sm rounded-full hover:bg-card/20 transition-colors text-xs font-sans text-card"
           >
-            <MousePointerClick className="w-4 h-4 text-card" />
+            Buy DNA
           </button>
         </TooltipTrigger>
         <TooltipContent side="top">
@@ -71,8 +72,9 @@ const SpeciesSlideshow = ({
   const [showInfo, setShowInfo] = useState(false);
   const [showArrows, setShowArrows] = useState(true);
   const [showShare, setShowShare] = useState(false);
-  const [autoPlayInterval, setAutoPlayInterval] = useState<number | null>(10);
-  const [isPaused, setIsPaused] = useState(false);
+  // Defaults: timer off + paused
+  const [autoPlayInterval, setAutoPlayInterval] = useState<number | null>(null);
+  const [isPaused, setIsPaused] = useState(true);
   const [voteKey, setVoteKey] = useState(0);
   const [voiceEnabled, setVoiceEnabled] = useState(false);
   const [showVoiceSelector, setShowVoiceSelector] = useState(false);
@@ -88,6 +90,7 @@ const SpeciesSlideshow = ({
   const touchEndRef = useRef<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const lastTapRef = useRef<number>(0);
+  const wasPausedBeforeTxRef = useRef<boolean>(true);
 
   const currentSpecies = species[currentIndex];
   const { speakSpeciesName, stopSpeaking, voices, selectedVoice, setSelectedVoice, isLoading: voiceLoading, useFallback } = useElevenLabsVoice();
@@ -686,7 +689,7 @@ const SpeciesSlideshow = ({
     return `https://www.fcbc.fun/species/${speciesSymbol}?code=${speciesCode}`;
   };
 
-  // Dynamic text color based on position (bottom area is usually darker)
+  // Dynamic text color (guardrail based on backdrop luminance)
   const infoTextColor = 'text-white';
   const infoTextColorMuted = 'text-white/80';
 
@@ -697,23 +700,28 @@ const SpeciesSlideshow = ({
       onMouseMove={handleMouseMove}
       onClick={() => resetIdleTimer()}
     >
-      {/* Full-screen image - show entire animal with object-contain */}
-      <div 
-        className="absolute inset-0 bg-foreground"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        onClick={handleBackgroundClick}
-        onDoubleClick={handleDoubleTap}
-      >
-        <img
-          src={currentSpecies.image}
-          alt={currentSpecies.name}
-          className="w-full h-full object-contain gallery-transition"
-          draggable={false}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-transparent to-foreground/30" />
-      </div>
+      {/* Adaptive full-screen backdrop + main image (object-contain) */}
+      <AdaptiveBackdrop imageSrc={currentSpecies.image}>
+        {() => (
+          <div
+            className="absolute inset-0"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onClick={handleBackgroundClick}
+            onDoubleClick={handleDoubleTap}
+          >
+            <img
+              src={currentSpecies.image}
+              alt={currentSpecies.name}
+              className="w-full h-full object-contain gallery-transition"
+              draggable={false}
+            />
+            {/* keep the existing overlay so UI/popups remain unchanged */}
+            <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-transparent to-foreground/30" />
+          </div>
+        )}
+      </AdaptiveBackdrop>
 
       {/* Top bar - Back arrow, Pause (left) and Info/Voice (right) */}
       <TooltipProvider>
@@ -961,11 +969,14 @@ const SpeciesSlideshow = ({
         <VoteSquares 
           key={`${currentSpecies.id}-${voteKey}`}
           speciesId={currentSpecies.id}
-          onTransactionStart={() => setIsPaused(true)}
-          onTransactionEnd={() => setIsPaused(false)}
+          onTransactionStart={() => {
+            wasPausedBeforeTxRef.current = isPaused;
+            setIsPaused(true);
+          }}
+          onTransactionEnd={() => setIsPaused(wasPausedBeforeTxRef.current)}
         />
-        {/* Double-tap to buy icon - reflects quick buy settings */}
-        <QuickBuyButton onClick={handleDoubleTap} />
+        {/* Buy DNA button (double-tap on image still works) */}
+        <BuyDnaButton onClick={handleDoubleTap} />
       </div>
 
       {/* Bottom right - Share button */}
