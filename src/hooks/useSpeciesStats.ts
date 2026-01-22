@@ -58,7 +58,7 @@ export const useSpeciesStats = () => {
           species_id: speciesId,
           wallet_address: walletAddress,
           rating,
-          usdc_cost: 0.2
+          usdc_cost: 0.1
         });
 
       if (error) throw error;

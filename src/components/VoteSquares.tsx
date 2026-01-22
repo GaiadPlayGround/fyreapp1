@@ -14,11 +14,11 @@ interface VoteSquaresProps {
   onTransactionEnd?: () => void;
 }
 
-// Vote payment address - receives 0.2 USDC per vote
+// Vote payment address - receives 0.1 USDC per vote
 const VOTE_PAYMENT_ADDRESS = '0xae28916f0bc703fccbaf9502d15f838a1caa01b3' as Address;
 const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' as Address;
 const USDC_DECIMALS = 6;
-const VOTE_COST = 0.2; // USDC
+const VOTE_COST = 0.1; // USDC
 
 const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactionEnd }: VoteSquaresProps) => {
   const { isConnected, address, usdcBalance, connect, addVoteTicket } = useWallet();
@@ -47,7 +47,7 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
     if (!isConnected || !wagmiAddress) {
       toast({
         title: "Wallet Required",
-        description: "Connect your wallet to vote. Voting costs 0.2 USDC.",
+        description: "Connect your wallet to vote. Voting costs 0.1 USDC.",
         variant: "destructive",
       });
       connect();
