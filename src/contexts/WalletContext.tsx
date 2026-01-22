@@ -211,6 +211,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       fcbccBalance: 0,
       ownedGenomes: 0,
       totalDnaTokens: 0,
+      ownedDnaTickers: [],
       voteTickets: 0,
       invites: 0,
       shares: 0,
