@@ -59,16 +59,6 @@ const Index = () => {
         // ID: fcbc1 to fcbc1234 (ascending)
         result.sort((a, b) => parseInt(a.id.replace(/\D/g, '')) - parseInt(b.id.replace(/\D/g, '')));
         break;
-      case 'trending':
-        // Trending: by last_viewed_at (most recently viewed first)
-        result.sort((a, b) => {
-          const statA = stats[a.id];
-          const statB = stats[b.id];
-          const timeA = statA?.last_viewed_at ? new Date(statA.last_viewed_at).getTime() : 0;
-          const timeB = statB?.last_viewed_at ? new Date(statB.last_viewed_at).getTime() : 0;
-          return timeB - timeA;
-        });
-        break;
       case 'votes':
         // Votes: by base squares (highest first)
         result.sort((a, b) => getBaseSquares(b.id) - getBaseSquares(a.id));
@@ -76,6 +66,12 @@ const Index = () => {
       case 'shares':
         // Shares: by share count (highest first)
         result.sort((a, b) => getShareCount(b.id) - getShareCount(a.id));
+        break;
+      case 'mcap':
+        result.sort((a, b) => (b.marketCap || 0) - (a.marketCap || 0));
+        break;
+      case 'holders':
+        result.sort((a, b) => (b.holders || 0) - (a.holders || 0));
         break;
       case 'new':
         // Newest: fcbc1234 to fcbc1 (descending)

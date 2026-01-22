@@ -15,7 +15,8 @@ const SpeciesDetail = () => {
   // Get sort preference from localStorage to maintain order
   const sortBy = useMemo(() => {
     const saved = localStorage.getItem('fyreapp-sort');
-    return (saved as SortOption) || 'id';
+    const allowed: SortOption[] = ['id', 'votes', 'shares', 'mcap', 'holders', 'new'];
+    return allowed.includes(saved as SortOption) ? (saved as SortOption) : 'id';
   }, []);
 
   // Sort species based on saved preference
@@ -26,14 +27,14 @@ const SpeciesDetail = () => {
           const idA = parseInt(a.symbol.replace(/\D/g, '') || '0');
           const idB = parseInt(b.symbol.replace(/\D/g, '') || '0');
           return idA - idB;
-        case 'trending':
-          const viewedA = getLastViewedAt(a.id);
-          const viewedB = getLastViewedAt(b.id);
-          return viewedB.getTime() - viewedA.getTime();
         case 'votes':
           return getBaseSquares(b.id) - getBaseSquares(a.id);
         case 'shares':
           return getShareCount(b.id) - getShareCount(a.id);
+        case 'mcap':
+          return (b.marketCap || 0) - (a.marketCap || 0);
+        case 'holders':
+          return (b.holders || 0) - (a.holders || 0);
         case 'new':
           const newIdA = parseInt(a.symbol.replace(/\D/g, '') || '0');
           const newIdB = parseInt(b.symbol.replace(/\D/g, '') || '0');

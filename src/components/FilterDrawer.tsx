@@ -3,7 +3,7 @@ import { X, LayoutGrid, List, Volume2, VolumeX, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ConservationStatus } from '@/data/species';
 
-export type SortOption = 'trending' | 'votes' | 'shares' | 'new' | 'id';
+export type SortOption = 'votes' | 'shares' | 'mcap' | 'holders' | 'new' | 'id';
 export type ViewMode = 'grid' | 'list';
 
 interface FilterDrawerProps {
@@ -52,9 +52,10 @@ const FilterDrawer = ({
   ];
 
   const sortOptions: { value: SortOption; label: string; description: string }[] = [
-    { value: 'trending', label: 'Trending', description: 'Recently opened globally' },
     { value: 'votes', label: 'Votes', description: 'Highest Base Squares' },
     { value: 'shares', label: 'Shares', description: 'Most shared' },
+    { value: 'mcap', label: 'MCap', description: 'Highest market cap' },
+    { value: 'holders', label: 'Holders', description: 'Most holders' },
     { value: 'new', label: 'Newest', description: 'FCBC234 to FCBC1' },
     { value: 'id', label: 'ID', description: 'FCBC1 to FCBC234' },
   ];
