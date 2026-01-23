@@ -12,7 +12,7 @@ interface SpeciesCardProps {
 }
 
 const SpeciesCard = ({ species, onClick, compact = false, animationEnabled = true }: SpeciesCardProps) => {
-  const borderColor = getHabitatColor(species.region, species.id);
+  const borderColor = getHabitatColor(species.region, species.id, species.name, species.scientificName);
 
   const content = (
     <div

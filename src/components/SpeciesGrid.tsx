@@ -185,7 +185,7 @@ const SpeciesGrid = ({
             return showElectricBorder ? (
               <ElectricBorder
                 key={s.id}
-                color={getHabitatColor(s.region, s.id)}
+                color={getHabitatColor(s.region, s.id, s.name, s.scientificName)}
                 speed={0.6}
                 chaos={0.05}
                 borderRadius={8}

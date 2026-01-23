@@ -24,6 +24,7 @@ interface WalletState {
   shares: number;
   votes: Vote[];
   inviteCode: string | null;
+  fyreKeys: number;
 }
 
 interface WalletContextType extends WalletState {
@@ -76,6 +77,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     shares: 0,
     votes: [],
     inviteCode: null,
+    fyreKeys: 0,
   });
 
   // Sync wagmi connection state with local state and fetch balances
@@ -217,6 +219,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       shares: 0,
       votes: [],
       inviteCode: null,
+      fyreKeys: 0,
     });
   };
 
@@ -224,6 +227,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     setState((prev) => ({
       ...prev,
       shares: prev.shares + 1,
+      fyreKeys: prev.fyreKeys + 1, // +1 Fyre Key per share
     }));
   };
 
@@ -243,6 +247,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       ...prev,
       usdcBalance: prev.usdcBalance - VOTE_COST,
       voteTickets: prev.voteTickets + 1, // +1 vote ticket with each vote
+      fyreKeys: prev.fyreKeys + 5, // +5 Fyre Keys per vote
       votes: [...prev.votes, { speciesId, rating, timestamp: new Date() }],
     }));
     return true;

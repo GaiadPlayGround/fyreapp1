@@ -10,7 +10,6 @@ import { useAnimalSounds } from '@/hooks/useAnimalSounds';
 import { useSpeciesStats } from '@/hooks/useSpeciesStats';
 import { ConservationStatus } from '@/data/species';
 import { SortOption, ViewMode } from '@/components/FilterDrawer';
-import type { PaymentCurrency } from '@/components/InlineFilterBar';
 import type { Species } from '@/data/species';
 
 const Explore = () => {
@@ -30,12 +29,6 @@ const Explore = () => {
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [conservationFilter, setConservationFilter] = useState<ConservationStatus | null>(null);
-  
-  // Payment currency state - persist to localStorage
-  const [paymentCurrency, setPaymentCurrency] = useState<PaymentCurrency>(() => {
-    const saved = localStorage.getItem('fyreapp-payment-currency');
-    return (saved as PaymentCurrency) || 'USDC';
-  });
   
   // Ref for scrolling
   const gridRef = useRef<HTMLDivElement>(null);
@@ -68,11 +61,6 @@ const Explore = () => {
   useEffect(() => {
     localStorage.setItem('fyreapp-sort', sortBy);
   }, [sortBy]);
-
-  // Persist payment currency preference
-  useEffect(() => {
-    localStorage.setItem('fyreapp-payment-currency', paymentCurrency);
-  }, [paymentCurrency]);
 
   // Allow manual opening from Wallet dropdown
   useEffect(() => {
@@ -147,8 +135,7 @@ const Explore = () => {
             onSearchChange={setSearchQuery}
             selectedStatus={conservationFilter}
             onStatusChange={setConservationFilter}
-            paymentCurrency={paymentCurrency}
-            onPaymentCurrencyChange={setPaymentCurrency}
+            species={species}
           />
         </div>
 

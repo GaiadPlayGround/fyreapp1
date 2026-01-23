@@ -42,7 +42,8 @@ const WalletDropdown = ({
     invites,
     connect,
     disconnect,
-    inviteCode
+    inviteCode,
+    fyreKeys
   } = useWallet();
   const {
     theme,
@@ -238,7 +239,7 @@ const WalletDropdown = ({
               )}
               <div className="flex items-center justify-between">
                 <span className="text-xs font-sans text-muted-foreground">Fyre Keys Balance:</span>
-                <span className="text-xs font-sans font-medium text-foreground">0</span>
+                <span className="text-xs font-sans font-medium text-foreground">{fyreKeys.toLocaleString()}</span>
               </div>
             </div>
 

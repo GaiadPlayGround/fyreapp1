@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Flame } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import WalletDropdown from './WalletDropdown';
 import LeaderboardDialog from './LeaderboardDialog';
 import FyreMissionsDialog from './FyreMissionsDialog';
@@ -52,9 +52,8 @@ const Header = ({
         <div className="flex items-center gap-1.5">
           <FyreMissionsDialog>
             <button className="flex items-center gap-1.5 px-2 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
-              <Flame className="w-3.5 h-3.5" />
- 
-                <span className="font-sans">{votes.length + shares}/27</span>
+              <ChevronDown className="w-3.5 h-3.5" />
+              <span className="font-sans">{votes.length + shares}/27</span>
             </button>
           </FyreMissionsDialog>
           

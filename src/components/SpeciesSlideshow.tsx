@@ -139,6 +139,10 @@ const SpeciesSlideshow = ({
   };
 
   const handleDoubleTap = async () => {
+    // Pause slideshow when attempting to buy
+    wasPausedBeforeTxRef.current = isPaused;
+    setIsPaused(true);
+    
     if (!isConnected || !wagmiAddress) {
       toast({
         title: "Wallet Required",
@@ -146,6 +150,7 @@ const SpeciesSlideshow = ({
         variant: "destructive",
       });
       connect();
+      setIsPaused(wasPausedBeforeTxRef.current);
       return;
     }
 
@@ -486,7 +491,7 @@ const SpeciesSlideshow = ({
         variant: "destructive",
       });
     } finally {
-      setIsPaused(false);
+      setIsPaused(wasPausedBeforeTxRef.current);
     }
   };
 
@@ -974,6 +979,11 @@ const SpeciesSlideshow = ({
             setIsPaused(true);
           }}
           onTransactionEnd={() => setIsPaused(wasPausedBeforeTxRef.current)}
+          onPanelOpen={() => {
+            wasPausedBeforeTxRef.current = isPaused;
+            setIsPaused(true);
+          }}
+          onPanelClose={() => setIsPaused(wasPausedBeforeTxRef.current)}
         />
         {/* Buy DNA button (double-tap on image still works) */}
         <BuyDnaButton onClick={handleDoubleTap} />
