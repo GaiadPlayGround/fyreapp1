@@ -5,6 +5,7 @@ import HeroSection from '@/components/HeroSection';
 import Footer from '@/components/Footer';
 import EnzymeAdPopup from '@/components/EnzymeAdPopup';
 import { useSpeciesApi } from '@/hooks/useSpeciesApi';
+import { useMetaTags } from '@/hooks/useMetaTags';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -16,6 +17,14 @@ const Home = () => {
   // Use API data for onchain stats
   const onchainCount = onchain || 234;
   const totalCount = total || 1234;
+
+  // Set meta tags for home page
+  useMetaTags({
+    title: 'PUREBREEDS EXPLORER | Tokenized Endangered Animals on Base L2',
+    description: 'Browse, Vote and Share Tokenized Endangered Animals on Base L2',
+    image: '/logo.png',
+    url: typeof window !== 'undefined' ? window.location.origin : 'https://www.fcbc.fun',
+  });
 
   // DNA Enzymes popup logic: only at 180 seconds and 45 minutes (twice total)
   useEffect(() => {

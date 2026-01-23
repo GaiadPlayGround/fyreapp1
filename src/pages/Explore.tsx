@@ -11,6 +11,7 @@ import { useSpeciesStats } from '@/hooks/useSpeciesStats';
 import { ConservationStatus } from '@/data/species';
 import { SortOption, ViewMode } from '@/components/FilterDrawer';
 import type { Species } from '@/data/species';
+import { useMetaTags } from '@/hooks/useMetaTags';
 
 const Explore = () => {
   const navigate = useNavigate();
@@ -35,6 +36,14 @@ const Explore = () => {
 
   // Wildlife sounds
   useAnimalSounds(soundEnabled);
+
+  // Set default meta tags for explore page
+  useMetaTags({
+    title: 'PUREBREEDS EXPLORER | Tokenized Endangered Animals on Base L2',
+    description: 'Browse, Vote and Share Tokenized Endangered Animals on Base L2',
+    image: '/logo.png',
+    url: typeof window !== 'undefined' ? `${window.location.origin}/explore` : 'https://www.fcbc.fun/explore',
+  });
 
   // DNA Enzymes popup logic: only at 180 seconds and 45 minutes (twice total)
   useEffect(() => {

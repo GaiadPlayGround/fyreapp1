@@ -4,6 +4,7 @@ import { useSpeciesApi } from '@/hooks/useSpeciesApi';
 import { useSpeciesStats } from '@/hooks/useSpeciesStats';
 import SpeciesSlideshow from '@/components/SpeciesSlideshow';
 import { SortOption } from '@/components/FilterDrawer';
+import { useMetaTags } from '@/hooks/useMetaTags';
 
 const SpeciesDetail = () => {
   const { speciesId } = useParams<{ speciesId: string }>();
@@ -78,6 +79,22 @@ const SpeciesDetail = () => {
       }
     }
   }, [sortedSpecies, speciesId, navigate]);
+
+  // Update meta tags for sharing with species-specific information
+  const currentSpecies = initialIndex !== null ? sortedSpecies[initialIndex] : null;
+  useMetaTags({
+    title: currentSpecies 
+      ? `${currentSpecies.name} (${currentSpecies.symbol}) | PUREBREEDS EXPLORER`
+      : undefined,
+    description: currentSpecies
+      ? `${currentSpecies.name} - ${currentSpecies.description || 'An endangered animal brought onchain to Base by the FCBC Club. Buy DNA and Create Hybrids.'}`
+      : undefined,
+    image: currentSpecies?.image || undefined,
+    url: currentSpecies && typeof window !== 'undefined'
+      ? `${window.location.origin}/explore/${currentSpecies.symbol?.toLowerCase() || speciesId}`
+      : undefined,
+    type: 'website',
+  });
 
   const handleClose = () => {
     navigate('/explore');
