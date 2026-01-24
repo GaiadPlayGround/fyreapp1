@@ -17,11 +17,11 @@ interface VoteSquaresProps {
   onPanelClose?: () => void;
 }
 
-// Vote payment address - receives 0.1 USDC per vote
+// Vote payment address - receives 0.01 USDC (1 cent) per vote
 const VOTE_PAYMENT_ADDRESS = '0xae28916f0bc703fccbaf9502d15f838a1caa01b3' as Address;
 const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' as Address;
 const USDC_DECIMALS = 6;
-const VOTE_COST = 0.1; // USDC
+const VOTE_COST = 0.01; // USDC (1 cent per vote)
 
 const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactionEnd, onPanelOpen, onPanelClose }: VoteSquaresProps) => {
   const { isConnected, address, usdcBalance, connect, addVoteTicket } = useWallet();
@@ -381,7 +381,7 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
             {totalVotes.toLocaleString()} Base Squares
           </span>
           <span className="text-card/60 text-[10px] font-sans">
-            0.1 USDC/vote
+            1c/vote
           </span>
           <span className="text-card/40 text-[9px] font-sans mt-0.5">
             Long press for bulk vote
