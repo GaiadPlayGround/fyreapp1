@@ -11,13 +11,10 @@ interface BulkVoteDialogProps {
 }
 
 const BULK_VOTE_OPTIONS = [
-  { amount: 50, cost: 5 },
-  { amount: 100, cost: 10 },
-  { amount: 250, cost: 25 },
-  { amount: 500, cost: 50 },
-  { amount: 1000, cost: 100 },
-  { amount: 2500, cost: 250 },
-  { amount: 5000, cost: 500 },
+  { amount: 10, cost: 0.1 },
+  { amount: 20, cost: 0.2 },
+  { amount: 50, cost: 0.5 },
+  { amount: 100, cost: 1 },
 ];
 
 const BulkVoteDialog = ({ isOpen, onClose, onConfirm, isSubmitting }: BulkVoteDialogProps) => {
@@ -34,31 +31,49 @@ const BulkVoteDialog = ({ isOpen, onClose, onConfirm, isSubmitting }: BulkVoteDi
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle className="font-serif text-lg">Bulk Vote</DialogTitle>
+          <DialogTitle className="font-serif text-lg">BULK VOTE</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <p className="text-sm text-muted-foreground font-sans">
-            Select the number of Base Squares to vote (50-5000):
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            {BULK_VOTE_OPTIONS.map((option) => (
-              <button
-                key={option.amount}
-                onClick={() => setSelectedAmount(option.amount)}
-                disabled={isSubmitting}
-                className={cn(
-                  "p-3 rounded-lg border-2 transition-all font-sans",
-                  selectedAmount === option.amount
-                    ? "border-primary bg-primary/10"
-                    : "border-border hover:border-primary/50",
-                  isSubmitting && "opacity-50 cursor-not-allowed"
-                )}
-              >
-                <div className="text-sm font-medium">{option.amount} Squares</div>
-                <div className="text-xs text-muted-foreground">${option.cost} USDC</div>
-              </button>
-            ))}
+          <div className="space-y-2">
+            <p className="text-sm text-foreground font-sans">
+              Base Squares represent the popularity and influence of FYRE Purebreeds.
+            </p>
+            <p className="text-sm text-muted-foreground font-sans">
+              Assign Base Square votes to boost visibility for endangered species.
+            </p>
           </div>
+          
+          <div>
+            <p className="text-xs text-muted-foreground font-sans mb-2">
+              Select the number of Base Squares to assign to this species:
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {BULK_VOTE_OPTIONS.map((option) => (
+                <button
+                  key={option.amount}
+                  onClick={() => setSelectedAmount(option.amount)}
+                  disabled={isSubmitting}
+                  className={cn(
+                    "p-3 rounded-lg border-2 transition-all font-sans",
+                    selectedAmount === option.amount
+                      ? "border-primary bg-primary/10"
+                      : "border-border hover:border-primary/50",
+                    isSubmitting && "opacity-50 cursor-not-allowed"
+                  )}
+                >
+                  <div className="text-sm font-medium">{option.amount} Base Squares</div>
+                  <div className="text-xs text-muted-foreground">
+                    {option.cost < 1 ? `${(option.cost * 100).toFixed(0)}c` : `$${option.cost}`} USDC
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <p className="text-[10px] text-muted-foreground font-sans text-center">
+            (onchain activity increases your chances of qualifying for $FYRE and $BASE airdrops.)
+          </p>
+
           <div className="flex gap-2 pt-2">
             <button
               onClick={onClose}
@@ -87,4 +102,3 @@ const BulkVoteDialog = ({ isOpen, onClose, onConfirm, isSubmitting }: BulkVoteDi
 };
 
 export default BulkVoteDialog;
-

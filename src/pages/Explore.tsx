@@ -26,7 +26,7 @@ const Explore = () => {
   const [sortBy, setSortBy] = useState<SortOption>(() => {
     const saved = localStorage.getItem('fyreapp-sort');
     const allowed: SortOption[] = ['id', 'votes', 'shares', 'mcap', 'holders', 'new'];
-    return allowed.includes(saved as SortOption) ? (saved as SortOption) : 'id';
+    return allowed.includes(saved as SortOption) ? (saved as SortOption) : 'votes';
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [conservationFilter, setConservationFilter] = useState<ConservationStatus | null>(null);
@@ -45,24 +45,21 @@ const Explore = () => {
     url: typeof window !== 'undefined' ? `${window.location.origin}/explore` : 'https://www.fcbc.fun/explore',
   });
 
-  // DNA Enzymes popup logic: only at 180 seconds and 45 minutes (twice total)
+  // DNA Enzymes popup logic: only once per session
   useEffect(() => {
-    const threeMinutes = 180 * 1000;
-    const fortyFiveMinutes = 45 * 60 * 1000;
+    const hasSeenAd = sessionStorage.getItem('fyreapp-enzyme-ad-shown');
+    if (hasSeenAd) return;
 
-    // First popup at 180 seconds
-    const firstTimeout = setTimeout(() => {
+    const threeMinutes = 180 * 1000;
+
+    // Show popup once at 180 seconds
+    const timeout = setTimeout(() => {
       setShowEnzymeAd(true);
+      sessionStorage.setItem('fyreapp-enzyme-ad-shown', 'true');
     }, threeMinutes);
 
-    // Second popup at 45 minutes
-    const secondTimeout = setTimeout(() => {
-      setShowEnzymeAd(true);
-    }, fortyFiveMinutes);
-
     return () => {
-      clearTimeout(firstTimeout);
-      clearTimeout(secondTimeout);
+      clearTimeout(timeout);
     };
   }, []);
 
