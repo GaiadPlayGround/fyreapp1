@@ -115,22 +115,10 @@ const WalletDropdown = ({
   };
 
   const copyInviteLink = () => {
-    const code = inviteCode || 'ABC123';
-    navigator.clipboard.writeText(`https://fcbc.fun/invite/${code}`);
+    navigator.clipboard.writeText('https://fyreapp1.fcbc.fun/connect');
     setInviteCopied(true);
     setTimeout(() => setInviteCopied(false), 2000);
   };
-
-  if (!isConnected) {
-    return (
-      <div className="relative">
-        <button onClick={connect} className="flex items-center gap-1 px-2 py-1.5 text-[10px] font-sans border border-border rounded-md hover:bg-muted transition-colors">
-          <Wallet className="w-3.5 h-3.5" />
-          <span className="hidden xs:inline">Connect</span>
-        </button>
-      </div>
-    );
-  }
 
   return (
     <>
@@ -138,21 +126,30 @@ const WalletDropdown = ({
         <button 
           ref={buttonRef}
           onClick={() => setIsOpen(!isOpen)} 
-          className="flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-secondary hover:bg-secondary/80 transition-colors"
+          className={cn(
+            "flex items-center gap-1.5 px-2 py-1.5 rounded-md transition-colors",
+            isConnected 
+              ? "bg-secondary hover:bg-secondary/80"
+              : "border border-border hover:bg-muted"
+          )}
         >
           <Wallet className="w-3.5 h-3.5 text-muted-foreground" />
-          {isLoadingName ? (
-            <span className="text-xs font-sans text-muted-foreground">...</span>
-          ) : displayName.type !== 'address' ? (
-            <span className={cn(
-              "text-xs font-sans truncate max-w-[100px]",
-              displayName.type === 'base' && "text-primary",
-              displayName.type === 'ens' && "text-primary"
-            )}>
-              {displayName.displayName}
-            </span>
+          {isConnected ? (
+            isLoadingName ? (
+              <span className="text-xs font-sans text-muted-foreground">...</span>
+            ) : displayName.type !== 'address' ? (
+              <span className={cn(
+                "text-xs font-sans truncate max-w-[100px]",
+                displayName.type === 'base' && "text-primary",
+                displayName.type === 'ens' && "text-primary"
+              )}>
+                {displayName.displayName}
+              </span>
+            ) : (
+              <span className="text-xs font-sans text-foreground">{formatBalance(fcbccBalance)}</span>
+            )
           ) : (
-            <span className="text-xs font-sans text-foreground">{formatBalance(fcbccBalance)}</span>
+            <span className="text-xs font-sans text-muted-foreground hidden xs:inline">Connect</span>
           )}
         </button>
 
@@ -165,60 +162,84 @@ const WalletDropdown = ({
               right: `${dropdownPosition.right}px`,
             }}
           >
+            {/* Not connected state - show prominent connect button */}
+            {!isConnected && (
+              <div className="p-4 border-b border-border">
+                <button
+                  onClick={() => {
+                    connect();
+                    setIsOpen(false);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 py-3 bg-primary text-primary-foreground rounded-lg font-sans font-medium hover:bg-primary/90 transition-colors"
+                >
+                  <Wallet className="w-4 h-4" />
+                  Connect Wallet
+                </button>
+              </div>
+            )}
+
             {/* Wallet Address with Base name/ENS */}
-            <div className="p-3 border-b border-border">
+            <div className={cn("p-3 border-b border-border", !isConnected && "opacity-50")}>
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-[10px] text-muted-foreground font-sans">Wallet Address</span>
               </div>
               <div className="flex items-center justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  {isLoadingName ? (
-                    <p className="text-xs text-muted-foreground font-sans">Loading...</p>
-                  ) : (
-                    <>
-                      {/* Display name with priority: Base name > ENS name > truncated address */}
-                      <p className={cn(
-                        "text-xs font-sans truncate",
-                        displayName.type === 'base' && "text-primary font-medium",
-                        displayName.type === 'ens' && "text-primary",
-                        displayName.type === 'address' && "font-mono text-foreground"
-                      )}>
-                        {displayName.displayName}
-                      </p>
-                      {/* Show full address below if we have a name */}
-                      {displayName.type !== 'address' && address && (
-                        <p className="font-mono text-[10px] text-muted-foreground truncate mt-0.5">
-                          {formatAddressForDisplay(address)}
+                  {isConnected ? (
+                    isLoadingName ? (
+                      <p className="text-xs text-muted-foreground font-sans">Loading...</p>
+                    ) : (
+                      <>
+                        {/* Display name with priority: Base name > ENS name > truncated address */}
+                        <p className={cn(
+                          "text-xs font-sans truncate",
+                          displayName.type === 'base' && "text-primary font-medium",
+                          displayName.type === 'ens' && "text-primary",
+                          displayName.type === 'address' && "font-mono text-foreground"
+                        )}>
+                          {displayName.displayName}
                         </p>
-                      )}
-                    </>
+                        {/* Show full address below if we have a name */}
+                        {displayName.type !== 'address' && address && (
+                          <p className="font-mono text-[10px] text-muted-foreground truncate mt-0.5">
+                            {formatAddressForDisplay(address)}
+                          </p>
+                        )}
+                      </>
+                    )
+                  ) : (
+                    <p className="text-xs text-muted-foreground font-sans">Not connected</p>
                   )}
                 </div>
-                <button onClick={copyAddress} className="p-1.5 hover:bg-muted rounded transition-colors flex-shrink-0">
+                <button 
+                  onClick={copyAddress} 
+                  className="p-1.5 hover:bg-muted rounded transition-colors flex-shrink-0"
+                  disabled={!isConnected}
+                >
                   {copied ? <Check className="w-3 h-3 text-primary" /> : <Copy className="w-3 h-3 text-muted-foreground" />}
                 </button>
               </div>
             </div>
 
             {/* Balances */}
-            <div className="p-3 space-y-2 border-b border-border">
+            <div className={cn("p-3 space-y-2 border-b border-border", !isConnected && "opacity-50")}>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-sans text-muted-foreground">Total DNA Tokens:</span>
-                <span className="text-xs font-sans font-medium text-foreground">{formatBalance(dnaBalance)}</span>
+                <span className="text-xs font-sans font-medium text-foreground">{isConnected ? formatBalance(dnaBalance) : '-'}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-sans text-muted-foreground">USDC Balance:</span>
-                <span className="text-xs font-sans font-medium text-foreground">${usdcBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span className="text-xs font-sans font-medium text-foreground">{isConnected ? `$${usdcBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-sans text-muted-foreground">$FCBCC balance:</span>
-                <span className="text-xs font-sans font-medium text-foreground">{formatBalance(fcbccBalance)}</span>
+                <span className="text-xs font-sans font-medium text-foreground">{isConnected ? formatBalance(fcbccBalance) : '-'}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-sans text-muted-foreground">Owned DNA genomes:</span>
-                <span className="text-xs font-sans font-medium text-foreground">{ownedGenomes.toLocaleString()}</span>
+                <span className="text-xs font-sans font-medium text-foreground">{isConnected ? ownedGenomes.toLocaleString() : '-'}</span>
               </div>
-              {ownedDnaTickers.length > 0 && (
+              {isConnected && ownedDnaTickers.length > 0 && (
                 <div className="flex flex-col gap-1 pt-1 border-t border-border">
                   <span className="text-[10px] font-sans text-muted-foreground">
                     DNA Tickers ({ownedDnaTickers.length}):
@@ -239,7 +260,7 @@ const WalletDropdown = ({
               )}
               <div className="flex items-center justify-between">
                 <span className="text-xs font-sans text-muted-foreground">Fyre Keys Balance:</span>
-                <span className="text-xs font-sans font-medium text-foreground">{fyreKeys.toLocaleString()}</span>
+                <span className="text-xs font-sans font-medium text-foreground">{isConnected ? fyreKeys.toLocaleString() : '-'}</span>
               </div>
             </div>
 
@@ -285,11 +306,14 @@ const WalletDropdown = ({
               )}
               <button className="flex items-center gap-2 w-full px-2 py-1.5 text-xs font-sans text-foreground hover:bg-muted rounded-md transition-colors">
                 <Ticket className="w-3.5 h-3.5" />
-                <span>Vote tickets ({voteTickets})</span>
+                <span>Vote tickets {isConnected ? `(${voteTickets})` : '-'}</span>
               </button>
-              <button className="flex items-center gap-2 w-full px-2 py-1.5 text-xs font-sans text-foreground hover:bg-muted rounded-md transition-colors">
+              <button 
+                className="flex items-center gap-2 w-full px-2 py-1.5 text-xs font-sans text-foreground hover:bg-muted rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!isConnected}
+              >
                 <Share2 className="w-3.5 h-3.5" />
-                <span>My shares ({shares})</span>
+                <span>My shares {isConnected ? `(${shares})` : '-'}</span>
               </button>
             </div>
 
@@ -319,15 +343,17 @@ const WalletDropdown = ({
             </div>
 
             {/* Disconnect */}
-            <div className="p-3">
-              <button onClick={() => {
-            disconnect();
-            setIsOpen(false);
-          }} className="flex items-center gap-2 w-full px-2 py-1.5 text-xs font-sans text-destructive hover:bg-destructive/10 rounded-md transition-colors">
-                <LogOut className="w-3.5 h-3.5" />
-                <span>Disconnect</span>
-              </button>
-            </div>
+            {isConnected && (
+              <div className="p-3">
+                <button onClick={() => {
+              disconnect();
+              setIsOpen(false);
+            }} className="flex items-center gap-2 w-full px-2 py-1.5 text-xs font-sans text-destructive hover:bg-destructive/10 rounded-md transition-colors">
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Disconnect</span>
+                </button>
+              </div>
+            )}
           </div>,
           document.body
         )}

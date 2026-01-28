@@ -17,7 +17,7 @@ interface VoteSquaresProps {
   onPanelClose?: () => void;
 }
 
-// Vote payment address - receives 0.1 USDC per vote
+// Vote payment address - receives 0.01 USDC (1 cent) per vote
 const VOTE_PAYMENT_ADDRESS = '0xae28916f0bc703fccbaf9502d15f838a1caa01b3' as Address;
 const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' as Address;
 const USDC_DECIMALS = 6;

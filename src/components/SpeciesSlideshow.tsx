@@ -17,10 +17,31 @@ import { base } from 'wagmi/chains';
 import { setApiKey, tradeCoin } from '@zoralabs/coins-sdk';
 import { usePaymentSettings } from './PaymentSettings';
 import { AdaptiveBackdrop } from './AdaptiveBackdrop';
+import BuyDnaPopup from './BuyDnaPopup';
 
-// Quick buy button component that reflects payment settings
-const BuyDnaButton = ({ onClick }: { onClick: () => void }) => {
+// Quick buy button component with long press for popup
+const BuyDnaButton = ({ 
+  onClick,
+  onLongPress,
+}: { 
+  onClick: () => void;
+  onLongPress: () => void;
+}) => {
   const { currency, amount } = usePaymentSettings();
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const handlePressStart = () => {
+    longPressTimerRef.current = setTimeout(() => {
+      onLongPress();
+    }, 500); // 500ms long press
+  };
+  
+  const handlePressEnd = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
   
   return (
     <TooltipProvider>
@@ -28,13 +49,18 @@ const BuyDnaButton = ({ onClick }: { onClick: () => void }) => {
         <TooltipTrigger asChild>
           <button
             onClick={onClick}
+            onMouseDown={handlePressStart}
+            onMouseUp={handlePressEnd}
+            onMouseLeave={handlePressEnd}
+            onTouchStart={handlePressStart}
+            onTouchEnd={handlePressEnd}
             className="relative px-3 py-1.5 bg-card/10 backdrop-blur-sm rounded-full hover:bg-card/20 transition-colors text-xs font-sans text-card"
           >
             Buy DNA
           </button>
         </TooltipTrigger>
         <TooltipContent side="top">
-          <p>Double-tap to buy ${amount} {currency} worth of this species DNA tokens</p>
+          <p>Tap to buy ${amount} {currency} • Long press to change</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -82,6 +108,7 @@ const SpeciesSlideshow = ({
   const [arrowsHoverActive, setArrowsHoverActive] = useState(false);
   const [contractCopied, setContractCopied] = useState(false);
   const [speciesContractCopied, setSpeciesContractCopied] = useState(false);
+  const [showBuyPopup, setShowBuyPopup] = useState(false);
   
   const arrowHideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const autoPlayRef = useRef<NodeJS.Timeout | null>(null);
@@ -973,7 +1000,14 @@ const SpeciesSlideshow = ({
       {/* Bottom center - Buy DNA button on top, vote panel below */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 safe-area-bottom z-10 flex flex-col items-center gap-2">
         {/* Buy DNA button on top */}
-        <BuyDnaButton onClick={handleDoubleTap} />
+        <BuyDnaButton 
+          onClick={handleDoubleTap}
+          onLongPress={() => {
+            wasPausedBeforeTxRef.current = isPaused;
+            setIsPaused(true);
+            setShowBuyPopup(true);
+          }}
+        />
         {/* Vote squares below */}
         <VoteSquares 
           key={`${currentSpecies.id}-${voteKey}`}
@@ -990,6 +1024,21 @@ const SpeciesSlideshow = ({
           onPanelClose={() => setIsPaused(wasPausedBeforeTxRef.current)}
         />
       </div>
+
+      {/* Buy DNA Popup */}
+      <BuyDnaPopup
+        isOpen={showBuyPopup}
+        onClose={() => {
+          setShowBuyPopup(false);
+          setIsPaused(wasPausedBeforeTxRef.current);
+        }}
+        onConfirm={(amount, currency) => {
+          setShowBuyPopup(false);
+          handleDoubleTap();
+        }}
+        speciesName={currentSpecies.name}
+        isSubmitting={isBuying || isConfirming}
+      />
 
       {/* Bottom right - Share button */}
       <TooltipProvider>

@@ -106,4 +106,3 @@ const BulkVoteDialog = ({ isOpen, onClose, onConfirm, isSubmitting }: BulkVoteDi
 };
 
 export default BulkVoteDialog;
-
