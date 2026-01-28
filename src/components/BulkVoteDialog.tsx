@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { cn } from '@/lib/utils';
 
@@ -10,14 +9,14 @@ interface BulkVoteDialogProps {
   isSubmitting: boolean;
 }
 
+// 1 vote = 1 cent, so amounts are in cents
 const BULK_VOTE_OPTIONS = [
-  { amount: 50, cost: 5 },
-  { amount: 100, cost: 10 },
-  { amount: 250, cost: 25 },
-  { amount: 500, cost: 50 },
-  { amount: 1000, cost: 100 },
-  { amount: 2500, cost: 250 },
-  { amount: 5000, cost: 500 },
+  { amount: 250, cost: 2.50 },   // 250 votes = $2.50
+  { amount: 500, cost: 5.00 },   // 500 votes = $5.00
+  { amount: 2500, cost: 25.00 },  // 2500 votes = $25.00
+  { amount: 5000, cost: 50.00 },  // 5000 votes = $50.00
+  { amount: 10000, cost: 100.00 }, // 10000 votes = $100.00
+  { amount: 25000, cost: 250.00 }, // 25000 votes = $250.00
 ];
 
 const BulkVoteDialog = ({ isOpen, onClose, onConfirm, isSubmitting }: BulkVoteDialogProps) => {
@@ -32,33 +31,53 @@ const BulkVoteDialog = ({ isOpen, onClose, onConfirm, isSubmitting }: BulkVoteDi
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-serif text-lg">Bulk Vote</DialogTitle>
+          <DialogTitle className="font-serif text-lg">BULK VOTING</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <p className="text-sm text-muted-foreground font-sans">
-            Select the number of Base Squares to vote (50-5000):
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            {BULK_VOTE_OPTIONS.map((option) => (
-              <button
-                key={option.amount}
-                onClick={() => setSelectedAmount(option.amount)}
-                disabled={isSubmitting}
-                className={cn(
-                  "p-3 rounded-lg border-2 transition-all font-sans",
-                  selectedAmount === option.amount
-                    ? "border-primary bg-primary/10"
-                    : "border-border hover:border-primary/50",
-                  isSubmitting && "opacity-50 cursor-not-allowed"
-                )}
-              >
-                <div className="text-sm font-medium">{option.amount} Squares</div>
-                <div className="text-xs text-muted-foreground">${option.cost} USDC</div>
-              </button>
-            ))}
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground font-sans leading-relaxed">
+              Base Squares is popularity indicator of Fyre PureBreeds.
+            </p>
+            <p className="text-xs text-muted-foreground font-sans leading-relaxed">
+              Assign Base Square votes to boost visibility for your favourite endangered species.
+            </p>
           </div>
+          
+          <div>
+            <p className="text-sm font-sans text-foreground mb-3">
+              Select the number of Base Squares to assign to this species:
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {BULK_VOTE_OPTIONS.map((option) => (
+                <button
+                  key={option.amount}
+                  onClick={() => setSelectedAmount(option.amount)}
+                  disabled={isSubmitting}
+                  className={cn(
+                    "p-3 rounded-lg border-2 transition-all font-sans text-left",
+                    selectedAmount === option.amount
+                      ? "border-primary bg-primary/10"
+                      : "border-border hover:border-primary/50",
+                    isSubmitting && "opacity-50 cursor-not-allowed"
+                  )}
+                >
+                  <div className="text-sm font-medium">
+                    {option.amount.toLocaleString()} Base Squares
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    ${option.cost.toFixed(2)}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <p className="text-[10px] text-muted-foreground font-sans italic">
+            (Onchain activity increases your chances of qualifying for $FYRE and $BASE airdrops.)
+          </p>
+
           <div className="flex gap-2 pt-2">
             <button
               onClick={onClose}

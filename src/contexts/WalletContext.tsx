@@ -47,7 +47,7 @@ export const useWallet = () => {
   return context;
 };
 
-const VOTE_COST = 0.1; // USDC
+const VOTE_COST = 0.01; // USDC (1 cent per vote)
 
 export const WalletProvider = ({ children }: { children: ReactNode }) => {
   // useAccount will detect if wallet is already connected, but won't auto-connect

@@ -274,13 +274,15 @@ const WalletDropdown = ({
 
             {/* Actions */}
             <div className="p-3 space-y-1 border-b border-border">
-              <button onClick={copyInviteLink} className="flex items-center justify-between w-full px-2 py-1.5 text-xs font-sans text-foreground hover:bg-muted rounded-md transition-colors">
-                <span className="flex items-center gap-2">
-                  <Users className="w-3.5 h-3.5" />
-                  <span>Invites ({invites})</span>
-                </span>
-                {inviteCopied ? <Check className="w-3 h-3 text-primary" /> : <Copy className="w-3 h-3 text-muted-foreground" />}
-              </button>
+              {invites > 0 && (
+                <button onClick={copyInviteLink} className="flex items-center justify-between w-full px-2 py-1.5 text-xs font-sans text-foreground hover:bg-muted rounded-md transition-colors">
+                  <span className="flex items-center gap-2">
+                    <Users className="w-3.5 h-3.5" />
+                    <span>Invites ({invites})</span>
+                  </span>
+                  {inviteCopied ? <Check className="w-3 h-3 text-primary" /> : <Copy className="w-3 h-3 text-muted-foreground" />}
+                </button>
+              )}
               <button className="flex items-center gap-2 w-full px-2 py-1.5 text-xs font-sans text-foreground hover:bg-muted rounded-md transition-colors">
                 <Ticket className="w-3.5 h-3.5" />
                 <span>Vote tickets ({voteTickets})</span>

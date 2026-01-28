@@ -72,8 +72,8 @@ const SpeciesSlideshow = ({
   const [showInfo, setShowInfo] = useState(false);
   const [showArrows, setShowArrows] = useState(true);
   const [showShare, setShowShare] = useState(false);
-  // Defaults: timer off + paused
-  const [autoPlayInterval, setAutoPlayInterval] = useState<number | null>(null);
+  // Defaults: 3 seconds timer but paused
+  const [autoPlayInterval, setAutoPlayInterval] = useState<number | null>(3);
   const [isPaused, setIsPaused] = useState(true);
   const [voteKey, setVoteKey] = useState(0);
   const [voiceEnabled, setVoiceEnabled] = useState(false);
@@ -144,12 +144,13 @@ const SpeciesSlideshow = ({
     setIsPaused(true);
     
     if (!isConnected || !wagmiAddress) {
-      toast({
-        title: "Wallet Required",
-        description: "Connect your wallet to buy DNA tokens.",
-        variant: "destructive",
-      });
+      // Auto-connect wallet
       connect();
+      toast({
+        title: "Connecting Wallet...",
+        description: "Please approve the connection to buy DNA tokens.",
+        duration: 2000,
+      });
       setIsPaused(wasPausedBeforeTxRef.current);
       return;
     }
@@ -969,8 +970,11 @@ const SpeciesSlideshow = ({
         />
       </div>
 
-      {/* Bottom center - Vote squares and double-tap buy icon */}
+      {/* Bottom center - Buy DNA button on top, vote panel below */}
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2 safe-area-bottom z-10 flex flex-col items-center gap-2">
+        {/* Buy DNA button on top */}
+        <BuyDnaButton onClick={handleDoubleTap} />
+        {/* Vote squares below */}
         <VoteSquares 
           key={`${currentSpecies.id}-${voteKey}`}
           speciesId={currentSpecies.id}
@@ -985,8 +989,6 @@ const SpeciesSlideshow = ({
           }}
           onPanelClose={() => setIsPaused(wasPausedBeforeTxRef.current)}
         />
-        {/* Buy DNA button (double-tap on image still works) */}
-        <BuyDnaButton onClick={handleDoubleTap} />
       </div>
 
       {/* Bottom right - Share button */}

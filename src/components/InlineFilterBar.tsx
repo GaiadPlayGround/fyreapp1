@@ -111,12 +111,12 @@ const InlineFilterBar = ({
 
   const clearAll = () => {
     onStatusChange(null);
-    onSortChange('id');
+    onSortChange('votes');
     onSearchChange('');
     onViewModeChange('grid');
   };
 
-  const hasActiveFilters = selectedStatus !== null || sortBy !== 'id' || searchTicker !== '' || viewMode !== 'grid';
+  const hasActiveFilters = selectedStatus !== null || sortBy !== 'votes' || searchTicker !== '' || viewMode !== 'grid';
 
   return (
     <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-2 sm:py-3 bg-background w-full overflow-x-auto scrollbar-hide">

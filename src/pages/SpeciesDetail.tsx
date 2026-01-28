@@ -17,7 +17,7 @@ const SpeciesDetail = () => {
   const sortBy = useMemo(() => {
     const saved = localStorage.getItem('fyreapp-sort');
     const allowed: SortOption[] = ['id', 'votes', 'shares', 'mcap', 'holders', 'new'];
-    return allowed.includes(saved as SortOption) ? (saved as SortOption) : 'id';
+    return allowed.includes(saved as SortOption) ? (saved as SortOption) : 'votes';
   }, []);
 
   // Sort species based on saved preference

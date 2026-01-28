@@ -97,11 +97,11 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* Quicklinks/Roadmap */}
+        {/* FyreApps */}
         <TooltipProvider>
           <div className="flex flex-col items-center mb-6">
             <h4 className="text-xs font-sans text-muted-foreground mb-3 uppercase tracking-wider">
-              Quicklinks/Roadmap
+              FyreApps
             </h4>
             <div className="flex flex-wrap justify-center gap-2">
               {quickLinks.map((link) => {
@@ -140,68 +140,60 @@ const Footer = () => {
           </div>
         </TooltipProvider>
 
-        {/* Quick Buy Settings */}
+        {/* Quick Buy Settings - Show as small tags */}
         <div className="flex flex-col items-center mb-6">
-          <h4 className="text-xs font-sans text-muted-foreground mb-3 uppercase tracking-wider">
+          <h4 className="text-xs font-sans text-muted-foreground mb-2 uppercase tracking-wider">
             Quick Buy Settings
           </h4>
-          <div className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-sans text-foreground bg-muted hover:bg-primary/20 rounded-full transition-all">
-                {paymentCurrency === 'USDC' ? (
-                  <>
-                    <span>$</span>
-                    <span>${quickBuyAmount} {paymentCurrency}</span>
-                  </>
-                ) : (
-                  <>
-                    <Coins className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span>${quickBuyAmount} {paymentCurrency}</span>
-                  </>
-                )}
-                <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="min-w-[160px]">
-                <div className="px-2 py-1.5 text-[10px] font-sans text-muted-foreground uppercase tracking-wider">
-                  Payment Currency
-                </div>
-                <DropdownMenuItem
-                  onClick={() => setPaymentCurrency('USDC')}
-                  className={cn(
-                    "text-sm font-sans cursor-pointer",
-                    paymentCurrency === 'USDC' && "bg-muted"
-                  )}
-                >
-                  $ USDC (Base)
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setPaymentCurrency('ETH')}
-                  className={cn(
-                    "text-sm font-sans cursor-pointer",
-                    paymentCurrency === 'ETH' && "bg-muted"
-                  )}
-                >
-                  ETH (Base)
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <div className="px-2 py-1.5 text-[10px] font-sans text-muted-foreground uppercase tracking-wider">
-                  Quick Buy Amount
-                </div>
-                {quickBuyAmounts.map((amount) => (
-                  <DropdownMenuItem
-                    key={amount}
-                    onClick={() => setQuickBuyAmount(amount)}
-                    className={cn(
-                      "text-sm font-sans cursor-pointer",
-                      quickBuyAmount === amount && "bg-muted"
-                    )}
-                  >
-                    ${amount}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <div className="flex flex-wrap items-center justify-center gap-1.5">
+            <span className="px-2 py-0.5 text-[10px] font-sans text-foreground bg-muted rounded-full">
+              {paymentCurrency === 'USDC' ? '$' : <Coins className="w-2.5 h-2.5 inline" />} ${quickBuyAmount} {paymentCurrency}
+            </span>
           </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger className="mt-2 text-[10px] font-sans text-muted-foreground hover:text-foreground underline">
+              Change settings
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="center" className="min-w-[160px]">
+              <div className="px-2 py-1.5 text-[10px] font-sans text-muted-foreground uppercase tracking-wider">
+                Payment Currency
+              </div>
+              <DropdownMenuItem
+                onClick={() => setPaymentCurrency('USDC')}
+                className={cn(
+                  "text-sm font-sans cursor-pointer",
+                  paymentCurrency === 'USDC' && "bg-muted"
+                )}
+              >
+                $ USDC (Base)
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setPaymentCurrency('ETH')}
+                className={cn(
+                  "text-sm font-sans cursor-pointer",
+                  paymentCurrency === 'ETH' && "bg-muted"
+                )}
+              >
+                ETH (Base)
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <div className="px-2 py-1.5 text-[10px] font-sans text-muted-foreground uppercase tracking-wider">
+                Quick Buy Amount
+              </div>
+              {quickBuyAmounts.map((amount) => (
+                <DropdownMenuItem
+                  key={amount}
+                  onClick={() => setQuickBuyAmount(amount)}
+                  className={cn(
+                    "text-sm font-sans cursor-pointer",
+                    quickBuyAmount === amount && "bg-muted"
+                  )}
+                >
+                  ${amount}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Copyright */}

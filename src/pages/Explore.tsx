@@ -26,7 +26,7 @@ const Explore = () => {
   const [sortBy, setSortBy] = useState<SortOption>(() => {
     const saved = localStorage.getItem('fyreapp-sort');
     const allowed: SortOption[] = ['id', 'votes', 'shares', 'mcap', 'holders', 'new'];
-    return allowed.includes(saved as SortOption) ? (saved as SortOption) : 'id';
+    return allowed.includes(saved as SortOption) ? (saved as SortOption) : 'votes';
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [conservationFilter, setConservationFilter] = useState<ConservationStatus | null>(null);
@@ -124,7 +124,7 @@ const Explore = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground overflow-x-hidden overscroll-none touch-pan-y">
+    <div className="min-h-screen flex flex-col bg-background text-foreground overflow-x-hidden">
       <Header 
         animationEnabled={animationEnabled}
         soundEnabled={soundEnabled}
@@ -149,7 +149,7 @@ const Explore = () => {
         </div>
 
         {/* Species Grid - add top padding to account for fixed filter bar (header h-14 = 56px + filter bar ~48px) */}
-        <div className="w-full overflow-x-hidden px-0 pt-[80px] sm:pt-[104px]">
+        <div className="w-full overflow-x-hidden px-0 pt-[80px] sm:pt-[104px] pb-4">
           <SpeciesGrid
             species={sortedSpecies}
             viewMode={viewMode}
