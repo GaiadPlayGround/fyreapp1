@@ -53,16 +53,18 @@ export const useSpeciesStats = () => {
   const recordVote = async (speciesId: string, walletAddress: string, rating: number) => {
     try {
       // Insert vote into database
+      // Each vote = 1 cent, but rating (1-5) determines how many base squares are assigned
+      // When user clicks box 5, we send 1 transaction (1 cent) and record 1 vote with rating=5 (5 base squares)
       // The database trigger `increment_species_votes()` will automatically:
-      // 1. Add `rating` to `base_squares` for this species (1 star = 1 base square, 5 stars = 5 base squares)
-      // 2. Update wallet's total_votes count
+      // 1. Add `rating` to `base_squares` for this species (rating=5 means +5 base squares)
+      // 2. Update wallet's total_votes count (+1 per vote)
       const { error } = await supabase
         .from('species_votes')
         .insert({
           species_id: speciesId,
           wallet_address: walletAddress,
-          rating, // 1-5 stars (1 star = 1 base square, 5 stars = 5 base squares)
-          usdc_cost: 0.01 * rating // 1 cent per star (1 star = 1¢, 5 stars = 5¢)
+          rating, // 1-5 (determines base squares: rating=5 means +5 base squares)
+          usdc_cost: 0.01 // Always 1 cent per vote
         });
 
       if (error) throw error;

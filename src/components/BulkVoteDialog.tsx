@@ -9,14 +9,15 @@ interface BulkVoteDialogProps {
   isSubmitting: boolean;
 }
 
-// 1 vote = 1 cent, so amounts are in cents
+// Each vote = max 5 base squares = 1 cent
+// Calculation: base squares / 5 = number of votes, each vote = 1 cent
 const BULK_VOTE_OPTIONS = [
-  { amount: 250, cost: 2.50 },   // 250 votes = $2.50
-  { amount: 500, cost: 5.00 },   // 500 votes = $5.00
-  { amount: 2500, cost: 25.00 },  // 2500 votes = $25.00
-  { amount: 5000, cost: 50.00 },  // 5000 votes = $50.00
-  { amount: 10000, cost: 100.00 }, // 10000 votes = $100.00
-  { amount: 25000, cost: 250.00 }, // 25000 votes = $250.00
+  { amount: 250, cost: 0.50 },   // 250 base squares = 50 votes (250/5) = 50 cents
+  { amount: 500, cost: 1.00 },   // 500 base squares = 100 votes (500/5) = $1
+  { amount: 2500, cost: 5.00 },  // 2500 base squares = 500 votes (2500/5) = $5
+  { amount: 5000, cost: 10.00 },  // 5000 base squares = 1000 votes (5000/5) = $10
+  { amount: 10000, cost: 20.00 }, // 10000 base squares = 2000 votes (10000/5) = $20
+  { amount: 25000, cost: 50.00 }, // 25000 base squares = 5000 votes (25000/5) = $50
 ];
 
 const BulkVoteDialog = ({ isOpen, onClose, onConfirm, isSubmitting }: BulkVoteDialogProps) => {
@@ -38,10 +39,10 @@ const BulkVoteDialog = ({ isOpen, onClose, onConfirm, isSubmitting }: BulkVoteDi
         <div className="space-y-4">
           <div className="space-y-2">
             <p className="text-xs text-muted-foreground font-sans leading-relaxed">
-              Base Squares is popularity indicator of Fyre PureBreeds.
+              Base Squares is popularity indicator for Fyre PureBreeds.
             </p>
             <p className="text-xs text-muted-foreground font-sans leading-relaxed">
-              Assign Base Square votes to boost visibility for your favourite endangered species.
+              [assign Base Square votes to boost visibility for your favourite endangered species.]
             </p>
           </div>
           

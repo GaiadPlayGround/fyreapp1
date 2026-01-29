@@ -3,9 +3,6 @@ import { ChevronDown } from 'lucide-react';
 import WalletDropdown from './WalletDropdown';
 import LeaderboardDialog from './LeaderboardDialog';
 import FyreMissionsDialog from './FyreMissionsDialog';
-
-import logo from '@/assets/logo.png';
-import logoLight from '@/assets/logo-light.png';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useWallet } from '@/contexts/WalletContext';
 import { cn } from '@/lib/utils';
@@ -15,6 +12,7 @@ interface HeaderProps {
   soundEnabled?: boolean;
   onToggleAnimation?: () => void;
   onToggleSound?: () => void;
+  showTitle?: boolean; // Control whether to show title text
 }
 
 const TITLE_OPTIONS = ['FyreApp 1', 'Slideshow and Rankings'];
@@ -24,28 +22,34 @@ const Header = ({
   soundEnabled = false,
   onToggleAnimation,
   onToggleSound,
+  showTitle = true, // Default to true for backward compatibility
 }: HeaderProps) => {
   const { theme } = useTheme();
   const { votes, shares, isConnected, ownedDnaTickers } = useWallet();
-  const currentLogo = theme === 'dark' ? logo : logoLight;
+  // Use logos from public folder: logo.png for dark mode, logo-black.png for light mode
+  const currentLogo = theme === 'dark' ? '/logo.png' : '/logo-black.png';
   const [titleIndex, setTitleIndex] = useState(0);
 
   useEffect(() => {
+    if (!showTitle) return; // Don't rotate titles if not showing
+    
     const interval = setInterval(() => {
       setTitleIndex((prev) => (prev + 1) % TITLE_OPTIONS.length);
     }, 4000);
     return () => clearInterval(interval);
-  }, []);
+  }, [showTitle]);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border safe-area-top w-full max-w-full overflow-x-hidden">
+    <header className="fixed top-0 left-0 right-0 z-50 overflow-y-clip bg-background/95 backdrop-blur-sm border-b border-border safe-area-top w-full max-w-full overflow-x-hidden">
       <div className="px-3 h-14 flex items-center justify-between w-full max-w-full">
         {/* Left: Logo and Title */}
         <a href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-          <img src={currentLogo} alt="Fyre App 1" className="w-9 h-9 rounded-lg object-contain" />
-          <h1 className="font-serif font-semibold text-foreground leading-tight text-[0.7em] sm:text-base transition-all duration-300">
-            {TITLE_OPTIONS[titleIndex]}
-          </h1>
+          <img src={currentLogo} alt="Fyre App 1" className="w-20 h-20 sm:w-50 sm:h-50 rounded-lg object-contain" />
+          {showTitle && (
+            <h1 className="font-serif font-semibold text-foreground leading-tight text-[0.7em] sm:text-base transition-all duration-300">
+              {TITLE_OPTIONS[titleIndex]}
+            </h1>
+          )}
         </a>
 
         {/* Right: Actions */}

@@ -16,7 +16,11 @@ const Index = () => {
   const { species: apiSpecies, total, onchain, loading } = useSpeciesApi();
   const { getBaseSquares, getShareCount, stats } = useSpeciesStats();
   const [selectedStatus, setSelectedStatus] = useState<ConservationStatus | null>(null);
-  const [sortBy, setSortBy] = useState<SortOption>('id');
+  const [sortBy, setSortBy] = useState<SortOption>(() => {
+    const saved = localStorage.getItem('fyreapp-sort');
+    const allowed: SortOption[] = ['id', 'votes', 'shares', 'mcap', 'holders', 'new'];
+    return allowed.includes(saved as SortOption) ? (saved as SortOption) : 'votes';
+  });
   const [searchTicker, setSearchTicker] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [selectedSpecies, setSelectedSpecies] = useState<{ species: Species; index: number } | null>(null);
@@ -132,6 +136,7 @@ const Index = () => {
           soundEnabled={soundEnabled}
           onToggleAnimation={() => setAnimationEnabled(!animationEnabled)}
           onToggleSound={() => setSoundEnabled(!soundEnabled)}
+          showTitle={false}
         />
 
         {/* Inline Filter Bar - Sticky within gallery section */}

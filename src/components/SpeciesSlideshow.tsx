@@ -47,17 +47,24 @@ const BuyDnaButton = ({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <button
-            onClick={onClick}
-            onMouseDown={handlePressStart}
-            onMouseUp={handlePressEnd}
-            onMouseLeave={handlePressEnd}
-            onTouchStart={handlePressStart}
-            onTouchEnd={handlePressEnd}
-            className="relative px-3 py-1.5 bg-card/10 backdrop-blur-sm rounded-full hover:bg-card/20 transition-colors text-xs font-sans text-card"
+          <div 
+            className="relative w-full p-[2px] rounded-full animate-pulse shadow-[0_0_15px_rgba(168,85,247,0.4),0_0_30px_rgba(236,72,153,0.3),0_0_45px_rgba(59,130,246,0.2)]"
+            style={{
+              background: 'linear-gradient(to right, #a855f7, #ec4899, #3b82f6, #06b6d4)'
+            }}
           >
-            Buy DNA
-          </button>
+            <button
+              onClick={onClick}
+              onMouseDown={handlePressStart}
+              onMouseUp={handlePressEnd}
+              onMouseLeave={handlePressEnd}
+              onTouchStart={handlePressStart}
+              onTouchEnd={handlePressEnd}
+              className="relative px-3 py-1.5 bg-[#8b8b8b] w-full backdrop-blur-sm rounded-full hover:bg-card transition-colors text-xs font-sans text-card"
+            >
+              Buy DNA
+            </button>
+          </div>
         </TooltipTrigger>
         <TooltipContent side="top">
           <p>Tap to buy ${amount} {currency} • Long press to change</p>
@@ -1008,6 +1015,9 @@ const SpeciesSlideshow = ({
             setShowBuyPopup(true);
           }}
         />
+               <span className="text-card/60 text-[10px] font-sans mt-0.5">
+            Long press for bulk actions
+          </span>
         {/* Vote squares below */}
         <VoteSquares 
           key={`${currentSpecies.id}-${voteKey}`}

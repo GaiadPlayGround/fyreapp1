@@ -287,11 +287,36 @@
   border: 3px solid transparent;
 }
 
-/* Prevent pull-to-refresh on mobile */
+/* Prevent pull-to-refresh on mobile but allow normal scrolling */
 html, body {
-  overscroll-behavior-y: none;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  height: 100%;
+  overflow-x: hidden;
 }
 
 .overscroll-none {
   overscroll-behavior: none;
+}
+
+/* Custom animations for vote squares */
+@keyframes scaleIn {
+  0% {
+    transform: scale(0) rotate(-180deg);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Radial gradient utility */
+.bg-gradient-radial {
+  background: radial-gradient(circle, var(--tw-gradient-stops));
 }

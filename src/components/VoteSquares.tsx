@@ -42,6 +42,7 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
   const [isBatchSubmitting, setIsBatchSubmitting] = useState(false);
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const voteRatingsRef = useRef<number[]>([]); // Store vote ratings in ref instead of sessionStorage
 
   useEffect(() => {
     const baseSquares = getBaseSquares(speciesId);
@@ -78,7 +79,9 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
   }, []);
 
   // Handle bulk voting with batch transactions
-  const handleBulkVote = async (amount: number) => {
+  // Each vote = max 5 base squares = 1 transaction = 1 cent
+  // Split amount into votes: e.g., 9 base squares = 2 votes (5+4), 11 = 3 votes (5+5+1)
+  const handleBulkVote = async (baseSquaresAmount: number) => {
     if (!isConnected || !wagmiAddress) {
       // Auto-connect wallet
       connect();
@@ -92,11 +95,23 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
       return;
     }
 
-    const totalCost = amount * VOTE_COST;
+    // Split base squares into votes (max 5 base squares per vote)
+    // Each vote = 1 transaction = 1 cent
+    const votes: number[] = [];
+    let remaining = baseSquaresAmount;
+    while (remaining > 0) {
+      const voteRating = Math.min(remaining, 5); // Max 5 base squares per vote
+      votes.push(voteRating);
+      remaining -= voteRating;
+    }
+
+    const numVotes = votes.length;
+    const totalCost = numVotes * VOTE_COST; // 1 cent per vote
+    
     if (usdcBalance < totalCost) {
       toast({
         title: "Insufficient USDC",
-        description: `You need at least ${totalCost.toFixed(2)}¢ (${totalCost.toFixed(2)} USDC) for ${amount} votes.`,
+        description: `You need at least ${totalCost.toFixed(2)}¢ for ${numVotes} vote${numVotes > 1 ? 's' : ''} (${baseSquaresAmount} Base Squares).`,
         variant: "destructive",
       });
       setShowBulkDialog(false);
@@ -109,8 +124,6 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
     onTransactionStart?.();
 
     try {
-      // Batch transactions: create separate USDC transfer for each vote
-      // This creates multiple transactions for Base rewards (transaction volume)
       const voteCostAmount = parseUnits(VOTE_COST.toString(), USDC_DECIMALS);
       
       if (!connector || !wagmiAddress || !publicClient) {
@@ -119,7 +132,7 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
 
       toast({
         title: "Preparing Batch Vote...",
-        description: `Creating ${amount} separate transactions (${totalCost.toFixed(2)}¢ total)`,
+        description: `Creating ${numVotes} vote${numVotes > 1 ? 's' : ''} (${baseSquaresAmount} Base Squares, ${totalCost.toFixed(2)}¢ total)`,
         duration: 3000,
       });
 
@@ -137,11 +150,13 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
         account: wagmiAddress as Address,
       });
 
-      // Send multiple transactions sequentially
-      // Each transaction is separate on-chain for Base rewards
+      // Send one transaction per vote
+      // Each vote can assign 1-5 base squares
       const txHashes: string[] = [];
+      const voteRatings: number[] = []; // Store rating for each vote
       
-      for (let i = 0; i < amount; i++) {
+      for (let i = 0; i < votes.length; i++) {
+        const voteRating = votes[i];
         try {
           const hash = await walletClient.writeContract({
             address: USDC_ADDRESS,
@@ -151,14 +166,14 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
           } as any);
           
           txHashes.push(hash);
+          voteRatings.push(voteRating); // Store the rating for this vote
           
           // Small delay between transactions to avoid nonce issues
-          if (i < amount - 1) {
+          if (i < votes.length - 1) {
             await new Promise(resolve => setTimeout(resolve, 200));
           }
         } catch (txError: any) {
           console.error(`Transaction ${i + 1} failed:`, txError);
-          // Continue with remaining transactions even if one fails
           if (txError?.name === 'UserRejectedRequestError' || txError?.code === 4001) {
             throw txError; // User cancelled, stop all
           }
@@ -167,15 +182,17 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
 
       setBatchVoteTxHashes(txHashes);
       
-      // Store bulk vote amount for confirmation handling
-      setBulkVoteAmount(amount);
+      // Store votes array for confirmation handling (each vote has its rating 1-5)
+      setBulkVoteAmount(voteRatings.length); // Number of votes
+      // Store vote ratings in ref for recording (saved to database on confirmation)
+      voteRatingsRef.current = voteRatings;
       
       // Optimistic update
-      setOptimisticVotes(prev => prev + amount);
+      setOptimisticVotes(prev => prev + baseSquaresAmount);
 
       toast({
         title: "Batch Transactions Sent!",
-        description: `${txHashes.length} transactions submitted. Waiting for confirmations...`,
+        description: `${txHashes.length} vote${txHashes.length > 1 ? 's' : ''} submitted (${baseSquaresAmount} Base Squares). Waiting for confirmations...`,
         duration: 3000,
       });
 
@@ -183,7 +200,10 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
     } catch (err: any) {
       setIsBatchSubmitting(false);
       console.error('Bulk vote error:', err);
-      setOptimisticVotes(prev => prev - amount);
+      // Rollback optimistic update using total base squares
+      setOptimisticVotes(prev => prev - baseSquaresAmount);
+      // Clear ref on error
+      voteRatingsRef.current = [];
       onTransactionEnd?.();
       
       if (err?.name === 'UserRejectedRequestError' || err?.code === 4001) {
@@ -263,14 +283,18 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
         }
       }
 
+      // Each vote = 1 transaction = 1 cent, rating (1-5) determines base squares
       toast({
         title: "Voting...",
-        description: `Sending ${(VOTE_COST * rating).toFixed(2)}¢ (${rating} votes)`,
+        description: `Sending ${VOTE_COST.toFixed(2)}¢ (${rating} Base Squares)`,
         duration: 2000,
       });
 
-      // Send USDC transfer to vote payment address
+      // Send USDC transfer to vote payment address (1 cent per vote)
       const voteCostAmount = parseUnits(VOTE_COST.toString(), USDC_DECIMALS);
+      
+      // Store rating for confirmation handling
+      setBulkVoteAmount(rating); // Use bulkVoteAmount to store the rating for single votes too
       
       writeContract({
         address: USDC_ADDRESS,
@@ -301,91 +325,49 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
     }
   };
 
-  // Handle transaction confirmation for single votes
+  // Handle transaction confirmation for single votes (rating 1-5)
   useEffect(() => {
-    if (isConfirmed && hash && !bulkVoteAmount) {
+    if (isConfirmed && hash && bulkVoteAmount > 0 && bulkVoteAmount <= 5 && batchVoteTxHashes.length === 0) {
+      // Single vote: bulkVoteAmount stores the rating (1-5 base squares)
       const recordVoteAsync = async () => {
         try {
-          if (bulkVoteAmount > 0) {
-            // Batch vote: record all votes separately
-            // Each transaction in the batch represents 1 vote (1 Base Square)
-            const votePerTransaction = 1;
-            let successCount = 0;
-            
-            // Record each vote separately - each one corresponds to a separate transaction
-            // This ensures Base rewards count each transaction separately
-            for (let i = 0; i < bulkVoteAmount; i++) {
-              const success = await recordVote(speciesId, address || wagmiAddress || '', votePerTransaction);
-              if (success) {
-                successCount++;
-                addVoteTicket(); // +1 vote ticket per vote
-              }
-              // Small delay to avoid rate limiting
-              if (i < bulkVoteAmount - 1) {
-                await new Promise(resolve => setTimeout(resolve, 100));
-              }
-            }
-            
-            if (successCount === bulkVoteAmount) {
-              toast({
-                title: "Batch Vote Submitted!",
-                description: `${bulkVoteAmount} transactions • -${(bulkVoteAmount * VOTE_COST).toFixed(2)}¢ • +${bulkVoteAmount} Base Squares • +${bulkVoteAmount} Vote Tickets • +${bulkVoteAmount * 5} Fyre Keys`,
-                duration: 4000,
-              });
-              setBulkVoteAmount(0);
-              setBatchVoteTxHashes([]);
-              refetch();
-            } else {
-              toast({
-                title: "Partial Vote Recording",
-                description: `Recorded ${successCount}/${bulkVoteAmount} votes. Please contact support.`,
-                variant: "destructive",
-              });
-            }
-          } else if (userVote > 0) {
-            // Single vote: user clicked 1-5 stars
-            // The rating (1-5) determines how many base squares are added:
-            // 1 star = 1 base square, 2 stars = 2 base squares, etc.
-            // Database trigger automatically updates base_squares when vote is recorded
-            const success = await recordVote(speciesId, address || wagmiAddress || '', userVote);
-            
-            if (success) {
-              addVoteTicket();
+          const rating = bulkVoteAmount; // Rating = base squares for this vote (1-5)
+          const success = await recordVote(speciesId, address || wagmiAddress || '', rating);
+          
+          if (success) {
+            addVoteTicket();
 
-              toast({
-                title: "Vote Submitted!",
-                description: `${userVote} star${userVote > 1 ? 's' : ''} • -${(VOTE_COST * userVote).toFixed(2)}¢ • +${userVote} Base Squares • +1 Vote Ticket • +5 Fyre Keys`,
-                duration: 3000,
-              });
-              
-              // Reset user vote display after brief delay
-              setTimeout(() => {
-                setUserVote(0);
-                onVoteSubmit?.();
-              }, 500);
-              
-              // Refresh stats in background
-              refetch();
-            } else {
-              // Rollback optimistic update on failure
-              setOptimisticVotes(prev => prev - userVote);
+            toast({
+              title: "Vote Submitted!",
+              description: `1 vote • -${VOTE_COST.toFixed(2)}¢ • +${rating} Base Squares • +1 Vote Ticket • +10 Fyre Keys`,
+              duration: 3000,
+            });
+            
+            // Reset user vote display after brief delay
+            setTimeout(() => {
               setUserVote(0);
-              toast({
-                title: "Vote Recording Failed",
-                description: "Transaction succeeded but vote recording failed. Please contact support.",
-                variant: "destructive",
-              });
-            }
+              setBulkVoteAmount(0);
+              onVoteSubmit?.();
+            }, 500);
+            
+            // Refresh stats in background
+            refetch();
+          } else {
+            // Rollback optimistic update on failure
+            setOptimisticVotes(prev => prev - rating);
+            setUserVote(0);
+            setBulkVoteAmount(0);
+            toast({
+              title: "Vote Recording Failed",
+              description: "Transaction succeeded but vote recording failed. Please contact support.",
+              variant: "destructive",
+            });
           }
         } catch (err) {
           console.error('Error recording vote:', err);
-          if (bulkVoteAmount > 0) {
-            setOptimisticVotes(prev => prev - bulkVoteAmount);
-            setBulkVoteAmount(0);
-          } else {
-            setOptimisticVotes(prev => prev - userVote);
-            setUserVote(0);
-          }
+          setOptimisticVotes(prev => prev - bulkVoteAmount);
+          setUserVote(0);
+          setBulkVoteAmount(0);
           toast({
             title: "Vote Recording Failed",
             description: "Transaction succeeded but vote recording failed. Please contact support.",
@@ -398,7 +380,7 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
 
       recordVoteAsync();
     }
-  }, [isConfirmed, hash, userVote, bulkVoteAmount, speciesId, address, wagmiAddress, recordVote, addVoteTicket, onVoteSubmit, onTransactionEnd, refetch]);
+  }, [isConfirmed, hash, userVote, bulkVoteAmount, batchVoteTxHashes.length, speciesId, address, wagmiAddress, recordVote, addVoteTicket, onVoteSubmit, onTransactionEnd, refetch]);
 
   // Handle batch transaction confirmations
   useEffect(() => {
@@ -423,15 +405,25 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
           if (confirmedCount === batchVoteTxHashes.length) {
             const recordVoteAsync = async () => {
               try {
-                const votePerTransaction = 1;
-                let successCount = 0;
+                // Get vote ratings from ref (each vote has rating 1-5 base squares)
+                const voteRatings = voteRatingsRef.current;
                 
-                // Record each vote separately - each transaction = 1 vote with 1 star (1 base square)
-                // Database trigger automatically adds 1 base square per vote to the species
+                // If we don't have ratings stored, default to 1 base square per vote (fallback)
+                const ratings = voteRatings.length === bulkVoteAmount 
+                  ? voteRatings 
+                  : Array(bulkVoteAmount).fill(1);
+                
+                let successCount = 0;
+                let totalBaseSquares = 0;
+                
+                // Record each vote separately in database - each transaction = 1 vote with rating (1-5 base squares)
+                // Database trigger automatically adds rating base squares per vote to the species
                 for (let i = 0; i < bulkVoteAmount; i++) {
-                  const success = await recordVote(speciesId, address || wagmiAddress || '', votePerTransaction);
+                  const voteRating = ratings[i]; // 1-5 base squares for this vote
+                  const success = await recordVote(speciesId, address || wagmiAddress || '', voteRating);
                   if (success) {
                     successCount++;
+                    totalBaseSquares += voteRating;
                     addVoteTicket();
                   }
                   if (i < bulkVoteAmount - 1) {
@@ -439,10 +431,13 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
                   }
                 }
                 
+                // Clear ref after recording
+                voteRatingsRef.current = [];
+                
                 if (successCount === bulkVoteAmount) {
                   toast({
                     title: "Batch Vote Complete!",
-                    description: `${bulkVoteAmount} transactions confirmed • -${(bulkVoteAmount * VOTE_COST).toFixed(2)}¢ • +${bulkVoteAmount} Base Squares • +${bulkVoteAmount} Vote Tickets • +${bulkVoteAmount * 5} Fyre Keys`,
+                    description: `${bulkVoteAmount} vote${bulkVoteAmount > 1 ? 's' : ''} confirmed • -${(bulkVoteAmount * VOTE_COST).toFixed(2)}¢ • +${totalBaseSquares} Base Squares • +${bulkVoteAmount} Vote Tickets • +${bulkVoteAmount * 10} Fyre Keys`,
                     duration: 4000,
                   });
                   setBulkVoteAmount(0);
@@ -459,9 +454,14 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
                 }
               } catch (err) {
                 console.error('Error recording batch votes:', err);
-                setOptimisticVotes(prev => prev - bulkVoteAmount);
+                // Calculate total base squares for rollback from ref
+                const voteRatings = voteRatingsRef.current;
+                const totalBaseSquares = voteRatings.reduce((sum, r) => sum + r, 0) || bulkVoteAmount;
+                
+                setOptimisticVotes(prev => prev - totalBaseSquares);
                 setBulkVoteAmount(0);
                 setBatchVoteTxHashes([]);
+                voteRatingsRef.current = []; // Clear ref
                 toast({
                   title: "Vote Recording Failed",
                   description: "Transactions confirmed but vote recording failed. Please contact support.",
@@ -532,9 +532,7 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
           <span className="text-card/60 text-[10px] font-sans">
             1¢ per vote
           </span>
-          <span className="text-card/40 text-[9px] font-sans mt-0.5">
-            Long press for bulk actions
-          </span>
+   
         </div>
       </div>
       <BulkVoteDialog

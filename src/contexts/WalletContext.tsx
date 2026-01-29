@@ -227,7 +227,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     setState((prev) => ({
       ...prev,
       shares: prev.shares + 1,
-      fyreKeys: prev.fyreKeys + 1, // +1 Fyre Key per share
+      fyreKeys: prev.fyreKeys + 10, // +10 Fyre Keys per share
     }));
   };
 
@@ -247,7 +247,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       ...prev,
       usdcBalance: prev.usdcBalance - VOTE_COST,
       voteTickets: prev.voteTickets + 1, // +1 vote ticket with each vote
-      fyreKeys: prev.fyreKeys + 5, // +5 Fyre Keys per vote
+      fyreKeys: prev.fyreKeys + 10, // +10 Fyre Keys per vote
       votes: [...prev.votes, { speciesId, rating, timestamp: new Date() }],
     }));
     return true;

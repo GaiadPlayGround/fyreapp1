@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, ChevronRight, Filter, Grid, List, Clock, Share2, Info, ArrowLeft, MousePointer2, MousePointerClick } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -100,73 +101,83 @@ const OnboardingGuide = ({ forceShow = false, onClose }: OnboardingGuideProps) =
 
   const step = guideSteps[currentStep];
 
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
-      <div className="bg-card border border-border rounded-xl p-5 mx-4 max-w-sm w-full shadow-xl animate-scale-in">
+  // Render as portal to body to avoid positioning issues
+  const content = (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-foreground/80 backdrop-blur-sm animate-fade-in">
+      <div className="relative w-full max-w-md bg-card border border-border rounded-2xl shadow-2xl overflow-hidden">
+        {/* Close button */}
+        <button
+          onClick={handleClose}
+          className="absolute top-3 right-3 p-1.5 bg-muted/50 hover:bg-muted rounded-full transition-colors z-10"
+        >
+          <X className="w-4 h-4 text-muted-foreground" />
+        </button>
+
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="p-6 pb-4">
           <span className="text-xs text-muted-foreground font-sans">
             {currentStep + 1} of {guideSteps.length}
           </span>
-          <button
-            onClick={handleClose}
-            className="text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
         </div>
 
         {/* Content */}
-        <div className="text-center py-4">
-          <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center mx-auto mb-4 text-blue-500">
-            {step.icon}
+        <div className="px-6 pb-6">
+          <div className="text-center py-4">
+            <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center mx-auto mb-4 text-blue-500">
+              {step.icon}
+            </div>
+            <h3 className="font-serif text-lg font-semibold text-foreground mb-2">
+              {step.title}
+            </h3>
+            <p className="text-sm text-muted-foreground font-sans leading-relaxed">
+              {step.description}
+            </p>
           </div>
-          <h3 className="font-serif text-lg font-semibold text-foreground mb-2">
-            {step.title}
-          </h3>
-          <p className="text-sm text-muted-foreground font-sans leading-relaxed">
-            {step.description}
-          </p>
-        </div>
 
-        {/* Progress dots */}
-        <div className="flex justify-center gap-1.5 my-4">
-          {guideSteps.map((_, index) => (
-            <div
-              key={index}
-              className={cn(
-                "w-1.5 h-1.5 rounded-full transition-colors",
-                index === currentStep ? "bg-blue-500" : "bg-muted"
+          {/* Progress dots */}
+          <div className="flex justify-center gap-1.5 my-4">
+            {guideSteps.map((_, index) => (
+              <div
+                key={index}
+                className={cn(
+                  "w-1.5 h-1.5 rounded-full transition-colors",
+                  index === currentStep ? "bg-blue-500" : "bg-muted"
+                )}
+              />
+            ))}
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-2 mt-4">
+            <button
+              onClick={handleClose}
+              className="flex-1 py-2.5 px-4 text-sm font-sans text-muted-foreground border border-border rounded-lg hover:bg-muted transition-colors"
+            >
+              Skip All
+            </button>
+            <button
+              onClick={handleNext}
+              className="flex-1 py-2.5 px-4 text-sm font-sans text-white bg-blue-500 hover:bg-blue-600 rounded-lg transition-colors flex items-center justify-center gap-1"
+            >
+              {currentStep < guideSteps.length - 1 ? (
+                <>
+                  Next
+                  <ChevronRight className="w-4 h-4" />
+                </>
+              ) : (
+                "Get Started"
               )}
-            />
-          ))}
-        </div>
-
-        {/* Actions */}
-        <div className="flex gap-2 mt-4">
-          <button
-            onClick={handleClose}
-            className="flex-1 py-2.5 px-4 text-sm font-sans text-muted-foreground border border-border rounded-lg hover:bg-muted transition-colors"
-          >
-            Skip All
-          </button>
-          <button
-            onClick={handleNext}
-            className="flex-1 py-2.5 px-4 text-sm font-sans text-white bg-blue-500 hover:bg-blue-600 rounded-lg transition-colors flex items-center justify-center gap-1"
-          >
-            {currentStep < guideSteps.length - 1 ? (
-              <>
-                Next
-                <ChevronRight className="w-4 h-4" />
-              </>
-            ) : (
-              "Get Started"
-            )}
-          </button>
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
+
+  // Use portal to render at body level, not relative to parent
+  return typeof window !== 'undefined' && document.body
+    ? createPortal(content, document.body)
+    : content;
 };
 
 export default OnboardingGuide;
