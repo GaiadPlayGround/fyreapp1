@@ -60,7 +60,7 @@ const BuyDnaButton = ({
               onMouseLeave={handlePressEnd}
               onTouchStart={handlePressStart}
               onTouchEnd={handlePressEnd}
-              className="relative px-3 py-1.5 bg-[#8b8b8b] w-full backdrop-blur-sm rounded-full hover:bg-card transition-colors text-xs font-sans text-card"
+              className="relative px-3 py-1.5 bg-[#8b8b8b] w-full backdrop-blur-sm rounded-full hover:bg-[#8b8b8bde] transition-colors text-xs font-sans text-card"
             >
               Buy DNA
             </button>
