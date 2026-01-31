@@ -5,27 +5,26 @@
     "signature": "AAAAAAAAAAAAAAAAyhG94Fl3s2MRZwKIYr4qFzl2yhEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAqSCrVbLAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAul7REO_bo9AFv8iC11NYrLu4WEIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAbQ_-6NvAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAECnmnWMSUljbItZKCWIwHK9HGnqYhHvlleiI5qWy6NH5LCVk626Iio5BmX37J7CzzeSWyHzxZHXyNRglwFfTVMdAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAACdRCLzFDGKovE3APOAtGwreiSrAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAA-FIQshzFAwL0d7pWaG0gGdybZ63hWwqMROytRWUz0BEOrSzgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAKAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABW5v3Yab7ri-UKb4EPg5Q7Tp6wI1XmprswcGV-4gNxAc-YkyqaS5WfUFcXmr1Gu33WTXljD7wUUthknRCdxLtaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAl8ZgIay2xclZzG8RWZzuWvO8j9R0fus3XxDee9lRlVy8dAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACKeyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoibWRURjBLX2pqMlJsbTU3TVpwcU9qXy1QemUtcThTUG42RVBJS2NSeXVHayIsIm9yaWdpbiI6Imh0dHBzOi8va2V5cy5jb2luYmFzZS5jb20iLCJjcm9zc09yaWdpbiI6ZmFsc2V9AAAAAAAAAAAAAAAAAAAAAAAAAAAAAGSSZJJkkmSSZJJkkmSSZJJkkmSSZJJkkmSSZJJkkmSS"
   },
   "miniapp": {
-    "version": "1",
-    "name": "fyreapp1",
-    "homeUrl": "https://fyreapp1.vercel.app",
-    "iconUrl": "https://fyreapp1.vercel.app/i.png",
-    "splashImageUrl": "https://fyreapp1.vercel.app/l.png",
-    "splashBackgroundColor": "#000000",
-    "webhookUrl": "https://fyreapp1.vercel.app/api/webhook",
-    "subtitle": "Fast, fun, social",
-    "description": "A fast, fun way to challenge friends in real time.",
-    "screenshotUrls": [
-      "https://fyreapp1.vercel.app/s1.png",
-      "https://fyreapp1.vercel.app/s2.png",
-      "https://fyreapp1.vercel.app/s3.png"
-    ],
-    "primaryCategory": "social",
-    "tags": ["example", "miniapp", "baseapp"],
-    "heroImageUrl": "https://fyreapp1.vercel.app/og.png",
-    "tagline": "Play instantly",
-    "ogTitle": "Example Mini App",
-    "ogDescription": "Challenge friends in real time.",
-    "ogImageUrl": "https://fyreapp1.vercel.app/og.png",
-    "noindex": true
-  }
+  "version": "1",
+  "name": "fyreapp1",
+  "homeUrl": "https://fyreapp1.vercel.app",
+  "iconUrl": "https://fyreapp1.vercel.app/i.png",
+  "splashImageUrl": "https://fyreapp1.vercel.app/l.png",
+  "splashBackgroundColor": "#000000",
+  "webhookUrl": "https://fyreapp1.vercel.app/api/webhook",
+  "subtitle": "explore and preserve life",
+  "description": "Browse, Vote and Share Tokenized Endangered Animals on Base L2",
+  "screenshotUrls": [
+    "https://fyreapp1.vercel.app/s1.png",
+    "https://fyreapp1.vercel.app/s2.png",
+    "https://fyreapp1.vercel.app/s3.png"
+  ],
+  "primaryCategory": "education",
+  "tags": ["wildlife", "conservation", "museum"],
+  "heroImageUrl": "https://fyreapp1.vercel.app/og.png",
+  "tagline": "discover endangered purebreeds",
+  "ogTitle": "PUREBREEDS EXPLORER | Tokenized Endangered Animals",
+  "ogDescription": "Browse, Vote and Share Tokenized Endangered Animals on Base L2",
+  "ogImageUrl": "https://fyreapp1.vercel.app/og.png",
+  "noindex": true
 }
