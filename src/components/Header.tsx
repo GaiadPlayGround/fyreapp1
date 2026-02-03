@@ -27,7 +27,7 @@ const Header = ({
   const { theme } = useTheme();
   const { votes, shares, isConnected, ownedDnaTickers } = useWallet();
   // Use logos from public folder: logo.png for dark mode, logo-black.png for light mode
-  const currentLogo = theme === 'dark' ? '/logo.svg' : '/logo-black.svg';
+  const currentLogo = theme === 'dark' ? '/logo.png' : '/logo-black.png';
   const [titleIndex, setTitleIndex] = useState(0);
 
   useEffect(() => {
@@ -43,8 +43,8 @@ const Header = ({
     <header className="fixed top-0 left-0 right-0 z-50 overflow-y-clip bg-background/95 backdrop-blur-sm border-b border-border safe-area-top w-full max-w-full overflow-x-hidden">
       <div className="px-3 h-14 flex items-center justify-between w-full max-w-full">
         {/* Left: Logo and Title */}
-        <a href="/" className="flex items-start gap-2 bg-red-500 hover:opacity-80 transition-opacity">
-          <img src={currentLogo} alt="Fyre App 1" className="w-30 h-30 bg-blue-500 rounded-lg object-contain" />
+        <a href="/" className="flex items-start gap-2 hover:opacity-80 transition-opacity">
+          <img src={currentLogo} alt="Fyre App 1" className="w-[5em] h-[3em] rounded-lg object-contain" />
           {showTitle && (
             <h1 className="font-serif font-semibold text-foreground leading-tight text-[0.7em] sm:text-base transition-all duration-300">
               {TITLE_OPTIONS[titleIndex]}
