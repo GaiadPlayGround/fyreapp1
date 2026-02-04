@@ -27,7 +27,7 @@ const Header = ({
   const { theme } = useTheme();
   const { votes, shares, isConnected, ownedDnaTickers } = useWallet();
   // Use logos from public folder: logo.png for dark mode, logo-black.png for light mode
-  const currentLogo = theme === 'dark' ? '/logo.png' : '/logo-black.png';
+  const currentLogo = theme === 'dark' ? '/i.png' : '/logo-black.png';
   const [titleIndex, setTitleIndex] = useState(0);
 
   useEffect(() => {
