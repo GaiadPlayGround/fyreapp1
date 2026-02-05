@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Antigravity from './Antigravity';
 
 interface HeroSectionProps {
@@ -15,8 +16,13 @@ const HeroSection = ({
   onSwipeUp,
   animationEnabled = true,
 }: HeroSectionProps) => {
+  const navigate = useNavigate();
   const displayOnchain = onchain > 0 ? onchain : 234;
   const displayTotal = total > 0 ? total : 1234;
+
+  const handleDexClick = () => {
+    // Coming soon - no action
+  };
 
   return (
     <section className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
@@ -41,7 +47,7 @@ const HeroSection = ({
       <div className="w-full max-w-2xl border-2 border-border rounded-lg p-6 sm:p-10 bg-card/80 backdrop-blur-sm relative z-10">
         <div className="text-center">
           <h1 className="font-mono text-3xl sm:text-5xl md:text-6xl font-semibold text-[#005ae0] tracking-wide">
-            PUREBREEDS EXPLORER
+            PUREBREEDS NAVIGATOR
           </h1>
           
           <p className="text-muted-foreground mt-6 leading-relaxed text-lg sm:text-2xl font-medium font-serif">
@@ -61,13 +67,24 @@ const HeroSection = ({
             </span>
           </div>
           
-          {/* CTA Button */}
-          <div className="relative mt-8 inline-block">
+          {/* CTA Buttons */}
+          <div className="relative mt-8 flex flex-col items-center gap-3">
+            {/* Explorer button - primary */}
             <button 
               onClick={onSwipeUp} 
               className="relative bg-[#005ae0] hover:bg-[#0047b3] text-white font-semibold text-lg py-3 px-12 transition-colors shadow-md rounded-xl font-mono overflow-hidden"
             >
-              PRESS ME
+              EXPLORER
+            </button>
+            
+            {/* Fyre DEX button - ghost/coming soon */}
+            <button 
+              onClick={handleDexClick}
+              disabled
+              className="relative border-2 border-muted-foreground/30 text-muted-foreground font-medium text-sm py-2 px-8 transition-colors rounded-xl font-mono cursor-not-allowed opacity-60 flex items-center gap-2"
+            >
+              FYRE DEX
+              <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground">Soon</span>
             </button>
           </div>
         </div>

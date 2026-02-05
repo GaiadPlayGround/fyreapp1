@@ -17,7 +17,7 @@ const Explore = () => {
   const navigate = useNavigate();
   const { species, loading, error } = useSpeciesApi();
   const { recordView, getBaseSquares, getShareCount, getLastViewedAt, loading: statsLoading, stats } = useSpeciesStats();
-  const [animationEnabled, setAnimationEnabled] = useState(true);
+  const [animationEnabled, setAnimationEnabled] = useState(false); // Default off for electric grids
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [showEnzymeAd, setShowEnzymeAd] = useState(false);
   
@@ -39,7 +39,7 @@ const Explore = () => {
 
   // Set default meta tags for explore page
   useMetaTags({
-    title: 'PUREBREEDS EXPLORER | Tokenized Endangered Animals on Base L2',
+    title: 'PUREBREEDS NAVIGATOR | Tokenized Endangered Animals on Base L2',
     description: 'Browse, Vote and Share Tokenized Endangered Animals on Base L2',
     image: '/logo.png',
     url: typeof window !== 'undefined' ? `${window.location.origin}/explore` : 'https://www.fcbc.fun/explore',

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, Coins } from 'lucide-react';
+import { Copy, Check, Settings, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PaymentCurrency } from '@/components/InlineFilterBar';
 import {
@@ -8,13 +8,139 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
+
+// App data for FyreApps dialog
+const FYRE_APPS = [
+  { 
+    id: 0, 
+    name: 'FyreApp 0', 
+    fullName: 'Fyre Docs', 
+    description: 'Documentation & onboarding hub',
+    url: 'https://fyreapp0.vercel.app/', 
+    active: true, 
+    isCurrent: false,
+    icon: '📚'
+  },
+  { 
+    id: 1, 
+    name: 'FyreApp 1', 
+    fullName: 'PureBreed Navigator', 
+    description: 'Slideshow & Base Square Rankings',
+    url: '/explore', 
+    active: true, 
+    isCurrent: true,
+    icon: '🔥'
+  },
+  { 
+    id: 2, 
+    name: 'FyreApp 2', 
+    fullName: 'Portfolio Manager', 
+    description: 'Track your DNA holdings',
+    url: '#', 
+    active: false, 
+    isCurrent: false,
+    icon: '📊'
+  },
+  { 
+    id: 3, 
+    name: 'FyreApp 3', 
+    fullName: 'Custody & Snapshots', 
+    description: 'Secure asset storage',
+    url: '#', 
+    active: false, 
+    isCurrent: false,
+    icon: '🔒'
+  },
+  { 
+    id: 4, 
+    name: 'FyreApp 4', 
+    fullName: 'Fyre Labs', 
+    description: 'Experimental features',
+    url: '#', 
+    active: false, 
+    isCurrent: false,
+    icon: '🧪'
+  },
+  { 
+    id: 5, 
+    name: 'FyreApp 5', 
+    fullName: 'Fyre Arena', 
+    description: 'Competitive gameplay',
+    url: '#', 
+    active: false, 
+    isCurrent: false,
+    icon: '⚔️'
+  },
+  { 
+    id: 'herald', 
+    name: 'Herald', 
+    fullName: 'FyreHerald', 
+    description: 'Community FyreApp',
+    url: 'https://farcaster.xyz/miniapps/NBRppPFoPDDF/fyre-herald', 
+    active: true, 
+    isCurrent: false,
+    icon: '📢'
+  },
+];
+
+const SOCIAL_LINKS = [
+  { 
+    name: 'X', 
+    url: 'https://x.com/warplette',
+    icon: (
+      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+      </svg>
+    )
+  },
+  { 
+    name: 'Discord', 
+    url: 'https://discord.gg/QrU4tkrPFP',
+    icon: (
+      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+      </svg>
+    )
+  },
+  { 
+    name: 'Farcaster', 
+    url: 'https://farcaster.xyz/warplette',
+    icon: (
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="8" fill="url(#fc-grad-footer)"/>
+        <defs>
+          <linearGradient id="fc-grad-footer" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#855DCD"/>
+            <stop offset="100%" stopColor="#2B5876"/>
+          </linearGradient>
+        </defs>
+        <ellipse cx="12" cy="10.5" rx="4" ry="3.5" fill="white" opacity="0.9"/>
+        <circle cx="10.5" cy="10.5" r="1" fill="#333"/>
+        <circle cx="13.5" cy="10.5" r="1" fill="#333"/>
+      </svg>
+    )
+  },
+  { 
+    name: 'Base App', 
+    url: 'https://base.app/profile/0xD7305c73f62B7713B74316613795C77E814Dea0f',
+    icon: (
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
+        <rect x="4" y="4" width="16" height="16" rx="3" fill="#0052FF"/>
+        <circle cx="12" cy="12" r="5" stroke="white" strokeWidth="1.5" fill="none"/>
+      </svg>
+    )
+  },
+  { 
+    name: 'Zora', 
+    url: 'https://zora.co/@fcbcc',
+    icon: (
+      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="10" fill="#1a1a1a"/>
+        <circle cx="12" cy="12" r="6" fill="white"/>
+      </svg>
+    )
+  },
+];
 
 const Footer = () => {
   const [paymentCurrency, setPaymentCurrency] = useState<PaymentCurrency>(() => {
@@ -29,7 +155,7 @@ const Footer = () => {
 
   const [showAppsDialog, setShowAppsDialog] = useState(false);
   const [showSocialsDialog, setShowSocialsDialog] = useState(false);
-  const [showBuyDialog, setShowBuyDialog] = useState(false);
+  const [showSettingsDialog, setShowSettingsDialog] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('fyreapp-payment-currency', paymentCurrency);
@@ -41,75 +167,52 @@ const Footer = () => {
 
   const quickBuyAmounts = [0.5, 1, 2, 3, 5, 10];
 
-  const socialLinks = [
-    { name: 'X', url: 'https://x.com/warplette' },
-    { name: 'Base App', url: 'https://base.app/profile/0xD7305c73f62B7713B74316613795C77E814Dea0f' },
-    { name: 'Farcaster', url: 'https://farcaster.xyz/warplette' },
-    { name: 'Zora', url: 'https://zora.co/@fcbcc' },
-  ];
-
-  const quickLinks = [
-    { id: 1, name: 'FyreApp 1', fullName: 'FyreApp 1: PureBreed Explorer', url: '/explore', active: true, isCurrent: true },
-    { id: 0, name: 'FyreApp 0', fullName: 'FyreApp 0: Fyre Docs', url: 'https://fyreapp0.vercel.app/', active: true, isCurrent: false },
-    { id: 2, name: 'FyreApp 2', fullName: 'FyreApp 2: Portfolio Manager', url: '#', active: false, isCurrent: false },
-    { id: 3, name: 'FyreApp 3', fullName: 'FyreApp 3: Custody and Snapshots', url: '#', active: false, isCurrent: false },
-    { id: 4, name: 'FyreApp 4', fullName: 'FyreApp 4: Fyre Labs', url: '#', active: false, isCurrent: false },
-    { id: 5, name: 'FyreApp 5', fullName: 'FyreApp 5: Fyre Arena', url: '#', active: false, isCurrent: false },
-    { id: 'herald', name: 'Herald', fullName: 'FyreHerald (community FyreApp)', url: 'https://farcaster.xyz/miniapps/NBRppPFoPDDF/fyre-herald', active: true, isCurrent: false },
-  ];
-
   return (
-    <footer className="border-t border-border bg-card/50 mt-8 w-full overflow-x-hidden">
-      <div className="max-w-6xl mx-auto px-4 py-4 w-full">
-        {/* Main Footer Row */}
-        <div className="flex items-center justify-between gap-2 mb-3">
+    <footer className="border-t border-border bg-card/50 backdrop-blur-sm mt-8 w-full overflow-x-hidden">
+      <div className="max-w-6xl mx-auto px-4 py-3 w-full">
+        {/* Main Footer Row - Compact */}
+        <div className="flex items-center justify-between gap-2">
           {/* FCBC Brand */}
           <a 
             href="https://fcbc.fun" 
             target="_blank" 
             rel="noopener noreferrer" 
-            className="font-serif text-lg font-bold text-foreground hover:text-primary transition-colors"
+            className="font-serif text-base font-bold text-foreground hover:text-primary transition-colors"
           >
-            FCBC
+            FCBC.FUN
           </a>
 
-          {/* Action Buttons */}
+          {/* Action Buttons - Compact Row */}
           <div className="flex items-center gap-0">
             <button
               onClick={() => setShowAppsDialog(true)}
-              className="px-3 py-1.5 text-xs font-sans text-muted-foreground hover:text-foreground transition-colors"
+              className="px-2.5 py-1 text-xs font-sans text-muted-foreground hover:text-foreground transition-colors"
             >
-              Apps
+              FyreApps
             </button>
             <span className="text-muted-foreground/30">|</span>
             <button
               onClick={() => setShowSocialsDialog(true)}
-              className="px-3 py-1.5 text-xs font-sans text-muted-foreground hover:text-foreground transition-colors"
+              className="px-2.5 py-1 text-xs font-sans text-muted-foreground hover:text-foreground transition-colors"
             >
               Socials
             </button>
             <span className="text-muted-foreground/30">|</span>
+            {/* Combined Settings Button */}
             <button
-              onClick={() => setShowBuyDialog(true)}
-              className="px-3 py-1.5 text-xs font-sans text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => setShowSettingsDialog(true)}
+              className="flex items-center gap-1 px-2.5 py-1 text-xs font-sans font-medium text-primary hover:text-primary/80 transition-colors"
             >
-              Buy Settings
-            </button>
-
-            {/* Quick Buy Amount Display */}
-            <button
-              onClick={() => setShowBuyDialog(true)}
-              className="ml-1 px-3 py-1.5 text-xs font-sans font-medium bg-primary text-primary-foreground rounded-full hover:bg-primary/90 transition-colors"
-            >
-              ${quickBuyAmount} {paymentCurrency}
+              <Settings className="w-3 h-3" />
+              <span>${quickBuyAmount} {paymentCurrency}</span>
             </button>
           </div>
         </div>
 
-        {/* Copyright */}
-        <div className="text-center">
-          <p className="text-xs text-muted-foreground">
-            © 2025 FCBC | with love from the og folks at{' '}
+        {/* Copyright - Smaller */}
+        <div className="text-center mt-2">
+          <p className="text-[10px] text-muted-foreground">
+            © 2026 fcbc Club | with love from the og folks at{' '}
             <a 
               href="https://fcbc.fun" 
               target="_blank" 
@@ -122,113 +225,125 @@ const Footer = () => {
         </div>
       </div>
 
-      {/* Apps Dialog */}
+      {/* FyreApps Dialog - Cards with Glassmorphism */}
       <Dialog open={showAppsDialog} onOpenChange={setShowAppsDialog}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-sm bg-card/95 backdrop-blur-xl border-border/50">
           <DialogHeader>
-            <DialogTitle className="text-center font-serif">Apps</DialogTitle>
+            <DialogTitle className="text-center font-serif text-lg">FyreApps</DialogTitle>
           </DialogHeader>
-          <div className="space-y-1">
-            {quickLinks.map((link) => (
-              <div key={link.id} className="border-b border-border last:border-0">
-                {link.active ? (
+          <div className="grid gap-2 mt-2">
+            {FYRE_APPS.map((app) => (
+              <div key={app.id} className={cn(
+                "relative rounded-xl border transition-all overflow-hidden",
+                app.active 
+                  ? "border-border/50 bg-background/50 hover:bg-background/80 cursor-pointer" 
+                  : "border-border/20 bg-muted/20 opacity-50 cursor-not-allowed",
+                app.isCurrent && "ring-2 ring-primary/50 border-primary/30"
+              )}>
+                {app.active ? (
                   <a
-                    href={link.url}
-                    target={link.url.startsWith('http') ? '_blank' : undefined}
-                    rel={link.url.startsWith('http') ? 'noopener noreferrer' : undefined}
+                    href={app.url}
+                    target={app.url.startsWith('http') ? '_blank' : undefined}
+                    rel={app.url.startsWith('http') ? 'noopener noreferrer' : undefined}
                     onClick={() => setShowAppsDialog(false)}
-                    className={cn(
-                      "flex items-center gap-2 w-full px-4 py-3 text-sm font-sans transition-colors hover:bg-muted",
-                      link.isCurrent && "font-medium"
-                    )}
+                    className="flex items-center gap-3 p-3"
                   >
-                    {link.isCurrent && (
-                      <span className="w-2 h-2 rounded-full bg-primary" />
-                    )}
-                    <span>{link.name}</span>
-                    {link.isCurrent && (
-                      <span className="text-muted-foreground text-xs">(Active)</span>
-                    )}
+                    <span className="text-xl">{app.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-sans font-medium text-sm text-foreground">{app.fullName}</span>
+                        {app.isCurrent && (
+                          <span className="text-[9px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full font-medium">Active</span>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground truncate">{app.description}</p>
+                    </div>
+                    {app.url.startsWith('http') && <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />}
                   </a>
                 ) : (
-                  <div className="flex items-center gap-2 w-full px-4 py-3 text-sm font-sans text-muted-foreground/50">
-                    <span>{link.name}</span>
+                  <div className="flex items-center gap-3 p-3">
+                    <span className="text-xl grayscale">{app.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-sans font-medium text-sm text-muted-foreground">{app.fullName}</span>
+                        <span className="text-[9px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full">Soon</span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground/60 truncate">{app.description}</p>
+                    </div>
                   </div>
                 )}
               </div>
             ))}
           </div>
-          <button
-            onClick={() => setShowAppsDialog(false)}
-            className="w-full py-2 text-sm font-sans text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Cancel
-          </button>
         </DialogContent>
       </Dialog>
 
-      {/* Socials Dialog */}
+      {/* Socials Dialog - Glassmorphism */}
       <Dialog open={showSocialsDialog} onOpenChange={setShowSocialsDialog}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-xs bg-card/95 backdrop-blur-xl border-border/50">
           <DialogHeader>
-            <DialogTitle className="text-center font-serif">Socials</DialogTitle>
+            <DialogTitle className="text-center font-serif text-lg">Socials</DialogTitle>
           </DialogHeader>
-          <div className="space-y-1">
-            {socialLinks.map((link) => (
+          <div className="grid gap-2 mt-2">
+            {SOCIAL_LINKS.map((link) => (
               <a
                 key={link.name}
                 href={link.url}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setShowSocialsDialog(false)}
-                className="flex items-center gap-2 w-full px-4 py-3 text-sm font-sans border-b border-border last:border-0 hover:bg-muted transition-colors"
+                className="flex items-center gap-3 p-3 rounded-xl border border-border/30 bg-background/50 hover:bg-background/80 transition-colors"
               >
-                {link.name}
+                {link.icon}
+                <span className="font-sans text-sm text-foreground">{link.name}</span>
+                <ExternalLink className="w-3 h-3 text-muted-foreground ml-auto" />
               </a>
             ))}
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Buy Settings Dialog */}
-      <Dialog open={showBuyDialog} onOpenChange={setShowBuyDialog}>
-        <DialogContent className="max-w-sm">
+      {/* Combined Settings Dialog - Glassmorphism */}
+      <Dialog open={showSettingsDialog} onOpenChange={setShowSettingsDialog}>
+        <DialogContent className="max-w-xs bg-card/95 backdrop-blur-xl border-border/50">
           <DialogHeader>
-            <DialogTitle className="text-center font-serif">Buy Settings</DialogTitle>
+            <DialogTitle className="text-center font-serif text-lg">Buy Settings</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 mt-2">
+            {/* Currency Selection */}
             <div>
-              <div className="px-2 py-1.5 text-[10px] font-sans text-muted-foreground uppercase tracking-wider mb-2">
+              <div className="text-[10px] font-sans text-muted-foreground uppercase tracking-wider mb-2">
                 Payment Currency
               </div>
-              <div className="space-y-1">
+              <div className="flex gap-2">
                 <button
                   onClick={() => setPaymentCurrency('USDC')}
                   className={cn(
-                    "w-full px-4 py-2 text-sm font-sans text-left rounded-lg transition-colors",
+                    "flex-1 px-3 py-2 text-xs font-sans rounded-xl border transition-all",
                     paymentCurrency === 'USDC' 
-                      ? "bg-primary text-primary-foreground" 
-                      : "bg-muted hover:bg-muted/80"
+                      ? "border-primary bg-primary/10 text-foreground" 
+                      : "border-border/30 bg-background/50 text-muted-foreground hover:border-border"
                   )}
                 >
-                  $ USDC (Base)
+                  $ USDC
                 </button>
                 <button
                   onClick={() => setPaymentCurrency('ETH')}
                   className={cn(
-                    "w-full px-4 py-2 text-sm font-sans text-left rounded-lg transition-colors",
+                    "flex-1 px-3 py-2 text-xs font-sans rounded-xl border transition-all",
                     paymentCurrency === 'ETH' 
-                      ? "bg-primary text-primary-foreground" 
-                      : "bg-muted hover:bg-muted/80"
+                      ? "border-primary bg-primary/10 text-foreground" 
+                      : "border-border/30 bg-background/50 text-muted-foreground hover:border-border"
                   )}
                 >
-                  ETH (Base)
+                  ETH
                 </button>
               </div>
             </div>
 
+            {/* Amount Selection */}
             <div>
-              <div className="px-2 py-1.5 text-[10px] font-sans text-muted-foreground uppercase tracking-wider mb-2">
+              <div className="text-[10px] font-sans text-muted-foreground uppercase tracking-wider mb-2">
                 Quick Buy Amount
               </div>
               <div className="grid grid-cols-3 gap-2">
@@ -237,10 +352,10 @@ const Footer = () => {
                     key={amount}
                     onClick={() => setQuickBuyAmount(amount)}
                     className={cn(
-                      "px-4 py-2 text-sm font-sans rounded-lg transition-colors",
+                      "px-3 py-2 text-xs font-sans rounded-xl border transition-all",
                       quickBuyAmount === amount 
-                        ? "bg-primary text-primary-foreground" 
-                        : "bg-muted hover:bg-muted/80"
+                        ? "border-primary bg-primary/10 text-foreground" 
+                        : "border-border/30 bg-background/50 text-muted-foreground hover:border-border"
                     )}
                   >
                     ${amount}
@@ -250,8 +365,8 @@ const Footer = () => {
             </div>
           </div>
           <button
-            onClick={() => setShowBuyDialog(false)}
-            className="w-full py-2 text-sm font-sans text-muted-foreground hover:text-foreground transition-colors"
+            onClick={() => setShowSettingsDialog(false)}
+            className="w-full mt-4 py-2 text-xs font-sans text-primary hover:text-primary/80 transition-colors"
           >
             Done
           </button>

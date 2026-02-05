@@ -32,22 +32,22 @@ const BulkVoteDialog = ({ isOpen, onClose, onConfirm, isSubmitting }: BulkVoteDi
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md bg-card/95 backdrop-blur-xl border-border/50">
         <DialogHeader>
-          <DialogTitle className="font-serif text-lg">BULK VOTING</DialogTitle>
+          <DialogTitle className="font-serif text-lg text-center">BULK VOTING</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <div className="space-y-2">
+          <div className="space-y-2 text-center">
             <p className="text-xs text-muted-foreground font-sans leading-relaxed">
-              Base Squares is popularity indicator for Fyre PureBreeds.
+              Base Squares represent the popularity and influence of FYRE PureBreeds.
             </p>
             <p className="text-xs text-muted-foreground font-sans leading-relaxed">
-              [assign Base Square votes to boost visibility for your favourite endangered species.]
+              Assign Base Square votes to boost visibility for endangered species.
             </p>
           </div>
           
           <div>
-            <p className="text-sm font-sans text-foreground mb-3">
+            <p className="text-sm font-sans text-foreground mb-3 text-center">
               Select the number of Base Squares to assign to this species:
             </p>
             <div className="grid grid-cols-2 gap-2">
@@ -57,10 +57,10 @@ const BulkVoteDialog = ({ isOpen, onClose, onConfirm, isSubmitting }: BulkVoteDi
                   onClick={() => setSelectedAmount(option.amount)}
                   disabled={isSubmitting}
                   className={cn(
-                    "p-3 rounded-lg border-2 transition-all font-sans text-left",
+                    "p-3 rounded-xl border-2 transition-all font-sans text-left",
                     selectedAmount === option.amount
                       ? "border-primary bg-primary/10"
-                      : "border-border hover:border-primary/50",
+                      : "border-border/50 bg-background/50 hover:border-primary/50",
                     isSubmitting && "opacity-50 cursor-not-allowed"
                   )}
                 >
@@ -75,7 +75,7 @@ const BulkVoteDialog = ({ isOpen, onClose, onConfirm, isSubmitting }: BulkVoteDi
             </div>
           </div>
 
-          <p className="text-[10px] text-muted-foreground font-sans italic">
+          <p className="text-[10px] text-muted-foreground font-sans italic text-center">
             (Onchain activity increases your chances of qualifying for $FYRE and $BASE airdrops.)
           </p>
 
@@ -83,7 +83,7 @@ const BulkVoteDialog = ({ isOpen, onClose, onConfirm, isSubmitting }: BulkVoteDi
             <button
               onClick={onClose}
               disabled={isSubmitting}
-              className="flex-1 px-4 py-2 text-sm font-sans border border-border rounded-lg hover:bg-muted transition-colors"
+              className="flex-1 px-4 py-2.5 text-sm font-sans border border-border/50 rounded-xl hover:bg-muted/50 transition-colors"
             >
               Cancel
             </button>
@@ -91,7 +91,7 @@ const BulkVoteDialog = ({ isOpen, onClose, onConfirm, isSubmitting }: BulkVoteDi
               onClick={handleConfirm}
               disabled={!selectedAmount || isSubmitting}
               className={cn(
-                "flex-1 px-4 py-2 text-sm font-sans rounded-lg transition-colors",
+                "flex-1 px-4 py-2.5 text-sm font-sans rounded-xl transition-colors",
                 selectedAmount && !isSubmitting
                   ? "bg-primary text-primary-foreground hover:bg-primary/90"
                   : "bg-muted text-muted-foreground cursor-not-allowed"

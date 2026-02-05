@@ -20,7 +20,7 @@ const Home = () => {
 
   // Set meta tags for home page
   useMetaTags({
-    title: 'PUREBREEDS EXPLORER | Tokenized Endangered Animals on Base L2',
+    title: 'PUREBREEDS NAVIGATOR | Tokenized Endangered Animals on Base L2',
     description: 'Browse, Vote and Share Tokenized Endangered Animals on Base L2',
     image: '/logo.png',
     url: typeof window !== 'undefined' ? window.location.origin : 'https://www.fcbc.fun',

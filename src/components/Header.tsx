@@ -41,12 +41,12 @@ const Header = ({
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 overflow-y-clip bg-background/95 backdrop-blur-sm border-b border-border safe-area-top w-full max-w-full overflow-x-hidden">
-      <div className="px-3 h-14 flex items-center justify-between w-full max-w-full">
-        {/* Left: Logo and Title */}
-        <a href="/" className="flex items-start gap-2 hover:opacity-80 transition-opacity">
-          <img src={currentLogo} alt="Fyre App 1" className="w-[5em] h-[3em] rounded-lg object-contain" />
+      <div className="px-2 h-14 flex items-center justify-between w-full max-w-full">
+        {/* Left: Logo and Title - adjusted to left edge */}
+        <a href="/" className="flex items-center gap-1.5 hover:opacity-80 transition-opacity -ml-0.5">
+          <img src={currentLogo} alt="Fyre App 1" className="w-[4.5em] h-[2.8em] rounded-lg object-contain" />
           {showTitle && (
-            <h1 className="font-serif font-semibold text-foreground leading-tight text-[0.7em] sm:text-base transition-all duration-300">
+            <h1 className="font-serif font-semibold text-foreground leading-tight text-[0.65em] sm:text-sm transition-all duration-300">
               {TITLE_OPTIONS[titleIndex]}
             </h1>
           )}
