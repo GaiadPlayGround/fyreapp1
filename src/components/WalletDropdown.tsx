@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Wallet, LogOut, Vote, Copy, Check, Users, Share2, Moon, Sun, Volume2, VolumeX, Sparkles, HelpCircle, Ticket } from 'lucide-react';
+import { Wallet, LogOut, Vote, Copy, Check, Users, Share2, Moon, Sun, Volume2, VolumeX, Sparkles, HelpCircle, Ticket, Settings } from 'lucide-react';
 import { useWallet } from '@/contexts/WalletContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { cn } from '@/lib/utils';
 import { getDisplayName, formatAddressForDisplay } from '@/lib/nameResolution';
 import OnboardingGuide from './OnboardingGuide';
-
+import type { PaymentCurrency } from '@/components/InlineFilterBar';
 interface WalletDropdownProps {
   animationEnabled?: boolean;
   soundEnabled?: boolean;
@@ -58,6 +58,27 @@ const WalletDropdown = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{ top: number; right: number } | null>(null);
+  
+  // Buy settings state
+  const [paymentCurrency, setPaymentCurrency] = useState<PaymentCurrency>(() => {
+    const saved = localStorage.getItem('fyreapp-payment-currency');
+    return (saved as PaymentCurrency) || 'USDC';
+  });
+  const [quickBuyAmount, setQuickBuyAmount] = useState<number>(() => {
+    const saved = localStorage.getItem('fyreapp-quick-buy-amount');
+    return saved ? parseFloat(saved) : 1;
+  });
+  const [showBuySettings, setShowBuySettings] = useState(false);
+  const quickBuyAmounts = [0.5, 1, 2, 3, 5, 10];
+
+  // Save buy settings to localStorage
+  useEffect(() => {
+    localStorage.setItem('fyreapp-payment-currency', paymentCurrency);
+  }, [paymentCurrency]);
+
+  useEffect(() => {
+    localStorage.setItem('fyreapp-quick-buy-amount', quickBuyAmount.toString());
+  }, [quickBuyAmount]);
 
   // Resolve display name when address changes
   useEffect(() => {
@@ -315,6 +336,74 @@ const WalletDropdown = ({
                 <Share2 className="w-3.5 h-3.5" />
                 <span>My shares {isConnected ? `(${shares})` : '-'}</span>
               </button>
+            </div>
+
+            {/* Buy Settings Section */}
+            <div className="p-3 border-b border-border space-y-2">
+              <button 
+                onClick={() => setShowBuySettings(!showBuySettings)}
+                className="flex items-center justify-between w-full px-2 py-1.5 text-xs font-sans text-foreground hover:bg-muted rounded-md transition-colors"
+              >
+                <span className="flex items-center gap-2">
+                  <Settings className="w-3.5 h-3.5" />
+                  <span>Buy Settings</span>
+                </span>
+                <span className="text-[10px] text-primary font-medium">${quickBuyAmount} {paymentCurrency}</span>
+              </button>
+              
+              {showBuySettings && (
+                <div className="space-y-3 px-2 py-2 bg-muted/30 rounded-lg">
+                  {/* Currency Selection */}
+                  <div>
+                    <div className="text-[9px] text-muted-foreground uppercase tracking-wider mb-1.5">Currency</div>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => setPaymentCurrency('USDC')}
+                        className={cn(
+                          "flex-1 px-2 py-1 text-[10px] font-sans rounded-md border transition-all",
+                          paymentCurrency === 'USDC' 
+                            ? "border-primary bg-primary/10 text-foreground" 
+                            : "border-border text-muted-foreground hover:border-border"
+                        )}
+                      >
+                        USDC
+                      </button>
+                      <button
+                        onClick={() => setPaymentCurrency('ETH')}
+                        className={cn(
+                          "flex-1 px-2 py-1 text-[10px] font-sans rounded-md border transition-all",
+                          paymentCurrency === 'ETH' 
+                            ? "border-primary bg-primary/10 text-foreground" 
+                            : "border-border text-muted-foreground hover:border-border"
+                        )}
+                      >
+                        ETH
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Amount Selection */}
+                  <div>
+                    <div className="text-[9px] text-muted-foreground uppercase tracking-wider mb-1.5">Amount</div>
+                    <div className="grid grid-cols-3 gap-1">
+                      {quickBuyAmounts.map((amount) => (
+                        <button
+                          key={amount}
+                          onClick={() => setQuickBuyAmount(amount)}
+                          className={cn(
+                            "px-2 py-1 text-[10px] font-sans rounded-md border transition-all",
+                            quickBuyAmount === amount 
+                              ? "border-primary bg-primary/10 text-foreground" 
+                              : "border-border text-muted-foreground hover:border-border"
+                          )}
+                        >
+                          ${amount}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Replay Onboarding */}

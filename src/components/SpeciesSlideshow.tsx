@@ -19,6 +19,13 @@ import { usePaymentSettings } from './PaymentSettings';
 import { AdaptiveBackdrop } from './AdaptiveBackdrop';
 import BuyDnaPopup from './BuyDnaPopup';
 
+// Trigger haptic feedback on mobile
+const triggerHaptic = () => {
+  if ('vibrate' in navigator) {
+    navigator.vibrate(10);
+  }
+};
+
 // Quick buy button component with long press for popup
 const BuyDnaButton = ({ 
   onClick,
@@ -32,6 +39,7 @@ const BuyDnaButton = ({
   
   const handlePressStart = () => {
     longPressTimerRef.current = setTimeout(() => {
+      triggerHaptic(); // Haptic on long press
       onLongPress();
     }, 500); // 500ms long press
   };
@@ -79,13 +87,6 @@ interface SpeciesSlideshowProps {
   initialIndex: number;
   onClose: () => void;
 }
-
-// Trigger haptic feedback on mobile
-const triggerHaptic = () => {
-  if ('vibrate' in navigator) {
-    navigator.vibrate(10);
-  }
-};
 
 // Analyze image brightness (simplified - assumes animal images are typically darker on edges)
 const getTextColorForBackground = (brightness: 'light' | 'dark' = 'dark') => {
@@ -1005,7 +1006,7 @@ const SpeciesSlideshow = ({
       </div>
 
       {/* Bottom center - Buy DNA button on top, vote panel below */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 safe-area-bottom z-10 flex flex-col items-center gap-2">
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 safe-area-bottom z-10 flex flex-col items-center gap-1">
         {/* Buy DNA button on top */}
         <BuyDnaButton 
           onClick={handleDoubleTap}
@@ -1015,10 +1016,7 @@ const SpeciesSlideshow = ({
             setShowBuyPopup(true);
           }}
         />
-               <span className="text-card/60 text-[10px] font-sans mt-0.5">
-            Long press for bulk actions
-          </span>
-        {/* Vote squares below */}
+        {/* Vote squares below - tighter spacing */}
         <VoteSquares 
           key={`${currentSpecies.id}-${voteKey}`}
           speciesId={currentSpecies.id}

@@ -135,7 +135,7 @@ Join the movement: https://fcbc.fun
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto bg-card/95 backdrop-blur-xl border-border/50">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-serif">
             <Flame className="w-5 h-5 text-primary" />

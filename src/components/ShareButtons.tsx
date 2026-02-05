@@ -21,31 +21,19 @@ const ShareButtons = ({ species }: ShareButtonsProps) => {
   
   const truncatedDesc = truncateToWords(species.description, 15);
   
-  // Build species URL using symbol and code
-  // symbol is like "FCBC3", code is like "68005/12881238"
+  // Build species URL using symbol
   const speciesSymbol = species.symbol || `FCBC${species.id.replace(/\D/g, '')}`;
-  const speciesCode = (species as any).code || `${species.id.replace(/\D/g, '')}0/12345678`;
-  const speciesUrl = `https://www.fcbc.fun/species/${speciesSymbol}?code=${speciesCode}`;
+  const speciesNumber = species.id.replace(/\D/g, '');
+  const speciesUrl = `https://1.fcbc.fun/explore/fcbc${speciesNumber}`;
   
-  // X share format
-  const xShareText = `The ${species.name} is an endangered animal brought onchain to Base by the FCBC Club. 
+  // New unified share format
+  const shareText = `The ${species.name} is an endangered animal brought onchain to Base-L2 by @warplette's FCBC Club.
 
-Buy DNA and Create Hybrids:
+View, Assign Base Squares and Buy DNA Units of this species:
 
-${speciesUrl}`;
+${speciesUrl}
 
-  // BaseApp/Farcaster share format
-  const farcasterShareText = `Meet ${speciesSymbol}.
-
--THE ${species.name.toUpperCase()} 
-
-"${truncatedDesc}" 
-
-Explore and buy onchain DNA of this endangered animal, build your Fyre Portfolio and Create Hybrids.
-
-Live on FCBCdotFUN.
-
-contract: ${CONTRACT_ADDRESS}`;
+#FyreBasePoster`;
 
   const handleShare = async (url: string, platform: string) => {
     addShare();
@@ -64,7 +52,7 @@ contract: ${CONTRACT_ADDRESS}`;
           <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
         </svg>
       ),
-      url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(xShareText)}`,
+      url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`,
     },
     {
       name: 'Farcaster',
@@ -83,7 +71,7 @@ contract: ${CONTRACT_ADDRESS}`;
           <circle cx="13.5" cy="10.5" r="1" fill="#333"/>
         </svg>
       ),
-      url: `https://warpcast.com/~/compose?text=${encodeURIComponent(farcasterShareText)}`,
+      url: `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}`,
     },
     {
       name: 'Base App',
@@ -94,7 +82,7 @@ contract: ${CONTRACT_ADDRESS}`;
           <circle cx="12" cy="12" r="5" stroke="white" strokeWidth="1.5" fill="none"/>
         </svg>
       ),
-      url: `https://warpcast.com/~/compose?text=${encodeURIComponent(farcasterShareText)}`,
+      url: `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}`,
     },
   ];
 

@@ -46,9 +46,9 @@ const BuyDnaPopup = ({ isOpen, onClose, onConfirm, speciesName, isSubmitting = f
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-xs">
+      <DialogContent className="max-w-[280px] bg-card/95 backdrop-blur-xl border-border/50">
         <DialogHeader>
-          <DialogTitle className="font-serif text-base text-center">Buy DNA</DialogTitle>
+          <DialogTitle className="font-serif text-sm text-center">Buy DNA</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           {/* Balance Display */}
