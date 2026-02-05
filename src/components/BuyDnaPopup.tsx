@@ -4,6 +4,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { cn } from '@/lib/utils';
 import { useWallet } from '@/contexts/WalletContext';
 import { usePaymentSettings, QuickBuyAmount } from './PaymentSettings';
+import { useAccount, useBalance } from 'wagmi';
+import { formatUnits } from 'viem';
 
 interface BuyDnaPopupProps {
   isOpen: boolean;
@@ -13,18 +15,20 @@ interface BuyDnaPopupProps {
   isSubmitting?: boolean;
 }
 
-const ETH_PRICE_APPROX = 3000; // Approximate ETH price in USD
-
 const BuyDnaPopup = ({ isOpen, onClose, onConfirm, speciesName, isSubmitting = false }: BuyDnaPopupProps) => {
   const { usdcBalance, isConnected } = useWallet();
   const { currency: savedCurrency, amount: savedAmount, setCurrency, setAmount } = usePaymentSettings();
+  const { address } = useAccount();
+  
+  // Fetch native ETH balance
+  const { data: ethBalanceData } = useBalance({
+    address: isConnected && address ? address : undefined,
+  });
+  
+  const ethBalance = ethBalanceData ? parseFloat(formatUnits(ethBalanceData.value, 18)) : 0;
   
   const [selectedCurrency, setSelectedCurrency] = useState<'USDC' | 'ETH'>(savedCurrency);
   const [selectedAmount, setSelectedAmount] = useState<QuickBuyAmount>(savedAmount);
-  
-  // Mock ETH balance (in production, this would come from useWallet)
-  const ethBalance = 0.52;
-  const ethValueUSD = ethBalance * ETH_PRICE_APPROX;
 
   const quickAmounts: QuickBuyAmount[] = [0.5, 1, 2, 3, 5, 10];
 
@@ -40,10 +44,6 @@ const BuyDnaPopup = ({ isOpen, onClose, onConfirm, speciesName, isSubmitting = f
     onConfirm(selectedAmount, selectedCurrency);
   };
 
-  const getEthAmount = (usdAmount: number) => {
-    return (usdAmount / ETH_PRICE_APPROX).toFixed(6);
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-[280px] bg-card/95 backdrop-blur-xl border-border/50">
@@ -53,8 +53,11 @@ const BuyDnaPopup = ({ isOpen, onClose, onConfirm, speciesName, isSubmitting = f
         <div className="space-y-3">
           {/* Balance Display */}
           <div className="flex items-center justify-between text-xs font-sans p-2 bg-muted/50 rounded-lg">
-            <span className="text-muted-foreground">USDC bal: <span className="text-foreground font-medium">${usdcBalance.toFixed(2)}</span></span>
-            <span className="text-muted-foreground">ETH bal: <span className="text-foreground font-medium">{ethBalance.toFixed(2)}</span> <span className="text-muted-foreground">(${ethValueUSD.toFixed(0)})</span></span>
+            {selectedCurrency === 'USDC' ? (
+              <span className="text-muted-foreground">USDC bal: <span className="text-foreground font-medium">${usdcBalance.toFixed(2)}</span></span>
+            ) : (
+              <span className="text-muted-foreground">ETH bal: <span className="text-foreground font-medium">{ethBalance.toFixed(4)} ETH</span></span>
+            )}
           </div>
 
           {/* Currency Selection */}
@@ -96,7 +99,7 @@ const BuyDnaPopup = ({ isOpen, onClose, onConfirm, speciesName, isSubmitting = f
                     : "border-border text-muted-foreground hover:border-primary/50"
                 )}
               >
-                {selectedCurrency === 'ETH' ? getEthAmount(amount) : `$${amount}`}
+                ${amount}
               </button>
             ))}
           </div>

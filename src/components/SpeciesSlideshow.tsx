@@ -241,13 +241,23 @@ const SpeciesSlideshow = ({
       }
       
       // Amount to swap: user-selected amount worth of selected currency
-      // For ETH, approximate price (assuming ~$3000/ETH)
-      // In production, you'd fetch real-time ETH price
-      const ethPriceApprox = 3000; // Approximate ETH price in USD
+      // We always work in USD, only convert to ETH when user wants to pay in ETH
       const swapAmountUSD = quickBuyAmount;
-      const swapAmount = paymentCurrency === 'ETH' 
-        ? parseUnits((swapAmountUSD / ethPriceApprox).toFixed(6), currencyDecimals)
-        : parseUnits(swapAmountUSD.toString(), currencyDecimals);
+      
+      let swapAmount: bigint;
+      if (paymentCurrency === 'ETH') {
+        // Fetch real ETH price for transaction conversion
+        const ethPriceResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
+        const ethPriceData = await ethPriceResponse.json();
+        const ethPrice = ethPriceData.ethereum?.usd || 3000; // Fallback to 3000 if API fails
+        
+        // Convert USD to ETH: swapAmountUSD / ethPrice
+        const ethAmount = swapAmountUSD / ethPrice;
+        swapAmount = parseUnits(ethAmount.toFixed(6), currencyDecimals);
+      } else {
+        // For USDC, use USD amount directly
+        swapAmount = parseUnits(swapAmountUSD.toString(), currencyDecimals);
+      }
       
       // Check user's balance before attempting trade
       console.log('=== BALANCE CHECK ===');
