@@ -95,14 +95,31 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
       return;
     }
 
-    // Split base squares into votes (max 5 base squares per vote)
-    // Each vote = 1 transaction = 1 cent
+    // Split base squares into votes following the formula:
+    // - Min 1 base square per vote
+    // - Max 5 base squares per vote
+    // - Each vote = 1 transaction = 1 cent
+    // Example: 10001 base squares = 2000 votes of 5 + 1 vote of 1 = 2001 votes total
     const votes: number[] = [];
     let remaining = baseSquaresAmount;
     while (remaining > 0) {
-      const voteRating = Math.min(remaining, 5); // Max 5 base squares per vote
+      // Each vote gets min(remaining, 5) base squares
+      // This ensures: 1 <= voteRating <= 5
+      const voteRating = Math.min(remaining, 5);
       votes.push(voteRating);
       remaining -= voteRating;
+    }
+    
+    // Validate: all votes should be between 1 and 5
+    const invalidVotes = votes.filter(v => v < 1 || v > 5);
+    if (invalidVotes.length > 0) {
+      console.error('Invalid vote ratings detected:', invalidVotes);
+      toast({
+        title: "Vote Calculation Error",
+        description: "Invalid vote distribution. Please try again.",
+        variant: "destructive",
+      });
+      return;
     }
 
     const numVotes = votes.length;
@@ -130,10 +147,20 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
         throw new Error('Wallet not properly connected');
       }
 
+      // Show breakdown: e.g., "2000 votes of 5 + 1 vote of 1 = 2001 votes"
+      const voteBreakdown = votes.reduce((acc, rating) => {
+        acc[rating] = (acc[rating] || 0) + 1;
+        return acc;
+      }, {} as Record<number, number>);
+      const breakdownText = Object.entries(voteBreakdown)
+        .sort((a, b) => Number(b[0]) - Number(a[0]))
+        .map(([rating, count]) => `${count} vote${count > 1 ? 's' : ''} of ${rating}`)
+        .join(' + ');
+      
       toast({
         title: "Preparing Batch Vote...",
-        description: `Creating ${numVotes} vote${numVotes > 1 ? 's' : ''} (${baseSquaresAmount} Base Squares, ${totalCost.toFixed(2)}¢ total)`,
-        duration: 3000,
+        description: `${numVotes} vote${numVotes > 1 ? 's' : ''} (${breakdownText}) = ${baseSquaresAmount} Base Squares, ${totalCost.toFixed(2)}¢ total`,
+        duration: 4000,
       });
 
       setIsBatchSubmitting(true);
