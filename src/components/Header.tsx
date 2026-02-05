@@ -25,7 +25,7 @@ const Header = ({
   showTitle = true, // Default to true for backward compatibility
 }: HeaderProps) => {
   const { theme } = useTheme();
-  const { votes, shares, isConnected, ownedDnaTickers } = useWallet();
+  const { completedTasksCount, isConnected } = useWallet();
   // Use logos from public folder: logo.png for dark mode, logo-black.png for light mode
   const currentLogo = theme === 'dark' ? '/i.png' : '/logo-black.png';
   const [titleIndex, setTitleIndex] = useState(0);
@@ -57,7 +57,7 @@ const Header = ({
           <FyreMissionsDialog>
             <button className="flex items-center gap-1.5 px-2 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
               <ChevronDown className="w-3.5 h-3.5" />
-              <span className="font-sans">{votes.length + shares}/27</span>
+              <span className="font-sans">{completedTasksCount}/27</span>
             </button>
           </FyreMissionsDialog>
           

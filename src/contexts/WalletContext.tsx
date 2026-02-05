@@ -25,6 +25,7 @@ interface WalletState {
   votes: Vote[];
   inviteCode: string | null;
   fyreKeys: number;
+  completedTasksCount: number;
 }
 
 interface WalletContextType extends WalletState {
@@ -35,6 +36,8 @@ interface WalletContextType extends WalletState {
   addVoteTicket: () => void;
   hasVoted: (speciesId: string) => boolean;
   getVoteCount: (speciesId: string) => number;
+  refreshFyreKeys: () => Promise<void>;
+  refreshCompletedTasksCount: () => Promise<void>;
 }
 
 const WalletContext = createContext<WalletContextType | null>(null);
@@ -56,6 +59,26 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const { disconnect: wagmiDisconnect } = useDisconnect();
   const walletDb = useWalletDb();
   const { fetchBalances } = useWalletBalances();
+
+  // Function to refresh Fyre Keys from database
+  const refreshFyreKeys = useCallback(async () => {
+    if (!wagmiAddress) return;
+    const fyreKeys = await walletDb.refreshFyreKeys(wagmiAddress);
+    setState((prev) => ({
+      ...prev,
+      fyreKeys,
+    }));
+  }, [wagmiAddress, walletDb.refreshFyreKeys]);
+
+  // Function to refresh completed tasks count from database
+  const refreshCompletedTasksCount = useCallback(async () => {
+    if (!wagmiAddress) return;
+    const completions = await walletDb.getTaskCompletions(wagmiAddress);
+    setState((prev) => ({
+      ...prev,
+      completedTasksCount: completions.size,
+    }));
+  }, [wagmiAddress, walletDb.getTaskCompletions]);
   
   // Use ref to store latest fetchBalances to avoid dependency issues
   const fetchBalancesRef = useRef(fetchBalances);
@@ -78,6 +101,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     votes: [],
     inviteCode: null,
     fyreKeys: 0,
+    completedTasksCount: 0,
   });
 
   // Sync wagmi connection state with local state and fetch balances
@@ -135,9 +159,11 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
           isConnected: true,
           address: wagmiAddress,
           inviteCode: walletData.invite_code || null,
+          fyreKeys: walletData.fyre_keys || 0,
         }));
-        // Fetch balances after wallet data is loaded
+        // Fetch balances and task completions after wallet data is loaded
         updateBalances();
+        refreshCompletedTasksCount();
       } else {
         // Register new wallet
         walletDb.registerWallet(wagmiAddress).then((newWalletData) => {
@@ -148,6 +174,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
               isConnected: true,
               address: wagmiAddress,
               inviteCode: newWalletData.invite_code || null,
+              fyreKeys: newWalletData.fyre_keys || 0,
             }));
           } else {
             // Fallback if registration fails
@@ -157,10 +184,12 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
               isConnected: true,
               address: wagmiAddress,
               inviteCode: uniqueCode,
+              fyreKeys: 0,
             }));
           }
-          // Fetch balances after wallet registration
+          // Fetch balances and task completions after wallet registration
           updateBalances();
+          refreshCompletedTasksCount();
         });
       }
     });
@@ -178,7 +207,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         clearInterval(balanceInterval);
       }
     };
-  }, [wagmiIsConnected, wagmiAddress, walletDb.getWalletByAddress, walletDb.registerWallet]); // Removed fetchBalances from deps
+  }, [wagmiIsConnected, wagmiAddress, walletDb.getWalletByAddress, walletDb.registerWallet, refreshCompletedTasksCount]); // Removed fetchBalances from deps
 
   const connect = async () => {
     try {
@@ -220,14 +249,15 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       votes: [],
       inviteCode: null,
       fyreKeys: 0,
+      completedTasksCount: 0,
     });
   };
 
-  const addShare = () => {
+  const addShare = async () => {
+    // Note: Fyre Keys for shares are now handled through task completions
     setState((prev) => ({
       ...prev,
       shares: prev.shares + 1,
-      fyreKeys: prev.fyreKeys + 10, // +10 Fyre Keys per share
     }));
   };
 
@@ -243,11 +273,11 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       return false;
     }
 
+    // Note: Fyre Keys for votes are now handled through task completions
     setState((prev) => ({
       ...prev,
       usdcBalance: prev.usdcBalance - VOTE_COST,
       voteTickets: prev.voteTickets + 1, // +1 vote ticket with each vote
-      fyreKeys: prev.fyreKeys + 10, // +10 Fyre Keys per vote
       votes: [...prev.votes, { speciesId, rating, timestamp: new Date() }],
     }));
     return true;
@@ -281,6 +311,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         addVoteTicket,
         hasVoted,
         getVoteCount,
+        refreshFyreKeys,
+        refreshCompletedTasksCount,
       }}
     >
       {children}

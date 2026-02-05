@@ -1006,7 +1006,7 @@ const SpeciesSlideshow = ({
       </div>
 
       {/* Bottom center - Buy DNA button on top, vote panel below */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 safe-area-bottom z-10 flex flex-col items-center gap-1">
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 safe-area-bottom z-10 flex flex-col items-center gap-0.5">
         {/* Buy DNA button on top */}
         <BuyDnaButton 
           onClick={handleDoubleTap}
@@ -1016,6 +1016,10 @@ const SpeciesSlideshow = ({
             setShowBuyPopup(true);
           }}
         />
+        {/* Long press hint - tightly spaced */}
+        <span className="text-card/50 text-[9px] font-sans leading-tight">
+          Long press for bulk action
+        </span>
         {/* Vote squares below - tighter spacing */}
         <VoteSquares 
           key={`${currentSpecies.id}-${voteKey}`}

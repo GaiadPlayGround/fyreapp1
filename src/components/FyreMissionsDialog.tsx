@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Check, ExternalLink, Share2, Vote, Coins, Users, Copy, Headphones, ShoppingCart, Twitter, Flame, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { cn } from '@/lib/utils';
 import { useWallet } from '@/contexts/WalletContext';
 import { toast } from '@/hooks/use-toast';
+import { useWalletDb } from '@/hooks/useWalletDb';
 
 const CONTRACT_ADDRESS = '0x17d8d3c956a9b2d72257d7c9624cfcfd8ba8672b';
 
@@ -60,7 +61,9 @@ interface FyreMissionsDialogProps {
 
 const FyreMissionsDialog = ({ children }: FyreMissionsDialogProps) => {
   const [clickedRedirects, setClickedRedirects] = useState<Set<string>>(new Set());
-  const { votes, shares, ownedGenomes, totalDnaTokens } = useWallet();
+  const [completedTasks, setCompletedTasks] = useState<Set<string>>(new Set());
+  const { votes, shares, ownedGenomes, totalDnaTokens, address, isConnected, refreshFyreKeys, refreshCompletedTasksCount } = useWallet();
+  const walletDb = useWalletDb();
   
   // Get referrals from localStorage (invited users)
   const getReferralCount = (): number => {
@@ -89,35 +92,192 @@ const FyreMissionsDialog = ({ children }: FyreMissionsDialogProps) => {
     }
   };
 
+  // Load task completions from database
+  useEffect(() => {
+    if (isConnected && address) {
+      walletDb.getTaskCompletions(address).then((completions) => {
+        setCompletedTasks(completions);
+      });
+    }
+  }, [isConnected, address, walletDb.getTaskCompletions]);
+
+  // Check for progress task completions whenever progress values change
+  useEffect(() => {
+    if (!isConnected || !address) return;
+
+    const checkProgressTasks = async () => {
+      const progressTasks = TASKS.filter(t => t.type === 'progress' && t.requirement && t.progressKey);
+      
+      for (const task of progressTasks) {
+        // Skip if already completed
+        if (completedTasks.has(task.id)) continue;
+        
+        const progress = getProgress(task.progressKey!);
+        const isMet = progress >= task.requirement!;
+        
+        if (isMet) {
+          const result = await walletDb.completeTask(address, task.id, 10);
+          if (result.success) {
+            setCompletedTasks(prev => new Set(prev).add(task.id));
+            await refreshFyreKeys();
+            await refreshCompletedTasksCount();
+            toast({
+              title: "Task Completed!",
+              description: `+10 Fyre Keys awarded for: ${task.label}`,
+              duration: 3000,
+            });
+          }
+        }
+      }
+    };
+
+    checkProgressTasks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [votes.length, shares, genomes, dna, isConnected, address]);
+
   const isTaskCompleted = (task: Task): boolean => {
+    // First check database for permanent completion
+    if (completedTasks.has(task.id)) {
+      return true;
+    }
+    
+    // For redirect/share tasks, check local state (will be saved to DB on click)
     if (task.type === 'redirect' || task.type === 'share') {
       return clickedRedirects.has(task.id);
     }
+    
+    // For progress tasks, check if requirement is met
+    // (Completion is handled in useEffect to avoid async calls during render)
     if (task.type === 'progress' && task.requirement && task.progressKey) {
-      return getProgress(task.progressKey) >= task.requirement;
+      const progress = getProgress(task.progressKey);
+      return progress >= task.requirement;
     }
+    
     return false;
   };
 
-  const handleTaskClick = (task: Task) => {
-    if (task.type === 'redirect' && task.url) {
-      window.open(task.url, '_blank');
-      setClickedRedirects(prev => new Set(prev).add(task.id));
-    } else if (task.type === 'share') {
-      const shareText = `I'm exploring endangered species and bio-RWAs with the FCBC Club! 🧬
+  const handleTaskClick = async (task: Task) => {
+    // Check if wallet is connected
+    if (!isConnected || !address) {
+      toast({
+        title: "Wallet Not Connected",
+        description: "Please connect your wallet to complete tasks.",
+        variant: "destructive",
+        duration: 3000,
+      });
+      return;
+    }
+
+    // Check if already completed
+    if (completedTasks.has(task.id)) {
+      return; // Already completed, do nothing
+    }
+
+    try {
+      if (task.type === 'redirect' && task.url) {
+        window.open(task.url, '_blank');
+        setClickedRedirects(prev => new Set(prev).add(task.id));
+        
+        // Record completion in database
+        const result = await walletDb.completeTask(address, task.id, 10);
+        if (result.success) {
+          setCompletedTasks(prev => new Set(prev).add(task.id));
+          await refreshFyreKeys();
+          await refreshCompletedTasksCount();
+          if (!result.alreadyCompleted) {
+            toast({
+              title: "Task Completed!",
+              description: `+10 Fyre Keys awarded for: ${task.label}`,
+              duration: 3000,
+            });
+          }
+        } else {
+          toast({
+            title: "Error Completing Task",
+            description: result.error || "Failed to save task completion. Please try again.",
+            variant: "destructive",
+            duration: 3000,
+          });
+        }
+      } else if (task.type === 'share') {
+        const shareText = `I'm exploring endangered species and bio-RWAs with the FCBC Club! 🧬
 
 DNA Markets are the new class of tokens representing real-world biodiversity.
 
 Join the movement: https://fcbc.fun
 
 #FyreBasePosting #FCBC #bioRWA`;
-      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`, '_blank');
-      setClickedRedirects(prev => new Set(prev).add(task.id));
-    } else if (task.type === 'copy') {
-      navigator.clipboard.writeText(CONTRACT_ADDRESS);
+        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`, '_blank');
+        setClickedRedirects(prev => new Set(prev).add(task.id));
+        
+        // Record completion in database
+        const result = await walletDb.completeTask(address, task.id, 10);
+        if (result.success) {
+          setCompletedTasks(prev => new Set(prev).add(task.id));
+          await refreshFyreKeys();
+          await refreshCompletedTasksCount();
+          if (!result.alreadyCompleted) {
+            toast({
+              title: "Task Completed!",
+              description: `+10 Fyre Keys awarded for: ${task.label}`,
+              duration: 3000,
+            });
+          }
+        } else {
+          toast({
+            title: "Error Completing Task",
+            description: result.error || "Failed to save task completion. Please try again.",
+            variant: "destructive",
+            duration: 3000,
+          });
+        }
+      } else if (task.type === 'copy') {
+        try {
+          await navigator.clipboard.writeText(CONTRACT_ADDRESS);
+          toast({
+            title: "Contract Address Copied!",
+            description: CONTRACT_ADDRESS,
+            duration: 2000,
+          });
+        } catch (clipboardError) {
+          console.error('Clipboard error:', clipboardError);
+          toast({
+            title: "Copy Failed",
+            description: "Please copy the address manually: " + CONTRACT_ADDRESS,
+            variant: "destructive",
+            duration: 3000,
+          });
+        }
+        
+        // Record completion in database
+        const result = await walletDb.completeTask(address, task.id, 10);
+        if (result.success) {
+          setCompletedTasks(prev => new Set(prev).add(task.id));
+          await refreshFyreKeys();
+          await refreshCompletedTasksCount();
+          if (!result.alreadyCompleted) {
+            toast({
+              title: "Task Completed!",
+              description: `+10 Fyre Keys awarded for: ${task.label}`,
+              duration: 3000,
+            });
+          }
+        } else {
+          toast({
+            title: "Error Completing Task",
+            description: result.error || "Failed to save task completion. Please try again.",
+            variant: "destructive",
+            duration: 3000,
+          });
+        }
+      }
+    } catch (error: any) {
+      console.error('Error in handleTaskClick:', error);
       toast({
-        title: "Contract Address Copied!",
-        description: CONTRACT_ADDRESS,
+        title: "Error",
+        description: error?.message || "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+        duration: 3000,
       });
     }
   };
@@ -155,7 +315,15 @@ Join the movement: https://fcbc.fun
             return (
               <button
                 key={task.id}
-                onClick={() => handleTaskClick(task)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (isClickable || completed) {
+                    handleTaskClick(task).catch((err) => {
+                      console.error('Unhandled error in handleTaskClick:', err);
+                    });
+                  }
+                }}
                 disabled={!isClickable && !completed}
                 className={cn(
                   "flex items-center gap-2 w-full text-left p-2 rounded-lg transition-colors",
