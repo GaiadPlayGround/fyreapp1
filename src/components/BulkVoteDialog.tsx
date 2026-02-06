@@ -22,11 +22,39 @@ const BULK_VOTE_OPTIONS = [
 
 const BulkVoteDialog = ({ isOpen, onClose, onConfirm, isSubmitting }: BulkVoteDialogProps) => {
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
+  const [customAmount, setCustomAmount] = useState<string>('');
+  const [useCustom, setUseCustom] = useState(false);
+
+  const handleSelectPreset = (amount: number) => {
+    setSelectedAmount(amount);
+    setUseCustom(false);
+    setCustomAmount('');
+  };
+
+  const handleCustomAmountChange = (value: string) => {
+    // Only allow valid numeric input (whole numbers for base squares)
+    if (value === '' || /^\d+$/.test(value)) {
+      setCustomAmount(value);
+      setUseCustom(true);
+      const parsed = parseInt(value, 10);
+      if (!isNaN(parsed) && parsed > 0) {
+        setSelectedAmount(parsed);
+      } else {
+        setSelectedAmount(null);
+      }
+    }
+  };
+
+  const finalAmount = useCustom ? (customAmount ? parseInt(customAmount, 10) : null) : selectedAmount;
+  const isValidAmount = finalAmount !== null && !isNaN(finalAmount) && finalAmount > 0;
+  const finalCost = isValidAmount ? (Math.ceil(finalAmount! / 5) * 0.01) : 0;
 
   const handleConfirm = () => {
-    if (selectedAmount) {
-      onConfirm(selectedAmount);
+    if (isValidAmount && finalAmount) {
+      onConfirm(finalAmount);
       setSelectedAmount(null);
+      setCustomAmount('');
+      setUseCustom(false);
     }
   };
 
@@ -37,6 +65,7 @@ const BulkVoteDialog = ({ isOpen, onClose, onConfirm, isSubmitting }: BulkVoteDi
           <DialogTitle className="font-serif text-lg text-center">BULK VOTING</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
+          {/* Description text */}
           <div className="space-y-2 text-center">
             <p className="text-xs text-muted-foreground font-sans leading-relaxed">
               Base Squares represent the popularity and influence of FYRE PureBreeds.
@@ -46,6 +75,14 @@ const BulkVoteDialog = ({ isOpen, onClose, onConfirm, isSubmitting }: BulkVoteDi
             </p>
           </div>
           
+          {/* BULK VOTE heading */}
+          <div className="text-center">
+            <p className="text-sm font-serif font-bold text-foreground tracking-wide">
+              BULK VOTE
+            </p>
+          </div>
+
+          {/* Selection prompt */}
           <div>
             <p className="text-sm font-sans text-foreground mb-3 text-center">
               Select the number of Base Squares to assign to this species:
@@ -54,11 +91,11 @@ const BulkVoteDialog = ({ isOpen, onClose, onConfirm, isSubmitting }: BulkVoteDi
               {BULK_VOTE_OPTIONS.map((option) => (
                 <button
                   key={option.amount}
-                  onClick={() => setSelectedAmount(option.amount)}
+                  onClick={() => handleSelectPreset(option.amount)}
                   disabled={isSubmitting}
                   className={cn(
                     "p-3 rounded-xl border-2 transition-all font-sans text-left",
-                    selectedAmount === option.amount
+                    !useCustom && selectedAmount === option.amount
                       ? "border-primary bg-primary/10"
                       : "border-border/50 bg-background/50 hover:border-primary/50",
                     isSubmitting && "opacity-50 cursor-not-allowed"
@@ -75,6 +112,31 @@ const BulkVoteDialog = ({ isOpen, onClose, onConfirm, isSubmitting }: BulkVoteDi
             </div>
           </div>
 
+          {/* Custom Amount */}
+          <div className="flex items-center gap-2 px-1">
+            <span className="text-xs text-muted-foreground font-sans whitespace-nowrap">Custom:</span>
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                inputMode="numeric"
+                value={customAmount}
+                onChange={(e) => handleCustomAmountChange(e.target.value)}
+                placeholder="Enter base squares"
+                className={cn(
+                  "w-full px-3 py-2 text-xs font-sans rounded-xl border bg-background/50 text-foreground placeholder:text-muted-foreground/50 outline-none transition-all",
+                  useCustom && customAmount
+                    ? "border-primary bg-primary/10"
+                    : "border-border/50 focus:border-primary/50"
+                )}
+              />
+            </div>
+            {useCustom && isValidAmount && (
+              <span className="text-xs text-muted-foreground font-sans whitespace-nowrap">
+                ${finalCost.toFixed(2)}
+              </span>
+            )}
+          </div>
+
           <p className="text-[10px] text-muted-foreground font-sans italic text-center">
             (Onchain activity increases your chances of qualifying for $FYRE and $BASE airdrops.)
           </p>
@@ -89,10 +151,10 @@ const BulkVoteDialog = ({ isOpen, onClose, onConfirm, isSubmitting }: BulkVoteDi
             </button>
             <button
               onClick={handleConfirm}
-              disabled={!selectedAmount || isSubmitting}
+              disabled={!isValidAmount || isSubmitting}
               className={cn(
                 "flex-1 px-4 py-2.5 text-sm font-sans rounded-xl transition-colors",
-                selectedAmount && !isSubmitting
+                isValidAmount && !isSubmitting
                   ? "bg-primary text-primary-foreground hover:bg-primary/90"
                   : "bg-muted text-muted-foreground cursor-not-allowed"
               )}

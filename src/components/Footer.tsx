@@ -19,7 +19,7 @@ const FYRE_APPS = [
     url: 'https://fyreapp0.vercel.app/', 
     active: true, 
     isCurrent: false,
-    icon: '📚'
+    logo: '/fyreapp-logo-0.png'
   },
   { 
     id: 1, 
@@ -29,7 +29,7 @@ const FYRE_APPS = [
     url: '/explore', 
     active: true, 
     isCurrent: true,
-    icon: '🔥'
+    logo: '/fyreapp-logo-1.png'
   },
   { 
     id: 2, 
@@ -39,7 +39,7 @@ const FYRE_APPS = [
     url: '#', 
     active: false, 
     isCurrent: false,
-    icon: '📊'
+    logo: '/fyreapp-logo-2.png'
   },
   { 
     id: 3, 
@@ -49,7 +49,7 @@ const FYRE_APPS = [
     url: '#', 
     active: false, 
     isCurrent: false,
-    icon: '🔒'
+    logo: '/fyreapp-logo-3.png'
   },
   { 
     id: 4, 
@@ -59,7 +59,7 @@ const FYRE_APPS = [
     url: '#', 
     active: false, 
     isCurrent: false,
-    icon: '🧪'
+    logo: '/fyreapp-logo-4.png'
   },
   { 
     id: 5, 
@@ -69,7 +69,7 @@ const FYRE_APPS = [
     url: '#', 
     active: false, 
     isCurrent: false,
-    icon: '⚔️'
+    logo: '/fyreapp-logo-5.png'
   },
   { 
     id: 'herald', 
@@ -79,7 +79,7 @@ const FYRE_APPS = [
     url: 'https://farcaster.xyz/miniapps/NBRppPFoPDDF/fyre-herald', 
     active: true, 
     isCurrent: false,
-    icon: '📢'
+    logo: null
   },
 ];
 
@@ -248,7 +248,11 @@ const Footer = () => {
                     onClick={() => setShowAppsDialog(false)}
                     className="flex items-center gap-3 p-3"
                   >
-                    <span className="text-xl">{app.icon}</span>
+                    {app.logo ? (
+                      <img src={app.logo} alt={app.fullName} className="w-8 h-8 rounded-lg object-contain bg-background" />
+                    ) : (
+                      <span className="text-xl">📢</span>
+                    )}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-sans font-medium text-sm text-foreground">{app.fullName}</span>
@@ -262,7 +266,11 @@ const Footer = () => {
                   </a>
                 ) : (
                   <div className="flex items-center gap-3 p-3">
-                    <span className="text-xl grayscale">{app.icon}</span>
+                    {app.logo ? (
+                      <img src={app.logo} alt={app.fullName} className="w-8 h-8 rounded-lg object-contain bg-background grayscale opacity-50" />
+                    ) : (
+                      <span className="text-xl grayscale">📢</span>
+                    )}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-sans font-medium text-sm text-muted-foreground">{app.fullName}</span>

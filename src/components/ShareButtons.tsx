@@ -12,22 +12,20 @@ const ShareButtons = ({ species }: ShareButtonsProps) => {
   const { addShare, address } = useWallet();
   const { recordShare } = useSpeciesStats();
   
-  // Truncate description to ~15 words for share text
-  const truncateToWords = (text: string, maxWords: number = 15) => {
-    const words = text.split(' ');
-    if (words.length <= maxWords) return text;
-    return words.slice(0, maxWords).join(' ') + '...';
-  };
-  
-  const truncatedDesc = truncateToWords(species.description, 15);
-  
   // Build species URL using symbol
-  const speciesSymbol = species.symbol || `FCBC${species.id.replace(/\D/g, '')}`;
   const speciesNumber = species.id.replace(/\D/g, '');
   const speciesUrl = `https://1.fcbc.fun/explore/fcbc${speciesNumber}`;
   
-  // New unified share format
-  const shareText = `The ${species.name} is an endangered animal brought onchain to Base-L2 by @warplette's FCBC Club.
+  // X (Twitter) share format - includes PS line
+  const xShareText = `The ${species.name} is an endangered animal brought onchain to Base-L2 by @warplette's FCBC Club.
+
+View, Assign Base Squares and Buy DNA Units of this species: ${speciesUrl}
+
+PS: DNA tokens are the 1st bio-RWAs in web3.
+#FyreBasePosting`;
+
+  // Farcaster & Base App share format - original format without PS line
+  const socialShareText = `The ${species.name} is an endangered animal brought onchain to Base-L2 by @warplette's FCBC Club.
 
 View, Assign Base Squares and Buy DNA Units of this species:
 
@@ -52,7 +50,7 @@ ${speciesUrl}
           <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
         </svg>
       ),
-      url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`,
+      url: `https://twitter.com/intent/tweet?text=${encodeURIComponent(xShareText)}`,
     },
     {
       name: 'Farcaster',
@@ -71,7 +69,7 @@ ${speciesUrl}
           <circle cx="13.5" cy="10.5" r="1" fill="#333"/>
         </svg>
       ),
-      url: `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}`,
+      url: `https://warpcast.com/~/compose?text=${encodeURIComponent(socialShareText)}`,
     },
     {
       name: 'Base App',
@@ -82,7 +80,7 @@ ${speciesUrl}
           <circle cx="12" cy="12" r="5" stroke="white" strokeWidth="1.5" fill="none"/>
         </svg>
       ),
-      url: `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}`,
+      url: `https://warpcast.com/~/compose?text=${encodeURIComponent(socialShareText)}`,
     },
   ];
 

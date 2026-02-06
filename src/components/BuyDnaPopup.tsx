@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { X, ChevronDown } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { cn } from '@/lib/utils';
 import { useWallet } from '@/contexts/WalletContext';
@@ -28,20 +27,47 @@ const BuyDnaPopup = ({ isOpen, onClose, onConfirm, speciesName, isSubmitting = f
   const ethBalance = ethBalanceData ? parseFloat(formatUnits(ethBalanceData.value, 18)) : 0;
   
   const [selectedCurrency, setSelectedCurrency] = useState<'USDC' | 'ETH'>(savedCurrency);
-  const [selectedAmount, setSelectedAmount] = useState<QuickBuyAmount>(savedAmount);
+  const [selectedAmount, setSelectedAmount] = useState<number>(savedAmount);
+  const [customAmount, setCustomAmount] = useState<string>('');
+  const [useCustom, setUseCustom] = useState(false);
 
   const quickAmounts: QuickBuyAmount[] = [0.5, 1, 2, 3, 5, 10];
 
   useEffect(() => {
     setSelectedCurrency(savedCurrency);
     setSelectedAmount(savedAmount);
+    setUseCustom(false);
+    setCustomAmount('');
   }, [savedCurrency, savedAmount, isOpen]);
 
+  const handleSelectPreset = (amount: QuickBuyAmount) => {
+    setSelectedAmount(amount);
+    setUseCustom(false);
+    setCustomAmount('');
+  };
+
+  const handleCustomAmountChange = (value: string) => {
+    // Only allow valid numeric input
+    if (value === '' || /^\d*\.?\d{0,2}$/.test(value)) {
+      setCustomAmount(value);
+      setUseCustom(true);
+      const parsed = parseFloat(value);
+      if (!isNaN(parsed) && parsed > 0) {
+        setSelectedAmount(parsed);
+      }
+    }
+  };
+
+  const finalAmount = useCustom && customAmount ? parseFloat(customAmount) : selectedAmount;
+  const isValidAmount = !isNaN(finalAmount) && finalAmount > 0;
+
   const handleConfirm = () => {
-    // Save preferences
+    if (!isValidAmount) return;
     setCurrency(selectedCurrency);
-    setAmount(selectedAmount);
-    onConfirm(selectedAmount, selectedCurrency);
+    if (!useCustom) {
+      setAmount(finalAmount as QuickBuyAmount);
+    }
+    onConfirm(finalAmount, selectedCurrency);
   };
 
   return (
@@ -91,10 +117,10 @@ const BuyDnaPopup = ({ isOpen, onClose, onConfirm, speciesName, isSubmitting = f
             {quickAmounts.map((amount) => (
               <button
                 key={amount}
-                onClick={() => setSelectedAmount(amount)}
+                onClick={() => handleSelectPreset(amount)}
                 className={cn(
                   "py-1.5 text-xs font-sans rounded-lg border transition-all",
-                  selectedAmount === amount
+                  !useCustom && selectedAmount === amount
                     ? "border-primary bg-primary/10 text-foreground"
                     : "border-border text-muted-foreground hover:border-primary/50"
                 )}
@@ -104,13 +130,34 @@ const BuyDnaPopup = ({ isOpen, onClose, onConfirm, speciesName, isSubmitting = f
             ))}
           </div>
 
+          {/* Custom Amount */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground font-sans">Custom:</span>
+            <div className="flex-1 relative">
+              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={customAmount}
+                onChange={(e) => handleCustomAmountChange(e.target.value)}
+                placeholder="0.00"
+                className={cn(
+                  "w-full pl-5 pr-2 py-1.5 text-xs font-sans rounded-lg border bg-background/50 text-foreground placeholder:text-muted-foreground/50 outline-none transition-all",
+                  useCustom && customAmount
+                    ? "border-primary bg-primary/10"
+                    : "border-border focus:border-primary/50"
+                )}
+              />
+            </div>
+          </div>
+
           {/* Buy Button */}
           <button
             onClick={handleConfirm}
-            disabled={isSubmitting || !isConnected}
+            disabled={isSubmitting || !isConnected || !isValidAmount}
             className={cn(
               "w-full py-3 text-sm font-sans font-bold rounded-lg transition-colors",
-              isConnected && !isSubmitting
+              isConnected && !isSubmitting && isValidAmount
                 ? "bg-primary text-primary-foreground hover:bg-primary/90"
                 : "bg-muted text-muted-foreground cursor-not-allowed"
             )}
