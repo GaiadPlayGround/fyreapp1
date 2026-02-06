@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Check, ExternalLink, Share2, Vote, Coins, Users, Copy, Headphones, ShoppingCart, Twitter, Flame, X } from 'lucide-react';
+import { Check, ExternalLink, Share2, Vote, Coins, Users, Copy, Headphones, ShoppingCart, Twitter, Flame, X, Key } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { cn } from '@/lib/utils';
 import { useWallet } from '@/contexts/WalletContext';
@@ -62,7 +62,7 @@ interface FyreMissionsDialogProps {
 const FyreMissionsDialog = ({ children }: FyreMissionsDialogProps) => {
   const [clickedRedirects, setClickedRedirects] = useState<Set<string>>(new Set());
   const [completedTasks, setCompletedTasks] = useState<Set<string>>(new Set());
-  const { votes, shares, ownedGenomes, totalDnaTokens, address, isConnected, refreshFyreKeys, refreshCompletedTasksCount } = useWallet();
+  const { votes, shares, ownedGenomes, totalDnaTokens, address, isConnected, refreshFyreKeys, refreshCompletedTasksCount, fyreKeys } = useWallet();
   const walletDb = useWalletDb();
   
   // Get referrals from localStorage (invited users)
@@ -299,14 +299,23 @@ Join the movement: https://fcbc.fun
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-serif">
             <Flame className="w-5 h-5 text-primary" />
-            FYRE MISSIONS
+            FYRE TASKS
             <span className="text-sm text-muted-foreground font-sans ml-auto">
               {completedCount}/{TASKS.length}
             </span>
           </DialogTitle>
         </DialogHeader>
+
+        {/* Fyre Keys Balance */}
+        <div className="flex items-center justify-center gap-3 py-3 px-4 rounded-xl bg-primary/10 border border-primary/20 mt-2">
+          <Key className="w-5 h-5 text-primary" />
+          <div className="text-center">
+            <div className="text-2xl font-bold font-serif text-foreground">{fyreKeys}</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Fyre Keys</div>
+          </div>
+        </div>
         
-        <div className="space-y-2 mt-4">
+        <div className="space-y-2 mt-3">
           {TASKS.map((task) => {
             const completed = isTaskCompleted(task);
             const isClickable = task.type === 'redirect' || task.type === 'copy' || task.type === 'share';
