@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Copy, Check, Settings, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTheme } from '@/contexts/ThemeContext';
 import type { PaymentCurrency } from '@/components/InlineFilterBar';
 import {
   Dialog,
@@ -15,71 +16,89 @@ const FYRE_APPS = [
     id: 0, 
     name: 'FyreApp 0', 
     fullName: 'Fyre Docs', 
-    description: 'Documentation & onboarding hub',
+    description: 'Docs & onboarding',
     url: 'https://fyreapp0.vercel.app/', 
     active: true, 
     isCurrent: false,
-    logo: '/fyreapp-logo-0.png'
+    logoLight: '/fyreapp-logo-0.png',
+    logoDark: '/fyreapp-logo-w-0.png',
   },
   { 
     id: 1, 
     name: 'FyreApp 1', 
-    fullName: 'PureBreed Navigator', 
-    description: 'Slideshow & Base Square Rankings',
+    fullName: 'Navigator', 
+    description: 'Slideshow & Rankings',
     url: '/explore', 
     active: true, 
     isCurrent: true,
-    logo: '/fyreapp-logo-1.png'
+    logoLight: '/fyreapp-logo-1.png',
+    logoDark: '/fyreapp-logo-1.png',
   },
   { 
     id: 2, 
     name: 'FyreApp 2', 
-    fullName: 'Portfolio Manager', 
-    description: 'Track your DNA holdings',
+    fullName: 'Portfolio', 
+    description: 'DNA holdings',
     url: '#', 
     active: false, 
     isCurrent: false,
-    logo: '/fyreapp-logo-2.png'
+    logoLight: '/fyreapp-logo-2.png',
+    logoDark: '/fyreapp-logo-w-2.png',
   },
   { 
     id: 3, 
     name: 'FyreApp 3', 
-    fullName: 'Custody & Snapshots', 
-    description: 'Secure asset storage',
+    fullName: 'Custody', 
+    description: 'Secure storage',
     url: '#', 
     active: false, 
     isCurrent: false,
-    logo: '/fyreapp-logo-3.png'
+    logoLight: '/fyreapp-logo-3.png',
+    logoDark: '/fyreapp-logo-w-3.png',
   },
   { 
     id: 4, 
     name: 'FyreApp 4', 
     fullName: 'Fyre Labs', 
-    description: 'Experimental features',
+    description: 'Experiments',
     url: '#', 
     active: false, 
     isCurrent: false,
-    logo: '/fyreapp-logo-4.png'
+    logoLight: '/fyreapp-logo-4.png',
+    logoDark: '/fyreapp-logo-w-4.png',
   },
   { 
     id: 5, 
     name: 'FyreApp 5', 
     fullName: 'Fyre Arena', 
-    description: 'Competitive gameplay',
+    description: 'Gameplay',
     url: '#', 
     active: false, 
     isCurrent: false,
-    logo: '/fyreapp-logo-5.png'
+    logoLight: '/fyreapp-logo-5.png',
+    logoDark: '/fyreapp-logo-w-5.png',
+  },
+  { 
+    id: 6, 
+    name: 'FyreApp 6', 
+    fullName: 'Fyre DEX', 
+    description: 'Token exchange',
+    url: '#', 
+    active: false, 
+    isCurrent: false,
+    logoLight: '/fyreapp-logo-6.png',
+    logoDark: '/fyreapp-logo-w-6.png',
   },
   { 
     id: 'herald', 
     name: 'Herald', 
     fullName: 'FyreHerald', 
-    description: 'Community FyreApp',
+    description: 'Community app',
     url: 'https://farcaster.xyz/miniapps/NBRppPFoPDDF/fyre-herald', 
     active: true, 
     isCurrent: false,
-    logo: null
+    logoLight: null,
+    logoDark: null,
   },
 ];
 
@@ -143,6 +162,8 @@ const SOCIAL_LINKS = [
 ];
 
 const Footer = () => {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const [paymentCurrency, setPaymentCurrency] = useState<PaymentCurrency>(() => {
     const saved = localStorage.getItem('fyreapp-payment-currency');
     return (saved as PaymentCurrency) || 'USDC';
@@ -225,63 +246,57 @@ const Footer = () => {
         </div>
       </div>
 
-      {/* FyreApps Dialog - Cards with Glassmorphism */}
+      {/* FyreApps Dialog - App Store Grid */}
       <Dialog open={showAppsDialog} onOpenChange={setShowAppsDialog}>
         <DialogContent className="max-w-sm bg-card/95 backdrop-blur-xl border-border/50">
           <DialogHeader>
             <DialogTitle className="text-center font-serif text-lg">FyreApps</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-2 mt-2">
-            {FYRE_APPS.map((app) => (
-              <div key={app.id} className={cn(
-                "relative rounded-xl border transition-all overflow-hidden",
-                app.active 
-                  ? "border-border/50 bg-background/50 hover:bg-background/80 cursor-pointer" 
-                  : "border-border/20 bg-muted/20 opacity-50 cursor-not-allowed",
-                app.isCurrent && "ring-2 ring-primary/50 border-primary/30"
-              )}>
-                {app.active ? (
-                  <a
-                    href={app.url}
-                    target={app.url.startsWith('http') ? '_blank' : undefined}
-                    rel={app.url.startsWith('http') ? 'noopener noreferrer' : undefined}
-                    onClick={() => setShowAppsDialog(false)}
-                    className="flex items-center gap-3 p-3"
-                  >
-                    {app.logo ? (
-                      <img src={app.logo} alt={app.fullName} className="w-8 h-8 rounded-lg object-contain bg-background" />
-                    ) : (
-                      <span className="text-xl">📢</span>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-sans font-medium text-sm text-foreground">{app.fullName}</span>
-                        {app.isCurrent && (
-                          <span className="text-[9px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full font-medium">Active</span>
-                        )}
-                      </div>
-                      <p className="text-[10px] text-muted-foreground truncate">{app.description}</p>
+          <div className="grid grid-cols-3 gap-3 mt-2">
+            {FYRE_APPS.map((app) => {
+              const logo = isDark ? app.logoDark : app.logoLight;
+              return (
+                <div key={app.id} className={cn(
+                  "relative rounded-xl border transition-all overflow-hidden flex flex-col items-center text-center p-3 gap-1.5",
+                  app.active 
+                    ? "border-border/50 bg-background/50 hover:bg-background/80 cursor-pointer" 
+                    : "border-border/20 bg-muted/10 opacity-40 cursor-not-allowed",
+                  app.isCurrent && "ring-2 ring-primary/50 border-primary/30"
+                )}>
+                  {app.active ? (
+                    <a
+                      href={app.url}
+                      target={app.url.startsWith('http') ? '_blank' : undefined}
+                      rel={app.url.startsWith('http') ? 'noopener noreferrer' : undefined}
+                      onClick={() => setShowAppsDialog(false)}
+                      className="flex flex-col items-center gap-1.5 w-full"
+                    >
+                      {logo ? (
+                        <img src={logo} alt={app.fullName} className="w-10 h-10 rounded-xl object-contain" />
+                      ) : (
+                        <span className="text-2xl">📢</span>
+                      )}
+                      <span className="font-sans font-medium text-[11px] text-foreground leading-tight">{app.fullName}</span>
+                      <p className="text-[9px] text-muted-foreground leading-tight">{app.description}</p>
+                      {app.isCurrent && (
+                        <span className="text-[8px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full font-medium">Active</span>
+                      )}
+                    </a>
+                  ) : (
+                    <div className="flex flex-col items-center gap-1.5 w-full">
+                      {logo ? (
+                        <img src={logo} alt={app.fullName} className="w-10 h-10 rounded-xl object-contain grayscale" />
+                      ) : (
+                        <span className="text-2xl grayscale">📢</span>
+                      )}
+                      <span className="font-sans font-medium text-[11px] text-muted-foreground leading-tight">{app.fullName}</span>
+                      <p className="text-[9px] text-muted-foreground/60 leading-tight">{app.description}</p>
+                      <span className="text-[8px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full">Soon</span>
                     </div>
-                    {app.url.startsWith('http') && <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />}
-                  </a>
-                ) : (
-                  <div className="flex items-center gap-3 p-3">
-                    {app.logo ? (
-                      <img src={app.logo} alt={app.fullName} className="w-8 h-8 rounded-lg object-contain bg-background grayscale opacity-50" />
-                    ) : (
-                      <span className="text-xl grayscale">📢</span>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-sans font-medium text-sm text-muted-foreground">{app.fullName}</span>
-                        <span className="text-[9px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full">Soon</span>
-                      </div>
-                      <p className="text-[10px] text-muted-foreground/60 truncate">{app.description}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
+                  )}
+                </div>
+              );
+            })}
           </div>
         </DialogContent>
       </Dialog>
