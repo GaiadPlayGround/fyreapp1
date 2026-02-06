@@ -119,6 +119,30 @@ export type Database = {
         }
         Relationships: []
       }
+      task_completions: {
+        Row: {
+          created_at: string | null
+          fyre_keys_awarded: number | null
+          id: string
+          task_id: string
+          wallet_address: string
+        }
+        Insert: {
+          created_at?: string | null
+          fyre_keys_awarded?: number | null
+          id?: string
+          task_id: string
+          wallet_address: string
+        }
+        Update: {
+          created_at?: string | null
+          fyre_keys_awarded?: number | null
+          id?: string
+          task_id?: string
+          wallet_address?: string
+        }
+        Relationships: []
+      }
       wallets: {
         Row: {
           address: string
@@ -152,30 +176,6 @@ export type Database = {
           total_shares?: number | null
           total_votes?: number | null
           updated_at?: string | null
-        }
-        Relationships: []
-      }
-      task_completions: {
-        Row: {
-          created_at: string | null
-          fyre_keys_awarded: number | null
-          id: string
-          task_id: string
-          wallet_address: string
-        }
-        Insert: {
-          created_at?: string | null
-          fyre_keys_awarded?: number | null
-          id?: string
-          task_id: string
-          wallet_address: string
-        }
-        Update: {
-          created_at?: string | null
-          fyre_keys_awarded?: number | null
-          id?: string
-          task_id?: string
-          wallet_address?: string
         }
         Relationships: []
       }
