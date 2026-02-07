@@ -254,10 +254,11 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addShare = async () => {
-    // Note: Fyre Keys for shares are now handled through task completions
+    // Each share adds 1 Fyre Key
     setState((prev) => ({
       ...prev,
       shares: prev.shares + 1,
+      fyreKeys: prev.fyreKeys + 1,
     }));
   };
 
@@ -273,11 +274,12 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       return false;
     }
 
-    // Note: Fyre Keys for votes are now handled through task completions
+    // Each successful vote adds 10 Fyre Keys to balance
     setState((prev) => ({
       ...prev,
       usdcBalance: prev.usdcBalance - VOTE_COST,
-      voteTickets: prev.voteTickets + 1, // +1 vote ticket with each vote
+      voteTickets: prev.voteTickets + 1,
+      fyreKeys: prev.fyreKeys + 10,
       votes: [...prev.votes, { speciesId, rating, timestamp: new Date() }],
     }));
     return true;

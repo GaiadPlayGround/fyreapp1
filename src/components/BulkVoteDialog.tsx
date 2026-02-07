@@ -86,17 +86,17 @@ const BulkVoteDialog = ({
         <div className="space-y-4">
           {/* Description text */}
           <div className="space-y-2 text-center">
-            <p className="text-xs text-muted-foreground font-sans leading-relaxed">
+            <p className="text-sm text-muted-foreground font-serif leading-relaxed tracking-wide">
               Base Squares represent the popularity and influence of FYRE PureBreeds.
             </p>
-            <p className="text-xs text-muted-foreground font-sans leading-relaxed">
+            <p className="text-sm text-muted-foreground font-serif leading-relaxed tracking-wide">
               Assign Base Square votes to boost visibility for endangered species.
             </p>
           </div>
           
           {/* BULK VOTE heading */}
           <div className="text-center">
-            <p className="text-sm font-serif font-bold text-foreground tracking-wide">BULK VOTING</p>
+            <p className="text-base font-serif font-bold text-foreground tracking-widest uppercase">BULK VOTE</p>
           </div>
 
           {/* Selection prompt */}

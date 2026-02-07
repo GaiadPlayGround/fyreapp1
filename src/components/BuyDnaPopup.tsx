@@ -63,9 +63,16 @@ const BuyDnaPopup = ({ isOpen, onClose, onConfirm, speciesName, isSubmitting = f
 
   const handleConfirm = () => {
     if (!isValidAmount) return;
+    // Always persist selected currency
     setCurrency(selectedCurrency);
+    // Persist amount - for custom amounts, also save to localStorage directly
     if (!useCustom) {
       setAmount(finalAmount as QuickBuyAmount);
+    } else {
+      // For custom amounts, persist directly to localStorage so the
+      // transaction handler reads the correct value
+      localStorage.setItem('fyreapp-quick-buy-amount', finalAmount.toString());
+      localStorage.setItem('fyreapp-payment-currency', selectedCurrency);
     }
     onConfirm(finalAmount, selectedCurrency);
   };
