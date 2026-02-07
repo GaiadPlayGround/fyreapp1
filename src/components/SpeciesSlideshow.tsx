@@ -26,7 +26,7 @@ const triggerHaptic = () => {
   }
 };
 
-// Quick buy button component with long press for popup
+// Quick buy button component with long press and double-tap for popup
 const BuyDnaButton = ({ 
   onClick,
   onLongPress,
@@ -36,9 +36,13 @@ const BuyDnaButton = ({
 }) => {
   const { currency, amount } = usePaymentSettings();
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastTapTimeRef = useRef<number>(0);
+  const longPressTriggeredRef = useRef(false);
   
   const handlePressStart = () => {
+    longPressTriggeredRef.current = false;
     longPressTimerRef.current = setTimeout(() => {
+      longPressTriggeredRef.current = true;
       triggerHaptic(); // Haptic on long press
       onLongPress();
     }, 500); // 500ms long press
@@ -48,6 +52,23 @@ const BuyDnaButton = ({
     if (longPressTimerRef.current) {
       clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = null;
+    }
+  };
+
+  const handleClick = () => {
+    if (longPressTriggeredRef.current) return; // Ignore click after long press
+    
+    const now = Date.now();
+    const timeSinceLastTap = now - lastTapTimeRef.current;
+    
+    if (timeSinceLastTap < 300 && timeSinceLastTap > 0) {
+      // Double-tap detected - open popup (same as long press)
+      triggerHaptic();
+      onLongPress();
+      lastTapTimeRef.current = 0;
+    } else {
+      lastTapTimeRef.current = now;
+      onClick();
     }
   };
   
@@ -62,7 +83,7 @@ const BuyDnaButton = ({
             }}
           >
             <button
-              onClick={onClick}
+              onClick={handleClick}
               onMouseDown={handlePressStart}
               onMouseUp={handlePressEnd}
               onMouseLeave={handlePressEnd}
@@ -75,7 +96,7 @@ const BuyDnaButton = ({
           </div>
         </TooltipTrigger>
         <TooltipContent side="top">
-          <p>Tap to buy ${amount} {currency} • Long press to change</p>
+          <p>Tap to buy ${amount} {currency} • Double-tap or long press to change</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -231,9 +252,13 @@ const SpeciesSlideshow = ({
       const WETH_ADDRESS = '0x4200000000000000000000000000000000000006' as Address; // Wrapped ETH on Base
       const ETH_DECIMALS = 18;
       
-      // Determine currency based on user selection
-      const currencyTokenAddress = paymentCurrency === 'ETH' ? WETH_ADDRESS : USDC_ADDRESS;
-      const currencyDecimals = paymentCurrency === 'ETH' ? ETH_DECIMALS : USDC_DECIMALS;
+      // Determine currency based on user selection - read FRESH from localStorage
+      // to avoid stale hook values when Buy DNA popup changes settings
+      const freshCurrency = (localStorage.getItem('fyreapp-payment-currency') || paymentCurrency) as 'USDC' | 'ETH';
+      const freshAmount = parseFloat(localStorage.getItem('fyreapp-quick-buy-amount') || quickBuyAmount.toString());
+      
+      const currencyTokenAddress = freshCurrency === 'ETH' ? WETH_ADDRESS : USDC_ADDRESS;
+      const currencyDecimals = freshCurrency === 'ETH' ? ETH_DECIMALS : USDC_DECIMALS;
       
       // Validate addresses are properly formatted
       if (!tokenAddress || !tokenAddress.startsWith('0x') || tokenAddress.length !== 42) {
@@ -242,10 +267,10 @@ const SpeciesSlideshow = ({
       
       // Amount to swap: user-selected amount worth of selected currency
       // We always work in USD, only convert to ETH when user wants to pay in ETH
-      const swapAmountUSD = quickBuyAmount;
+      const swapAmountUSD = freshAmount;
       
       let swapAmount: bigint;
-      if (paymentCurrency === 'ETH') {
+      if (freshCurrency === 'ETH') {
         // Fetch real ETH price for transaction conversion
         const ethPriceResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
         const ethPriceData = await ethPriceResponse.json();
@@ -262,7 +287,7 @@ const SpeciesSlideshow = ({
       // Check user's balance before attempting trade
       console.log('=== BALANCE CHECK ===');
       console.log('Wallet address:', wagmiAddress);
-      console.log('Currency:', paymentCurrency);
+      console.log('Currency:', freshCurrency);
       console.log('Currency address:', currencyTokenAddress);
       console.log('Swap amount:', swapAmount.toString());
       console.log('Swap amount (formatted):', formatUnits(swapAmount, currencyDecimals));
@@ -271,7 +296,7 @@ const SpeciesSlideshow = ({
         if (publicClient && wagmiAddress) {
           let balance: bigint;
           
-          if (paymentCurrency === 'ETH') {
+          if (freshCurrency === 'ETH') {
             // For native ETH, get balance directly
             balance = await publicClient.getBalance({ address: wagmiAddress as Address });
           } else {
@@ -295,7 +320,7 @@ const SpeciesSlideshow = ({
           if (balance < swapAmount) {
             toast({
               title: "Insufficient Balance",
-              description: `You need at least ${requiredFormatted.toFixed(6)} ${paymentCurrency}. Your current balance is ${balanceFormatted.toFixed(6)} ${paymentCurrency}.`,
+              description: `You need at least ${requiredFormatted.toFixed(6)} ${freshCurrency}. Your current balance is ${balanceFormatted.toFixed(6)} ${freshCurrency}.`,
               variant: "destructive",
             });
             return;
@@ -385,7 +410,7 @@ const SpeciesSlideshow = ({
         // Zora SDK supports native ETH via 'eth' type
         const result = await tradeCoin({
           tradeParameters: {
-            sell: paymentCurrency === 'ETH'
+            sell: freshCurrency === 'ETH'
               ? { type: 'eth' as const }
               : {
                   type: 'erc20',
@@ -488,7 +513,7 @@ const SpeciesSlideshow = ({
             errorMessageLower.includes('transfer_from_failed') ||
             errorDetails.includes('transfer_from_failed')) {
           errorTitle = "Insufficient Balance";
-          errorMessage = `You don't have enough ${paymentCurrency}. Please ensure you have at least $${quickBuyAmount} ${paymentCurrency} in your wallet.`;
+          errorMessage = `You don't have enough ${freshCurrency}. Please ensure you have at least $${freshAmount} ${freshCurrency} in your wallet.`;
         } else if (errorString.includes('insufficient') || 
                    errorMessageLower.includes('insufficient') ||
                    errorMessageLower.includes('insufficient balance')) {
@@ -1026,9 +1051,9 @@ const SpeciesSlideshow = ({
             setShowBuyPopup(true);
           }}
         />
-        {/* Long press hint - tightly spaced */}
+        {/* Hint text */}
         <span className="text-card/50 text-[9px] font-sans leading-tight">
-          Long press for bulk action
+          Double-tap or long press for options
         </span>
         {/* Vote squares below - tighter spacing */}
         <VoteSquares 
@@ -1056,6 +1081,8 @@ const SpeciesSlideshow = ({
         }}
         onConfirm={(amount, currency) => {
           setShowBuyPopup(false);
+          // The BuyDnaPopup already persists settings via usePaymentSettings
+          // so the next handleDoubleTap will use the updated settings
           handleDoubleTap();
         }}
         speciesName={currentSpecies.name}

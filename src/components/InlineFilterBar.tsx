@@ -93,7 +93,6 @@ const InlineFilterBar = ({
   const sortOptions: { value: SortOption; label: string }[] = [
     { value: 'votes', label: 'Base Squares' },
     { value: 'id', label: 'ID' },
-    { value: 'shares', label: 'Shares' },
     { value: 'mcap', label: 'MCap' },
     { value: 'holders', label: 'Holders' },
     { value: 'new', label: 'Newest' },

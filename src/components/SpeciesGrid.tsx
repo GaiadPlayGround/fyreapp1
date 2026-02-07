@@ -209,7 +209,7 @@ const SpeciesGrid = ({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 mt-6 pb-4">
+        <div className="flex items-center justify-center gap-2 mt-6 pb-2">
           <button 
             onClick={() => navigatePage('prev')} 
             disabled={currentPage === 1} 
@@ -262,6 +262,11 @@ const SpeciesGrid = ({
           </button>
         </div>
       )}
+
+      {/* Tagline */}
+      <p className="text-center text-[11px] text-muted-foreground font-serif italic py-2">
+        The onchain genetic marketplace for real-world endangered animals.
+      </p>
 
     </div>
   );

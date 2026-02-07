@@ -54,7 +54,6 @@ const FilterDrawer = ({
   const sortOptions: { value: SortOption; label: string; description: string }[] = [
     { value: 'votes', label: 'Base Squares', description: 'Highest Base Squares' },
     { value: 'id', label: 'ID', description: 'FCBC1 to FCBC234' },
-    { value: 'shares', label: 'Shares', description: 'Most shared' },
     { value: 'mcap', label: 'MCap', description: 'Highest market cap' },
     { value: 'holders', label: 'Holders', description: 'Most holders' },
     { value: 'new', label: 'Newest', description: 'FCBC234 to FCBC1' },

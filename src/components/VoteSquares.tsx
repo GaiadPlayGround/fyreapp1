@@ -8,6 +8,13 @@ import { parseUnits, formatUnits, Address, erc20Abi, createWalletClient, custom,
 import { base } from 'wagmi/chains';
 import BulkVoteDialog from './BulkVoteDialog';
 
+// Trigger haptic feedback on mobile
+const triggerHaptic = () => {
+  if ('vibrate' in navigator) {
+    navigator.vibrate(10);
+  }
+};
+
 interface VoteSquaresProps {
   speciesId: string;
   onVoteSubmit?: () => void;
@@ -292,7 +299,7 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
                 
                 toast({
                   title: "Batch Vote Complete!",
-                  description: `${bulkVoteAmount} vote${bulkVoteAmount > 1 ? 's' : ''} confirmed • -${(bulkVoteAmount * VOTE_COST).toFixed(2)}¢ • +${totalBaseSquares} Base Squares • +${bulkVoteAmount} Vote Tickets • +${bulkVoteAmount * 10} Fyre Keys`,
+                  description: `${bulkVoteAmount} vote${bulkVoteAmount > 1 ? 's' : ''} confirmed • -${(bulkVoteAmount * VOTE_COST).toFixed(2)}¢ • +${totalBaseSquares} Base Squares • +${bulkVoteAmount} Vote Tickets • +100 Fyre Keys`,
                   duration: 4000,
                 });
                 setBulkVoteAmount(0);
@@ -565,11 +572,32 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
     }
   }, [isConfirming, hash]);
 
+  // Double-tap handler for vote panel (same as long press)
+  const lastVoteTapRef = useRef<number>(0);
+  const handleVotePanelClick = (e: React.MouseEvent) => {
+    // Only trigger double-tap on the container, not on individual vote buttons
+    if ((e.target as HTMLElement).closest('button')) return;
+    
+    const now = Date.now();
+    const timeSinceLastTap = now - lastVoteTapRef.current;
+    
+    if (timeSinceLastTap < 300 && timeSinceLastTap > 0) {
+      // Double-tap detected - open bulk dialog
+      triggerHaptic();
+      setShowBulkDialog(true);
+      onPanelOpen?.();
+      lastVoteTapRef.current = 0;
+    } else {
+      lastVoteTapRef.current = now;
+    }
+  };
+
   return (
     <>
       <div 
         ref={containerRef}
         className="flex flex-col items-center gap-1"
+        onClick={handleVotePanelClick}
         onMouseDown={handleLongPressStart}
         onMouseUp={handleLongPressEnd}
         onMouseLeave={handleLongPressEnd}

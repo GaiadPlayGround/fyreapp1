@@ -16,7 +16,7 @@ import { useMetaTags } from '@/hooks/useMetaTags';
 const Explore = () => {
   const navigate = useNavigate();
   const { species, loading, error } = useSpeciesApi();
-  const { recordView, getBaseSquares, getShareCount, getLastViewedAt, loading: statsLoading, stats } = useSpeciesStats();
+  const { recordView, getBaseSquares, getLastViewedAt, loading: statsLoading, stats } = useSpeciesStats();
   const [animationEnabled, setAnimationEnabled] = useState(false); // Default off for electric grids
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [showEnzymeAd, setShowEnzymeAd] = useState(false);
@@ -25,7 +25,7 @@ const Explore = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [sortBy, setSortBy] = useState<SortOption>(() => {
     const saved = localStorage.getItem('fyreapp-sort');
-    const allowed: SortOption[] = ['id', 'votes', 'shares', 'mcap', 'holders', 'new'];
+    const allowed: SortOption[] = ['id', 'votes', 'mcap', 'holders', 'new'];
     return allowed.includes(saved as SortOption) ? (saved as SortOption) : 'votes';
   });
   const [searchQuery, setSearchQuery] = useState('');
@@ -91,7 +91,7 @@ const Explore = () => {
   // Only sort when stats are loaded to ensure accurate base squares data
   const sortedSpecies = useMemo(() => {
     // Don't sort if stats are still loading and we're sorting by votes/shares
-    if (statsLoading && (sortBy === 'votes' || sortBy === 'shares')) {
+    if (statsLoading && sortBy === 'votes') {
       return filteredSpecies; // Return unsorted until stats load
     }
     
@@ -113,8 +113,6 @@ const Explore = () => {
             return idA - idB;
           }
           return baseSquaresB - baseSquaresA;
-        case 'shares':
-          return getShareCount(b.id) - getShareCount(a.id);
         case 'mcap':
           return (b.marketCap || 0) - (a.marketCap || 0);
         case 'holders':
@@ -136,7 +134,7 @@ const Explore = () => {
           return defaultBaseSquaresB - defaultBaseSquaresA;
       }
     });
-  }, [filteredSpecies, sortBy, getBaseSquares, getShareCount, statsLoading, stats]);
+  }, [filteredSpecies, sortBy, getBaseSquares, statsLoading, stats]);
 
   const handleSpeciesClick = async (clickedSpecies: Species, _index: number) => {
     // Navigate to species detail page using symbol and pass the sorted species array
@@ -182,7 +180,7 @@ const Explore = () => {
       <main className="w-full overflow-x-hidden pt-6 sm:p-14">
         {/* Species Grid - add top padding to account for fixed filter bar (header h-14 = 56px + filter bar ~48px) */}
         <div className="w-full overflow-x-hidden px-0 pt-[80px] sm:pt-[104px] pb-4">
-          {loading || (statsLoading && (sortBy === 'votes' || sortBy === 'shares')) ? (
+          {loading || (statsLoading && sortBy === 'votes') ? (
             <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
               <p className="text-sm text-muted-foreground font-sans">
