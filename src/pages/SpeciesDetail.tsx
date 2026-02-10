@@ -151,7 +151,7 @@ const SpeciesDetail = () => {
   });
 
   const handleClose = () => {
-    navigate('/explore');
+    navigate('/explore', { replace: false });
   };
 
   if (loading || initialIndex === null) {

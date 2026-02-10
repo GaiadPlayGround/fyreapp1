@@ -156,19 +156,42 @@ const BuyDnaPopup = ({ isOpen, onClose, onConfirm, speciesName, isSubmitting = f
             </div>
           </div>
 
-          {/* Buy Button */}
-          <button
-            onClick={handleConfirm}
-            disabled={isSubmitting || !isValidAmount}
-            className={cn(
-              "w-full py-3 text-sm font-sans font-bold rounded-lg transition-colors",
-              !isSubmitting && isValidAmount
-                ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                : "bg-muted text-muted-foreground cursor-not-allowed"
-            )}
-          >
-            {isSubmitting ? 'Processing...' : isConnected ? 'BUY' : 'SET DEFAULT'}
-          </button>
+          {/* Action Buttons */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                // Lock in settings without buying
+                localStorage.setItem('fyreapp-payment-currency', selectedCurrency);
+                localStorage.setItem('fyreapp-quick-buy-amount', finalAmount.toString());
+                window.dispatchEvent(new CustomEvent('buySettingsChanged'));
+                setCurrency(selectedCurrency);
+                if (!useCustom) setAmount(finalAmount as QuickBuyAmount);
+                onClose();
+              }}
+              disabled={!isValidAmount}
+              className={cn(
+                "px-3 py-3 text-xs font-sans rounded-lg border transition-colors",
+                isValidAmount
+                  ? "border-primary text-primary hover:bg-primary/10"
+                  : "border-border text-muted-foreground cursor-not-allowed"
+              )}
+              title="Lock in as default"
+            >
+              🔒
+            </button>
+            <button
+              onClick={handleConfirm}
+              disabled={isSubmitting || !isValidAmount}
+              className={cn(
+                "flex-1 py-3 text-sm font-sans font-bold rounded-lg transition-colors",
+                !isSubmitting && isValidAmount
+                  ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                  : "bg-muted text-muted-foreground cursor-not-allowed"
+              )}
+            >
+              {isSubmitting ? 'Processing...' : isConnected ? 'BUY' : 'SET DEFAULT'}
+            </button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

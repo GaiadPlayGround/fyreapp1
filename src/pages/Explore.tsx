@@ -5,6 +5,7 @@ import InlineFilterBar from '@/components/InlineFilterBar';
 import SpeciesGrid from '@/components/SpeciesGrid';
 import Footer from '@/components/Footer';
 import EnzymeAdPopup from '@/components/EnzymeAdPopup';
+import OnchainSeoAdPopup from '@/components/OnchainSeoAdPopup';
 import OnboardingGuide from '@/components/OnboardingGuide';
 import { useSpeciesApi } from '@/hooks/useSpeciesApi';
 import { useAnimalSounds } from '@/hooks/useAnimalSounds';
@@ -22,14 +23,24 @@ const Explore = () => {
   const [animationEnabled, setAnimationEnabled] = useState(false); // Default off for electric grids
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [showEnzymeAd, setShowEnzymeAd] = useState(false);
+  const [showSeoAd, setShowSeoAd] = useState(false);
+
+  // Onchain SEO ad - once per 24 hours
+  useEffect(() => {
+    const lastShown = localStorage.getItem('fyreapp-seo-ad-last');
+    const now = Date.now();
+    if (!lastShown || now - parseInt(lastShown) > 24 * 60 * 60 * 1000) {
+      const timer = setTimeout(() => {
+        setShowSeoAd(true);
+        localStorage.setItem('fyreapp-seo-ad-last', now.toString());
+      }, 30000); // Show after 30s
+      return () => clearTimeout(timer);
+    }
+  }, []);
   
   // Filter state - persist sortBy to localStorage
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
-  const [sortBy, setSortBy] = useState<SortOption>(() => {
-    const saved = localStorage.getItem('fyreapp-sort');
-    const allowed: SortOption[] = ['id', 'votes', 'mcap', 'holders', 'new'];
-    return allowed.includes(saved as SortOption) ? (saved as SortOption) : 'votes';
-  });
+  const [sortBy, setSortBy] = useState<SortOption>('votes');
   const [searchQuery, setSearchQuery] = useState('');
   const [conservationFilter, setConservationFilter] = useState<ConservationStatus | null>(null);
   
@@ -40,11 +51,11 @@ const Explore = () => {
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
   const lastScrollY = useRef(0);
   
-  // Auto-collapse header after 5 seconds
+  // Auto-collapse header after 7 seconds
   useEffect(() => {
     const timer = setTimeout(() => {
       setHeaderCollapsed(true);
-    }, 5000);
+    }, 7000);
     return () => clearTimeout(timer);
   }, []);
   
@@ -54,8 +65,8 @@ const Explore = () => {
       const currentScrollY = window.scrollY;
       if (currentScrollY < lastScrollY.current - 5) {
         setHeaderCollapsed(false);
-        // Re-collapse after 5 seconds
-        setTimeout(() => setHeaderCollapsed(true), 5000);
+        // Re-collapse after 7 seconds
+        setTimeout(() => setHeaderCollapsed(true), 7000);
       }
       lastScrollY.current = currentScrollY;
     };
@@ -187,11 +198,14 @@ const Explore = () => {
         showTitle={false}
       />
       
-      {/* Header text - collapsible */}
-      <div className={cn(
-        "fixed top-14 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border w-full max-w-full overflow-x-hidden transition-all duration-300",
-        headerCollapsed && "max-h-0 overflow-hidden border-b-0 py-0"
-      )}>
+      {/* Header text - collapsible, expandable on click */}
+      <div 
+        className={cn(
+          "fixed top-14 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border w-full max-w-full overflow-x-hidden transition-all duration-300 cursor-pointer",
+          headerCollapsed && "max-h-0 overflow-hidden border-b-0 py-0"
+        )}
+        onClick={() => { if (!headerCollapsed) { setHeaderCollapsed(true); } }}
+      >
         <div className={cn(
           "text-center py-2 px-4 transition-all duration-300",
           headerCollapsed && "opacity-0 py-0"
@@ -205,6 +219,16 @@ const Explore = () => {
           <h3 className="text-sm text-muted-foreground font-sans">on Base</h3>
         </div>
       </div>
+      {/* Tap collapsed area to expand */}
+      {headerCollapsed && (
+        <div 
+          className="fixed top-14 left-0 right-0 h-1 z-40 cursor-pointer"
+          onClick={() => {
+            setHeaderCollapsed(false);
+            setTimeout(() => setHeaderCollapsed(true), 7000);
+          }}
+        />
+      )}
       
       {/* Filter bar - always fixed, adjusts position based on header collapse */}
       <div className={cn(
@@ -264,6 +288,11 @@ const Explore = () => {
       {/* DNA Enzymes Ad Popup */}
       {showEnzymeAd && (
         <EnzymeAdPopup onClose={() => setShowEnzymeAd(false)} />
+      )}
+
+      {/* Onchain SEO Ad Popup */}
+      {showSeoAd && (
+        <OnchainSeoAdPopup onClose={() => setShowSeoAd(false)} />
       )}
     </div>
   );

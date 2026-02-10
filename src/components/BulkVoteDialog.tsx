@@ -86,24 +86,24 @@ const BulkVoteDialog = ({
         <div className="space-y-4">
           {/* Description text */}
           <div className="space-y-2 text-center">
-            <h3 className="text-sm text-muted-foreground font-serif leading-relaxed tracking-wide">
+            <h1 className="text-sm text-muted-foreground font-serif leading-relaxed tracking-wide">
               Base Squares indicate attention commitment to endangered animals from Voters.
-            </h3>
-            <h2 className="text-base font-serif font-semibold text-foreground leading-relaxed tracking-wide">
+            </h1>
+            <h3 className="text-xs font-serif text-muted-foreground/80 leading-relaxed tracking-wide">
               Assign Base Square votes to boost visibility for endangered species.
-            </h2>
+            </h3>
           </div>
           
           {/* BULK VOTE heading */}
           <div className="text-center">
-            <h1 className="text-xl font-serif font-bold text-foreground tracking-widest uppercase">BULK VOTE</h1>
+            <h2 className="text-lg font-serif font-bold text-foreground tracking-widest uppercase">BULK VOTE</h2>
           </div>
 
           {/* Selection prompt */}
           <div>
-            <h2 className="text-sm font-serif font-semibold text-foreground mb-3 text-center">
+            <h3 className="text-xs font-serif text-muted-foreground mb-3 text-center">
               Select the number of Base Squares to assign to this species:
-            </h2>
+            </h3>
             <div className="grid grid-cols-2 gap-2">
               {BULK_VOTE_OPTIONS.map(option => <button key={option.amount} onClick={() => handleSelectPreset(option.amount)} disabled={isSubmitting} className={cn("p-3 rounded-xl border-2 transition-all font-sans text-left", !useCustom && selectedAmount === option.amount ? "border-primary bg-primary/10" : "border-border/50 bg-background/50 hover:border-primary/50", isSubmitting && "opacity-50 cursor-not-allowed")}>
                   <div className="text-sm font-medium">

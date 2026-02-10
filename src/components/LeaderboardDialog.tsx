@@ -13,7 +13,7 @@ import {
 
 const LeaderboardDialog = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [tab, setTab] = useState<'votes' | 'shares' | 'dna' | 'referrers'>('dna');
+  const [tab, setTab] = useState<'votes' | 'shares' | 'dna' | 'referrers'>('dna'); // DNA holders default
   const { topVoters, topSharers, topDnaHolders, topReferrers, loading } = useWalletLeaderboard(50);
 
 

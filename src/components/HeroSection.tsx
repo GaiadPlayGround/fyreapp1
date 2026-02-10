@@ -58,7 +58,7 @@ const HeroSection = ({
           </h1>
           
           <p className="text-muted-foreground mt-6 leading-relaxed text-lg sm:text-2xl font-medium font-serif">
-            Browse, Vote and Share <br />
+            Browse, Vote and Buy <br />
             ​Tokenized Endangered Animals <br />
             on Base L2
           </p>
@@ -88,7 +88,7 @@ const HeroSection = ({
             <div className="relative">
               <button 
                 onClick={() => setShowDexDropdown(!showDexDropdown)}
-                className="relative border-2 border-muted-foreground/30 text-muted-foreground font-medium text-sm py-2 px-8 transition-colors rounded-xl font-mono flex items-center gap-2 hover:border-primary/50"
+                className="relative border-2 border-orange-500/40 text-muted-foreground font-medium text-sm py-2 px-8 transition-colors rounded-xl font-mono flex items-center gap-2 hover:border-orange-500/70 shadow-[0_0_8px_rgba(249,115,22,0.2),0_0_16px_rgba(239,68,68,0.1)]"
               >
                 FYRE DEX
                 <ChevronDown className="w-3 h-3" />
