@@ -5,32 +5,43 @@ import { Button } from '@/components/ui/button';
 import Cubes from '@/components/Cubes';
 import DecryptedText from '@/components/DecryptedText';
 import { formatAddressForDisplay } from '@/lib/nameResolution';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Loader2 } from 'lucide-react';
 
 const WalletGate = () => {
   const navigate = useNavigate();
-  const { connect, disconnect, isConnected, address } = useWallet();
+  const { connect, disconnect, isConnected, address, usdcBalance, dnaBalance, ownedGenomes } = useWallet();
   const [isConnecting, setIsConnecting] = useState(false);
   const [showDecryptedText, setShowDecryptedText] = useState(false);
+  const [showConnectingPopup, setShowConnectingPopup] = useState(false);
+  const [showConnectedDetails, setShowConnectedDetails] = useState(false);
 
-  // If already connected, show connected state (don't auto-navigate)
-  // User can choose to continue or disconnect
+  // When wallet connects during the connecting flow, show details
+  useEffect(() => {
+    if (isConnected && isConnecting && showConnectingPopup) {
+      setShowConnectedDetails(true);
+      // Auto-navigate after 5 seconds
+      const timer = setTimeout(() => {
+        navigate('/explore');
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [isConnected, isConnecting, showConnectingPopup, navigate]);
 
   const handleConnect = async () => {
     setIsConnecting(true);
     setShowDecryptedText(true);
-    
-    // Connect wallet first
+    setShowConnectingPopup(true);
     connect();
-    
-    // Wait for animation to complete, then navigate
-    setTimeout(() => {
-      navigate('/explore');
-    }, 4500);
+  };
+
+  const handleSpeedUp = () => {
+    setShowConnectingPopup(false);
+    navigate('/explore');
   };
 
   const handleDisconnect = () => {
     disconnect();
-    // Stay on this page after disconnect
   };
 
   const handleSkip = () => {
@@ -85,7 +96,7 @@ const WalletGate = () => {
                       encryptedClassName="text-[#005ae0]/80 font-mono text-sm sm:text-base tracking-widest"
                     />
                   </div>
-                ) : isConnected && address ? (
+                ) : isConnected && address && !isConnecting ? (
                   <>
                     <h1 className="font-mono text-xl sm:text-2xl font-bold text-white tracking-wider">
                       WALLET CONNECTED
@@ -118,6 +129,9 @@ const WalletGate = () => {
                     <h1 className="font-mono text-xl sm:text-2xl font-bold text-white tracking-wider">
                       FYREAPP 1
                     </h1>
+                    <p className="text-white/60 font-mono text-xs tracking-widest">
+                      Explorer Miniapp
+                    </p>
                     <Button 
                       onClick={handleConnect}
                       disabled={isConnecting}
@@ -141,6 +155,54 @@ const WalletGate = () => {
           />
         </div>
       </div>
+
+      {/* Connecting Popup */}
+      <Dialog open={showConnectingPopup} onOpenChange={(open) => { if (!open) handleSpeedUp(); }}>
+        <DialogContent className="max-w-xs bg-[#0a0020]/95 border-[#005ae0]/30 text-white">
+          {!showConnectedDetails ? (
+            <div className="flex flex-col items-center gap-4 py-4">
+              <Loader2 className="w-8 h-8 text-[#005ae0] animate-spin" />
+              <p className="font-mono text-sm text-white/80">Connecting wallet...</p>
+              <button
+                onClick={handleSpeedUp}
+                className="text-[#005ae0] text-xs font-mono underline underline-offset-4 hover:text-[#3d8cff] transition-colors"
+              >
+                Speed up — continue to explore
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-3 py-4">
+              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+              <p className="font-mono text-sm text-white font-bold">Connected</p>
+              {address && (
+                <p className="font-mono text-[10px] text-white/60">
+                  {formatAddressForDisplay(address)}
+                </p>
+              )}
+              <div className="w-full space-y-1.5 mt-2 text-xs font-mono">
+                <div className="flex justify-between text-white/70">
+                  <span>USDC:</span>
+                  <span className="text-white">${usdcBalance.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-white/70">
+                  <span>DNA Tokens:</span>
+                  <span className="text-white">{dnaBalance.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-white/70">
+                  <span>Genomes:</span>
+                  <span className="text-white">{ownedGenomes}</span>
+                </div>
+              </div>
+              <button
+                onClick={handleSpeedUp}
+                className="mt-2 text-[#005ae0] text-xs font-mono underline underline-offset-4 hover:text-[#3d8cff] transition-colors"
+              >
+                Speed up — continue to explore
+              </button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

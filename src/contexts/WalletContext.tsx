@@ -34,6 +34,7 @@ interface WalletContextType extends WalletState {
   addVote: (speciesId: string, rating: number) => boolean;
   addShare: () => void;
   addVoteTicket: () => void;
+  addBulkVoteRewards: (numVotes: number) => void;
   hasVoted: (speciesId: string) => boolean;
   getVoteCount: (speciesId: string) => number;
   refreshFyreKeys: () => Promise<void>;
@@ -274,7 +275,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       return false;
     }
 
-    // Each successful vote adds 10 Fyre Keys to balance
+    // Each successful vote adds 10 Fyre Keys and 1 vote ticket
     setState((prev) => ({
       ...prev,
       usdcBalance: prev.usdcBalance - VOTE_COST,
@@ -283,6 +284,15 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       votes: [...prev.votes, { speciesId, rating, timestamp: new Date() }],
     }));
     return true;
+  };
+
+  // Bulk vote: adds commensurate multiples of tickets and keys
+  const addBulkVoteRewards = (numVotes: number) => {
+    setState((prev) => ({
+      ...prev,
+      voteTickets: prev.voteTickets + numVotes,
+      fyreKeys: prev.fyreKeys + 100,
+    }));
   };
 
   // Users can vote multiple times now
@@ -311,6 +321,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         addVote,
         addShare,
         addVoteTicket,
+        addBulkVoteRewards,
         hasVoted,
         getVoteCount,
         refreshFyreKeys,

@@ -63,7 +63,7 @@ PS: DNA tokens are the 1st bio-RWAs in web3.
       url: `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}`,
     },
     {
-      name: 'Base App',
+      name: 'BaseApp',
       platform: 'baseapp',
       icon: (
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
@@ -71,7 +71,7 @@ PS: DNA tokens are the 1st bio-RWAs in web3.
           <circle cx="12" cy="12" r="5" stroke="white" strokeWidth="1.5" fill="none"/>
         </svg>
       ),
-      url: `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}`,
+      url: `https://base.app/share?text=${encodeURIComponent(shareText)}`,
     },
   ];
 

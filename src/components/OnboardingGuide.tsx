@@ -76,7 +76,7 @@ const OnboardingGuide = ({ forceShow = false, onClose }: OnboardingGuideProps) =
     
     const completed = localStorage.getItem(ONBOARDING_KEY);
     if (!completed) {
-      // Show after a short delay
+      // Auto-show on first visit after a short delay
       const timer = setTimeout(() => setIsVisible(true), 1500);
       return () => clearTimeout(timer);
     }

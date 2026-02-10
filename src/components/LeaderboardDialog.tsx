@@ -13,8 +13,8 @@ import {
 
 const LeaderboardDialog = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [tab, setTab] = useState<'votes' | 'shares' | 'dna'>('dna');
-  const { topVoters, topSharers, topDnaHolders, loading } = useWalletLeaderboard(50);
+  const [tab, setTab] = useState<'votes' | 'shares' | 'dna' | 'referrers'>('dna');
+  const { topVoters, topSharers, topDnaHolders, topReferrers, loading } = useWalletLeaderboard(50);
 
 
   const truncateAddress = (address: string) => {
@@ -43,7 +43,14 @@ const LeaderboardDialog = () => {
         count: s.total_shares,
       }));
     }
-    // Top DNA holders - aggregated across all DNA tokens
+    if (tab === 'referrers') {
+      return topReferrers.map((r, i) => ({
+        rank: i + 1,
+        address: r.address,
+        count: r.referral_count,
+      }));
+    }
+    // Top DNA holders
     return topDnaHolders.map((h, i) => ({
       rank: i + 1,
       address: h.address,
@@ -105,6 +112,17 @@ const LeaderboardDialog = () => {
             )}
           >
             DNA Holders
+          </button>
+          <button
+            onClick={() => setTab('referrers')}
+            className={cn(
+              "flex-1 py-2 text-xs font-sans rounded-md transition-colors",
+              tab === 'referrers'
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:text-foreground"
+            )}
+          >
+            Referrers
           </button>
         </div>
 

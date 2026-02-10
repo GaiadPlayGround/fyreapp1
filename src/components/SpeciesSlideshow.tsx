@@ -842,6 +842,11 @@ const SpeciesSlideshow = ({
             </Tooltip>
           </div>
           
+          {/* Species name between play and voice callout */}
+          <span className="text-card/80 text-xs font-sans truncate max-w-[120px] sm:max-w-[200px]">
+            {currentSpecies.name}
+          </span>
+          
           <div className="flex items-center gap-2 relative">
             <Tooltip>
               <TooltipTrigger asChild>

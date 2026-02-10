@@ -5,6 +5,7 @@ import InlineFilterBar from '@/components/InlineFilterBar';
 import SpeciesGrid from '@/components/SpeciesGrid';
 import Footer from '@/components/Footer';
 import EnzymeAdPopup from '@/components/EnzymeAdPopup';
+import OnboardingGuide from '@/components/OnboardingGuide';
 import { useSpeciesApi } from '@/hooks/useSpeciesApi';
 import { useAnimalSounds } from '@/hooks/useAnimalSounds';
 import { useSpeciesStats } from '@/hooks/useSpeciesStats';
@@ -158,12 +159,17 @@ const Explore = () => {
         showTitle={false}
       />
       
-      {/* Fixed Filter Bar - matches navbar styling */}
-      <div 
-        ref={gridRef} 
-        className="fixed top-14 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border w-full max-w-full overflow-x-hidden"
-        style={{ touchAction: 'none' } as React.CSSProperties}
-      >
+      {/* Header text */}
+      <div className="fixed top-14 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border w-full max-w-full overflow-x-hidden">
+        <div className="text-center py-2 px-4">
+          <h2 className="font-serif text-base sm:text-lg font-semibold text-foreground leading-tight">
+            Discover, Vote and Buy
+          </h2>
+          <h2 className="font-serif text-base sm:text-lg font-semibold text-foreground leading-tight">
+            Tokenized Endangered Animals
+          </h2>
+          <h3 className="text-sm text-muted-foreground font-sans">on Base</h3>
+        </div>
         <InlineFilterBar
           viewMode={viewMode}
           onViewModeChange={setViewMode}
@@ -179,7 +185,7 @@ const Explore = () => {
 
       <main className="w-full overflow-x-hidden pt-6 sm:p-14">
         {/* Species Grid - add top padding to account for fixed filter bar (header h-14 = 56px + filter bar ~48px) */}
-        <div className="w-full overflow-x-hidden px-0 pt-[80px] sm:pt-[104px] pb-4">
+        <div className="w-full overflow-x-hidden px-0 pt-[140px] sm:pt-[164px] pb-4">
           {loading || (statsLoading && sortBy === 'votes') ? (
             <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -207,6 +213,9 @@ const Explore = () => {
       </main>
 
       <Footer />
+
+      {/* Onboarding Guide - auto-plays on first visit */}
+      <OnboardingGuide />
 
       {/* DNA Enzymes Ad Popup */}
       {showEnzymeAd && (

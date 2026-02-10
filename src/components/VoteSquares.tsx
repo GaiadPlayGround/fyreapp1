@@ -31,7 +31,7 @@ const USDC_DECIMALS = 6;
 const VOTE_COST = 0.01; // USDC (1 cent per vote)
 
 const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactionEnd, onPanelOpen, onPanelClose }: VoteSquaresProps) => {
-  const { isConnected, address, usdcBalance, connect, addVoteTicket } = useWallet();
+  const { isConnected, address, usdcBalance, connect, addVoteTicket, addBulkVoteRewards } = useWallet();
   const { address: wagmiAddress, connector } = useAccount();
   const connectors = useConnectors();
   const publicClient = usePublicClient();
@@ -296,6 +296,9 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
               if (successCount === bulkVoteAmount) {
                 // Clear optimistic votes since database now has the real values
                 setOptimisticVotes(0);
+                
+                // Add bulk vote rewards (tickets + keys)
+                addBulkVoteRewards(bulkVoteAmount);
                 
                 toast({
                   title: "Batch Vote Complete!",
