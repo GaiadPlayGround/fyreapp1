@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '@/contexts/WalletContext';
+import { useAccount, useBalance } from 'wagmi';
+import { formatUnits } from 'viem';
 import { Button } from '@/components/ui/button';
 import Cubes from '@/components/Cubes';
 import DecryptedText from '@/components/DecryptedText';
@@ -15,6 +17,11 @@ const WalletGate = () => {
   const [showDecryptedText, setShowDecryptedText] = useState(false);
   const [showConnectingPopup, setShowConnectingPopup] = useState(false);
   const [showConnectedDetails, setShowConnectedDetails] = useState(false);
+  const { address: wagmiAddress } = useAccount();
+  const { data: ethBalanceData } = useBalance({
+    address: isConnected && wagmiAddress ? wagmiAddress : undefined,
+  });
+  const ethBalance = ethBalanceData ? parseFloat(formatUnits(ethBalanceData.value, 18)) : 0;
 
   // When wallet connects during the connecting flow, show details
   useEffect(() => {
@@ -183,6 +190,10 @@ const WalletGate = () => {
                 <div className="flex justify-between text-white/70">
                   <span>USDC:</span>
                   <span className="text-white">${usdcBalance.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-white/70">
+                  <span>ETH:</span>
+                  <span className="text-white">{ethBalance.toFixed(4)} ETH</span>
                 </div>
                 <div className="flex justify-between text-white/70">
                   <span>DNA Tokens:</span>

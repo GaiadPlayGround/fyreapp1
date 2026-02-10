@@ -71,7 +71,7 @@ PS: DNA tokens are the 1st bio-RWAs in web3.
           <circle cx="12" cy="12" r="5" stroke="white" strokeWidth="1.5" fill="none"/>
         </svg>
       ),
-      url: `https://base.app/share?text=${encodeURIComponent(shareText)}`,
+      url: `https://base.app/share?url=${encodeURIComponent(speciesUrl)}&text=${encodeURIComponent(shareText)}`,
     },
   ];
 

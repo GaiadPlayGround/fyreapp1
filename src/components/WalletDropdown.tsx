@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Wallet, LogOut, Vote, Copy, Check, Users, Share2, Moon, Sun, Volume2, VolumeX, Sparkles, HelpCircle, Ticket, Settings } from 'lucide-react';
+import { Wallet, LogOut, Vote, Copy, Check, Users, Share2, Moon, Sun, Volume2, VolumeX, Sparkles, HelpCircle, Ticket, Settings, BarChart3, ChevronDown, ChevronUp } from 'lucide-react';
 import { useWallet } from '@/contexts/WalletContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { cn } from '@/lib/utils';
@@ -53,6 +53,8 @@ const WalletDropdown = ({
   const [copied, setCopied] = useState(false);
   const [inviteCopied, setInviteCopied] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showHoldingsDialog, setShowHoldingsDialog] = useState(false);
+  const [holdingsExpanded, setHoldingsExpanded] = useState(50);
   const [displayName, setDisplayName] = useState<{ displayName: string; type: 'base' | 'ens' | 'address' }>({ displayName: '', type: 'address' });
   const [isLoadingName, setIsLoadingName] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -71,14 +73,28 @@ const WalletDropdown = ({
   const [showBuySettings, setShowBuySettings] = useState(false);
   const quickBuyAmounts = [0.5, 1, 2, 3, 5, 10];
 
-  // Save buy settings to localStorage
+  // Save buy settings to localStorage and notify other components
   useEffect(() => {
     localStorage.setItem('fyreapp-payment-currency', paymentCurrency);
+    window.dispatchEvent(new CustomEvent('buySettingsChanged'));
   }, [paymentCurrency]);
 
   useEffect(() => {
     localStorage.setItem('fyreapp-quick-buy-amount', quickBuyAmount.toString());
+    window.dispatchEvent(new CustomEvent('buySettingsChanged'));
   }, [quickBuyAmount]);
+
+  // Listen for buy settings changes from other components
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const savedCurrency = localStorage.getItem('fyreapp-payment-currency') as PaymentCurrency;
+      const savedAmount = localStorage.getItem('fyreapp-quick-buy-amount');
+      if (savedCurrency && savedCurrency !== paymentCurrency) setPaymentCurrency(savedCurrency);
+      if (savedAmount && parseFloat(savedAmount) !== quickBuyAmount) setQuickBuyAmount(parseFloat(savedAmount));
+    };
+    window.addEventListener('buySettingsChanged', handleStorageChange);
+    return () => window.removeEventListener('buySettingsChanged', handleStorageChange);
+  }, [paymentCurrency, quickBuyAmount]);
 
   // Resolve display name when address changes
   useEffect(() => {
@@ -137,8 +153,8 @@ const WalletDropdown = ({
 
   const copyInviteLink = () => {
     const link = inviteCode 
-      ? `https://fyreapp1.fcbc.fun/connect?ref=${inviteCode}`
-      : 'https://fyreapp1.fcbc.fun/connect';
+      ? `https://1.fcbc.fun/connect?ref=${inviteCode}`
+      : 'https://1.fcbc.fun/connect';
     navigator.clipboard.writeText(link);
     setInviteCopied(true);
     setTimeout(() => setInviteCopied(false), 2000);
@@ -175,7 +191,7 @@ const WalletDropdown = ({
                 {displayName.displayName}
               </span>
             ) : (
-              <span className="text-xs font-sans text-foreground">{formatBalance(fcbccBalance)}</span>
+              <span className="text-xs font-sans text-foreground">{formatBalance(dnaBalance)} DNA</span>
             )
           ) : (
             <span className="text-xs font-sans text-muted-foreground hidden xs:inline">Connect</span>
@@ -254,14 +270,25 @@ const WalletDropdown = ({
             <div className={cn("p-3 space-y-2 border-b border-border", !isConnected && "opacity-50")}>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-sans text-muted-foreground">Total DNA Tokens:</span>
-                <span className="text-xs font-sans font-medium text-foreground">{isConnected ? formatBalance(dnaBalance) : '-'}</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-sans font-medium text-foreground">{isConnected ? formatBalance(dnaBalance) : '-'}</span>
+                  {isConnected && ownedDnaTickers.length > 0 && (
+                    <button 
+                      onClick={() => setShowHoldingsDialog(true)}
+                      className="p-0.5 hover:bg-muted rounded transition-colors"
+                      title="View holdings breakdown"
+                    >
+                      <BarChart3 className="w-3 h-3 text-primary" />
+                    </button>
+                  )}
+                </div>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-sans text-muted-foreground">USDC Balance:</span>
                 <span className="text-xs font-sans font-medium text-foreground">{isConnected ? `$${usdcBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs font-sans text-muted-foreground">$FCBCC balance:</span>
+                <span className="text-xs font-sans text-muted-foreground">Warplette balance:</span>
                 <span className="text-xs font-sans font-medium text-foreground">{isConnected ? formatBalance(fcbccBalance) : '-'}</span>
               </div>
               <div className="flex items-center justify-between">
@@ -466,6 +493,44 @@ const WalletDropdown = ({
       
       {showOnboarding && (
         <OnboardingGuide forceShow={true} onClose={() => setShowOnboarding(false)} />
+      )}
+      
+      {/* Holdings Breakdown Dialog */}
+      {showHoldingsDialog && createPortal(
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setShowHoldingsDialog(false)}>
+          <div className="w-72 max-h-[70vh] bg-card border border-border rounded-lg shadow-lg animate-fade-in overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="p-3 border-b border-border">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-sans font-medium text-foreground">Holdings Breakdown</span>
+                <button onClick={() => setShowHoldingsDialog(false)} className="text-muted-foreground hover:text-foreground">
+                  <span className="text-xs">✕</span>
+                </button>
+              </div>
+              <div className="text-lg font-serif font-bold text-foreground mt-1">{formatBalance(dnaBalance)} DNA</div>
+              <span className="text-[10px] text-muted-foreground">{ownedDnaTickers.length} genomes held</span>
+            </div>
+            <div className="p-2 overflow-y-auto max-h-[50vh]">
+              <div className="space-y-1">
+                {ownedDnaTickers.slice(0, holdingsExpanded).map((ticker, idx) => (
+                  <div key={idx} className="flex items-center justify-between px-2 py-1 text-[10px] font-mono rounded hover:bg-muted/50">
+                    <span className="text-primary font-medium">{ticker}</span>
+                    <span className="text-muted-foreground">#{idx + 1}</span>
+                  </div>
+                ))}
+              </div>
+              {ownedDnaTickers.length > holdingsExpanded && (
+                <button
+                  onClick={() => setHoldingsExpanded((prev) => prev + 50)}
+                  className="w-full mt-2 py-1.5 text-[10px] font-sans text-primary hover:bg-primary/10 rounded transition-colors flex items-center justify-center gap-1"
+                >
+                  <ChevronDown className="w-3 h-3" />
+                  Show more ({ownedDnaTickers.length - holdingsExpanded} remaining)
+                </button>
+              )}
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </>
   );

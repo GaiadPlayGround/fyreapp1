@@ -178,12 +178,26 @@ const Footer = () => {
   const [showSocialsDialog, setShowSocialsDialog] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
 
+  // Listen for buy settings changes from other components
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const savedCurrency = localStorage.getItem('fyreapp-payment-currency') as PaymentCurrency;
+      const savedAmount = localStorage.getItem('fyreapp-quick-buy-amount');
+      if (savedCurrency && savedCurrency !== paymentCurrency) setPaymentCurrency(savedCurrency);
+      if (savedAmount && parseFloat(savedAmount) !== quickBuyAmount) setQuickBuyAmount(parseFloat(savedAmount));
+    };
+    window.addEventListener('buySettingsChanged', handleStorageChange);
+    return () => window.removeEventListener('buySettingsChanged', handleStorageChange);
+  }, [paymentCurrency, quickBuyAmount]);
+
   useEffect(() => {
     localStorage.setItem('fyreapp-payment-currency', paymentCurrency);
+    window.dispatchEvent(new CustomEvent('buySettingsChanged'));
   }, [paymentCurrency]);
 
   useEffect(() => {
     localStorage.setItem('fyreapp-quick-buy-amount', quickBuyAmount.toString());
+    window.dispatchEvent(new CustomEvent('buySettingsChanged'));
   }, [quickBuyAmount]);
 
   const quickBuyAmounts = [0.5, 1, 2, 3, 5, 10];
