@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { ArrowLeft, Info, ChevronLeft, ChevronRight, Share2, ExternalLink, Volume2, VolumeX, Pause, Play, X, MousePointerClick, Copy, Check } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import { Species, getStatusColor, getStatusLabel } from '@/data/species';
 import { cn } from '@/lib/utils';
 import VoteSquares from './VoteSquares';
@@ -151,7 +152,7 @@ const SpeciesSlideshow = ({
   const currentSpecies = species[currentIndex];
   const { speakSpeciesName, stopSpeaking, voices, selectedVoice, setSelectedVoice, isLoading: voiceLoading, useFallback } = useElevenLabsVoice();
   const { recordView } = useSpeciesStats();
-  const { address, isConnected, usdcBalance, connect } = useWallet();
+  const { address, isConnected, usdcBalance, connect, ownedDnaTickers } = useWallet();
   const { address: wagmiAddress, connector, chainId } = useAccount();
   const { currency: paymentCurrency, amount: quickBuyAmount } = usePaymentSettings();
   const publicClient = usePublicClient();
@@ -593,7 +594,26 @@ const SpeciesSlideshow = ({
     }
   }, [currentSpecies?.id, address, recordView]);
 
-  // Stop speaking when voice is disabled
+  // Confetti celebration when user holds this species' token
+  useEffect(() => {
+    if (!isConnected || !currentSpecies || ownedDnaTickers.length === 0) return;
+    const speciesSymbol = currentSpecies.symbol?.toUpperCase() || `FCBC${currentSpecies.id.replace(/\D/g, '')}`;
+    const holdsToken = ownedDnaTickers.some(t => t.toUpperCase() === speciesSymbol);
+    if (holdsToken) {
+      // Subtle confetti burst
+      confetti({
+        particleCount: 30,
+        spread: 60,
+        origin: { y: 0.2 },
+        colors: ['#a855f7', '#ec4899', '#3b82f6', '#22c55e'],
+        gravity: 1.2,
+        scalar: 0.7,
+        ticks: 100,
+        disableForReducedMotion: true,
+      });
+    }
+  }, [currentSpecies?.id, isConnected, ownedDnaTickers]);
+
   useEffect(() => {
     if (!voiceEnabled) {
       stopSpeaking();

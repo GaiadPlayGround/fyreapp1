@@ -13,6 +13,7 @@ import { ConservationStatus } from '@/data/species';
 import { SortOption, ViewMode } from '@/components/FilterDrawer';
 import type { Species } from '@/data/species';
 import { useMetaTags } from '@/hooks/useMetaTags';
+import { cn } from '@/lib/utils';
 
 const Explore = () => {
   const navigate = useNavigate();
@@ -34,6 +35,33 @@ const Explore = () => {
   
   // Ref for scrolling
   const gridRef = useRef<HTMLDivElement>(null);
+  
+  // Collapsible header state
+  const [headerCollapsed, setHeaderCollapsed] = useState(false);
+  const lastScrollY = useRef(0);
+  
+  // Auto-collapse header after 5 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setHeaderCollapsed(true);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, []);
+  
+  // Show header on scroll up, hide on scroll down
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY < lastScrollY.current - 5) {
+        setHeaderCollapsed(false);
+        // Re-collapse after 5 seconds
+        setTimeout(() => setHeaderCollapsed(true), 5000);
+      }
+      lastScrollY.current = currentScrollY;
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Wildlife sounds
   useAnimalSounds(soundEnabled);
@@ -159,9 +187,15 @@ const Explore = () => {
         showTitle={false}
       />
       
-      {/* Header text */}
-      <div className="fixed top-14 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border w-full max-w-full overflow-x-hidden">
-        <div className="text-center py-2 px-4">
+      {/* Header text - collapsible */}
+      <div className={cn(
+        "fixed top-14 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border w-full max-w-full overflow-x-hidden transition-all duration-300",
+        headerCollapsed && "max-h-0 overflow-hidden border-b-0 py-0"
+      )}>
+        <div className={cn(
+          "text-center py-2 px-4 transition-all duration-300",
+          headerCollapsed && "opacity-0 py-0"
+        )}>
           <h2 className="font-serif text-base sm:text-lg font-semibold text-foreground leading-tight">
             Discover, Vote and Buy
           </h2>
@@ -170,6 +204,13 @@ const Explore = () => {
           </h2>
           <h3 className="text-sm text-muted-foreground font-sans">on Base</h3>
         </div>
+      </div>
+      
+      {/* Filter bar - always fixed, adjusts position based on header collapse */}
+      <div className={cn(
+        "fixed left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border w-full max-w-full overflow-x-hidden transition-all duration-300",
+        headerCollapsed ? "top-14" : "top-[7.5rem]"
+      )}>
         <InlineFilterBar
           viewMode={viewMode}
           onViewModeChange={setViewMode}
@@ -185,7 +226,10 @@ const Explore = () => {
 
       <main className="w-full overflow-x-hidden pt-6 sm:p-14">
         {/* Species Grid - add top padding to account for fixed filter bar (header h-14 = 56px + filter bar ~48px) */}
-        <div className="w-full overflow-x-hidden px-0 pt-[140px] sm:pt-[164px] pb-4">
+        <div className={cn(
+          "w-full overflow-x-hidden px-0 pb-4 transition-all duration-300",
+          headerCollapsed ? "pt-[80px] sm:pt-[90px]" : "pt-[170px] sm:pt-[194px]"
+        )}>
           {loading || (statsLoading && sortBy === 'votes') ? (
             <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>

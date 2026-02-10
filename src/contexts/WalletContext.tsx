@@ -64,10 +64,11 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   // Function to refresh Fyre Keys from database
   const refreshFyreKeys = useCallback(async () => {
     if (!wagmiAddress) return;
-    const fyreKeys = await walletDb.refreshFyreKeys(wagmiAddress);
+    const dbFyreKeys = await walletDb.refreshFyreKeys(wagmiAddress);
     setState((prev) => ({
       ...prev,
-      fyreKeys,
+      // Use the higher of DB value or local value to preserve local increments
+      fyreKeys: Math.max(dbFyreKeys, prev.fyreKeys),
     }));
   }, [wagmiAddress, walletDb.refreshFyreKeys]);
 
