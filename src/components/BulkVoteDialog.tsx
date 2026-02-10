@@ -81,29 +81,29 @@ const BulkVoteDialog = ({
   return <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md bg-card/95 backdrop-blur-xl border-border/50">
         <DialogHeader>
-          <DialogTitle className="font-serif text-lg text-center">BULK VOTING</DialogTitle>
+          <DialogTitle className="sr-only">Bulk Voting</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           {/* Description text */}
           <div className="space-y-2 text-center">
-            <p className="text-sm text-muted-foreground font-serif leading-relaxed tracking-wide">
-              Base Squares represent the popularity and influence of FYRE PureBreeds.
-            </p>
-            <p className="text-sm text-muted-foreground font-serif leading-relaxed tracking-wide">
+            <h3 className="text-sm text-muted-foreground font-serif leading-relaxed tracking-wide">
+              Base Squares indicate attention commitment to endangered animals from Voters.
+            </h3>
+            <h2 className="text-base font-serif font-semibold text-foreground leading-relaxed tracking-wide">
               Assign Base Square votes to boost visibility for endangered species.
-            </p>
+            </h2>
           </div>
           
           {/* BULK VOTE heading */}
           <div className="text-center">
-            <p className="text-base font-serif font-bold text-foreground tracking-widest uppercase">BULK VOTE</p>
+            <h1 className="text-xl font-serif font-bold text-foreground tracking-widest uppercase">BULK VOTE</h1>
           </div>
 
           {/* Selection prompt */}
           <div>
-            <p className="text-sm font-sans text-foreground mb-3 text-center">
+            <h2 className="text-sm font-serif font-semibold text-foreground mb-3 text-center">
               Select the number of Base Squares to assign to this species:
-            </p>
+            </h2>
             <div className="grid grid-cols-2 gap-2">
               {BULK_VOTE_OPTIONS.map(option => <button key={option.amount} onClick={() => handleSelectPreset(option.amount)} disabled={isSubmitting} className={cn("p-3 rounded-xl border-2 transition-all font-sans text-left", !useCustom && selectedAmount === option.amount ? "border-primary bg-primary/10" : "border-border/50 bg-background/50 hover:border-primary/50", isSubmitting && "opacity-50 cursor-not-allowed")}>
                   <div className="text-sm font-medium">

@@ -136,7 +136,10 @@ const WalletDropdown = ({
   };
 
   const copyInviteLink = () => {
-    navigator.clipboard.writeText('https://fyreapp1.fcbc.fun/connect');
+    const link = inviteCode 
+      ? `https://fyreapp1.fcbc.fun/connect?ref=${inviteCode}`
+      : 'https://fyreapp1.fcbc.fun/connect';
+    navigator.clipboard.writeText(link);
     setInviteCopied(true);
     setTimeout(() => setInviteCopied(false), 2000);
   };
@@ -148,13 +151,18 @@ const WalletDropdown = ({
           ref={buttonRef}
           onClick={() => setIsOpen(!isOpen)} 
           className={cn(
-            "flex items-center gap-1.5 px-2 py-1.5 rounded-md transition-colors",
+            "flex items-center gap-1.5 px-2 py-1.5 rounded-md transition-colors relative",
             isConnected 
               ? "bg-secondary hover:bg-secondary/80"
               : "border border-border hover:bg-muted"
           )}
         >
-          <Wallet className="w-3.5 h-3.5 text-muted-foreground" />
+          <div className="relative">
+            <Wallet className={cn("w-3.5 h-3.5", isConnected ? "text-primary" : "text-muted-foreground")} />
+            {isConnected && (
+              <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            )}
+          </div>
           {isConnected ? (
             isLoadingName ? (
               <span className="text-xs font-sans text-muted-foreground">...</span>
@@ -316,26 +324,34 @@ const WalletDropdown = ({
 
             {/* Actions */}
             <div className="p-3 space-y-1 border-b border-border">
-              {invites > 0 && (
-                <button onClick={copyInviteLink} className="flex items-center justify-between w-full px-2 py-1.5 text-xs font-sans text-foreground hover:bg-muted rounded-md transition-colors">
-                  <span className="flex items-center gap-2">
-                    <Users className="w-3.5 h-3.5" />
-                    <span>Invites ({invites})</span>
-                  </span>
-                  {inviteCopied ? <Check className="w-3 h-3 text-primary" /> : <Copy className="w-3 h-3 text-muted-foreground" />}
-                </button>
-              )}
-              <button className="flex items-center gap-2 w-full px-2 py-1.5 text-xs font-sans text-foreground hover:bg-muted rounded-md transition-colors">
-                <Ticket className="w-3.5 h-3.5" />
-                <span>Vote tickets {isConnected ? `(${voteTickets})` : '-'}</span>
+              <button className="flex items-center justify-between w-full px-2 py-1.5 text-xs font-sans text-foreground hover:bg-muted rounded-md transition-colors">
+                <span className="flex items-center gap-2">
+                  <Ticket className="w-3.5 h-3.5" />
+                  <span>Vote Tickets</span>
+                </span>
+                <span className="text-xs font-medium">{isConnected ? voteTickets : '-'}</span>
               </button>
               <button 
-                className="flex items-center gap-2 w-full px-2 py-1.5 text-xs font-sans text-foreground hover:bg-muted rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={!isConnected}
+                className="flex items-center justify-between w-full px-2 py-1.5 text-xs font-sans text-foreground hover:bg-muted rounded-md transition-colors"
               >
-                <Share2 className="w-3.5 h-3.5" />
-                <span>My shares {isConnected ? `(${shares})` : '-'}</span>
+                <span className="flex items-center gap-2">
+                  <Share2 className="w-3.5 h-3.5" />
+                  <span>My Shares</span>
+                </span>
+                <span className="text-xs font-medium">{isConnected ? shares : '-'}</span>
               </button>
+              <div className="flex items-center justify-between w-full px-2 py-1.5 text-xs font-sans text-foreground rounded-md">
+                <span className="flex items-center gap-2">
+                  <Users className="w-3.5 h-3.5" />
+                  <span>My Invites</span>
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-medium">{isConnected ? invites : '-'}</span>
+                  <button onClick={copyInviteLink} className="p-0.5 hover:bg-muted rounded transition-colors">
+                    {inviteCopied ? <Check className="w-3 h-3 text-primary" /> : <Copy className="w-3 h-3 text-muted-foreground" />}
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* Buy Settings Section */}

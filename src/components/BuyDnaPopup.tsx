@@ -161,15 +161,15 @@ const BuyDnaPopup = ({ isOpen, onClose, onConfirm, speciesName, isSubmitting = f
           {/* Buy Button */}
           <button
             onClick={handleConfirm}
-            disabled={isSubmitting || !isConnected || !isValidAmount}
+            disabled={isSubmitting || !isValidAmount}
             className={cn(
               "w-full py-3 text-sm font-sans font-bold rounded-lg transition-colors",
-              isConnected && !isSubmitting && isValidAmount
+              !isSubmitting && isValidAmount
                 ? "bg-primary text-primary-foreground hover:bg-primary/90"
                 : "bg-muted text-muted-foreground cursor-not-allowed"
             )}
           >
-            {isSubmitting ? 'Processing...' : 'BUY'}
+            {isSubmitting ? 'Processing...' : isConnected ? 'BUY' : 'SET DEFAULT'}
           </button>
         </div>
       </DialogContent>

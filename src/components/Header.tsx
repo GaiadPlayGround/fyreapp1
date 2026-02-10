@@ -15,7 +15,7 @@ interface HeaderProps {
   showTitle?: boolean; // Control whether to show title text
 }
 
-const TITLE_OPTIONS = ['FyreApp 1', 'Slideshow and Rankings'];
+const TITLE_OPTIONS = ['FyreApp 1', 'PureBreed Explorer', 'FyreDEX'];
 
 const Header = ({
   animationEnabled = true,
@@ -62,17 +62,6 @@ const Header = ({
           </FyreMissionsDialog>
           
           <LeaderboardDialog />
-
-          {/* Connection Status Indicator */}
-          {isConnected && (
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-primary/10 border border-primary/20">
-              <div className="relative">
-                <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                <div className="absolute inset-0 w-2 h-2 bg-primary rounded-full animate-ping opacity-75" />
-              </div>
-              <span className="text-[10px] font-sans text-primary font-medium hidden xs:inline">Connected</span>
-            </div>
-          )}
 
           <WalletDropdown
             animationEnabled={animationEnabled}

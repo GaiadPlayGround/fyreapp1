@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Antigravity from './Antigravity';
+import { Dialog, DialogContent } from './ui/dialog';
+import { ChevronDown, Lock } from 'lucide-react';
 
 interface HeroSectionProps {
   onchain: number;
@@ -19,9 +21,14 @@ const HeroSection = ({
   const navigate = useNavigate();
   const displayOnchain = onchain > 0 ? onchain : 234;
   const displayTotal = total > 0 ? total : 1234;
+  const [showDexDropdown, setShowDexDropdown] = useState(false);
+  const [dexPassword, setDexPassword] = useState('');
+  const [showDexUrl, setShowDexUrl] = useState(false);
 
-  const handleDexClick = () => {
-    // Coming soon - no action
+  const handleDexSubmit = () => {
+    if (dexPassword === '1234321') {
+      setShowDexUrl(true);
+    }
   };
 
   return (
@@ -77,18 +84,61 @@ const HeroSection = ({
               EXPLORER
             </button>
             
-            {/* Fyre DEX button - ghost/coming soon */}
-            <button 
-              onClick={handleDexClick}
-              disabled
-              className="relative border-2 border-muted-foreground/30 text-muted-foreground font-medium text-sm py-2 px-8 transition-colors rounded-xl font-mono cursor-not-allowed opacity-60 flex items-center gap-2"
-            >
-              FYRE DEX
-              <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground">Soon</span>
-            </button>
+            {/* Fyre DEX button - with password dropdown */}
+            <div className="relative">
+              <button 
+                onClick={() => setShowDexDropdown(!showDexDropdown)}
+                className="relative border-2 border-muted-foreground/30 text-muted-foreground font-medium text-sm py-2 px-8 transition-colors rounded-xl font-mono flex items-center gap-2 hover:border-primary/50"
+              >
+                FYRE DEX
+                <ChevronDown className="w-3 h-3" />
+              </button>
+              
+              {showDexDropdown && (
+                <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-card border border-border rounded-lg shadow-lg p-3 w-56 z-20 animate-fade-in">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Lock className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground font-mono">Enter access code</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="password"
+                      value={dexPassword}
+                      onChange={(e) => setDexPassword(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleDexSubmit()}
+                      placeholder="Password"
+                      className="flex-1 px-2 py-1.5 text-xs font-mono bg-background border border-border rounded-md text-foreground outline-none focus:border-primary/50"
+                    />
+                    <button
+                      onClick={handleDexSubmit}
+                      className="px-3 py-1.5 text-xs font-mono bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+                    >
+                      Go
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
+
+      {/* DEX URL Popup */}
+      <Dialog open={showDexUrl} onOpenChange={setShowDexUrl}>
+        <DialogContent className="max-w-xs">
+          <div className="text-center space-y-3 py-2">
+            <h3 className="font-mono text-sm font-bold text-foreground">FyreDEX Access</h3>
+            <a
+              href="https://fyreapp11.lovable.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary text-sm font-mono underline break-all hover:text-primary/80"
+            >
+              fyreapp11.lovable.app
+            </a>
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 };
