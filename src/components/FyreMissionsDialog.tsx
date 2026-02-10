@@ -25,34 +25,34 @@ const formatNumber = (num: number): string => {
   return num.toString();
 };
 
-const TASKS: Task[] = [
-  { id: 'follow-zora', label: 'Follow FCBC on Zora', icon: <ExternalLink className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://zora.co/@fcbcc' },
-  { id: 'follow-base', label: 'Follow FCBC on Base App', icon: <ExternalLink className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://base.app/profile/0xD7305c73f62B7713B74316613795C77E814Dea0f' },
-  { id: 'follow-x', label: 'Follow FCBC on X', icon: <ExternalLink className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://x.com/warplette' },
-  { id: 'follow-farcaster', label: 'Follow on Farcaster', icon: <ExternalLink className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://farcaster.xyz/warplette' },
-  { id: 'listen-ama', label: 'Listen to Founders AMA', icon: <Headphones className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://x.com/i/status/2007512266556702973' },
-  { id: 'buy-enzyme', label: 'Buy 100+ Enzyme Consumables', icon: <ShoppingCart className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://opensea.io/collection/fcbrwa-enzyme' },
-  { id: 'buy-dna', label: 'Buy your 1st DNA token', icon: <Coins className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://zora.co/@fcbcc' },
-  { id: 'invite-10', label: 'Invite 10 people to FyreApp 0', icon: <Users className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://fyreapp0.lovable.app/' },
-  { id: 'fyre-posting', label: 'Start #FyreBasePosting!', icon: <Twitter className="w-3.5 h-3.5" />, type: 'share' },
-  { id: 'vote-10', label: 'Vote for 10 species', icon: <Vote className="w-3.5 h-3.5" />, type: 'progress', requirement: 10, progressKey: 'votes' },
-  { id: 'vote-25', label: 'Vote for 25 species', icon: <Vote className="w-3.5 h-3.5" />, type: 'progress', requirement: 25, progressKey: 'votes' },
-  { id: 'vote-50', label: 'Vote for 50 species', icon: <Vote className="w-3.5 h-3.5" />, type: 'progress', requirement: 50, progressKey: 'votes' },
-  { id: 'vote-100', label: 'Vote for 100 species', icon: <Vote className="w-3.5 h-3.5" />, type: 'progress', requirement: 100, progressKey: 'votes' },
-  { id: 'share-5', label: 'Share 5 species', icon: <Share2 className="w-3.5 h-3.5" />, type: 'progress', requirement: 5, progressKey: 'shares' },
-  { id: 'share-25', label: 'Share 25 species', icon: <Share2 className="w-3.5 h-3.5" />, type: 'progress', requirement: 25, progressKey: 'shares' },
-  { id: 'share-50', label: 'Share 50 species', icon: <Share2 className="w-3.5 h-3.5" />, type: 'progress', requirement: 50, progressKey: 'shares' },
-  { id: 'refer-3', label: 'Refer 3 people', icon: <Users className="w-3.5 h-3.5" />, type: 'progress', requirement: 3, progressKey: 'referrals' },
-  { id: 'refer-5', label: 'Refer 5 people', icon: <Users className="w-3.5 h-3.5" />, type: 'progress', requirement: 5, progressKey: 'referrals' },
-  { id: 'genome-10', label: 'Own 10 genomes', icon: <Coins className="w-3.5 h-3.5" />, type: 'progress', requirement: 10, progressKey: 'genomes' },
-  { id: 'genome-25', label: 'Own 25 genomes', icon: <Coins className="w-3.5 h-3.5" />, type: 'progress', requirement: 25, progressKey: 'genomes' },
-  { id: 'genome-50', label: 'Own 50 genomes', icon: <Coins className="w-3.5 h-3.5" />, type: 'progress', requirement: 50, progressKey: 'genomes' },
-  { id: 'genome-100', label: 'Own 100 genomes', icon: <Coins className="w-3.5 h-3.5" />, type: 'progress', requirement: 100, progressKey: 'genomes' },
-  { id: 'dna-100m', label: '100M DNA units', icon: <Coins className="w-3.5 h-3.5" />, type: 'progress', requirement: 100000000, progressKey: 'dna' },
-  { id: 'dna-500m', label: '500M DNA units', icon: <Coins className="w-3.5 h-3.5" />, type: 'progress', requirement: 500000000, progressKey: 'dna' },
-  { id: 'dna-1b', label: '1B DNA units', icon: <Coins className="w-3.5 h-3.5" />, type: 'progress', requirement: 1000000000, progressKey: 'dna' },
-  { id: 'dna-10b', label: '10B DNA units', icon: <Coins className="w-3.5 h-3.5" />, type: 'progress', requirement: 10000000000, progressKey: 'dna' },
-  { id: 'buy-coin', label: 'Buy Creator Coin', icon: <Coins className="w-3.5 h-3.5" />, type: 'copy' },
+const TASKS: (Task & { keys: number })[] = [
+  { id: 'follow-zora', label: 'Follow FCBC on Zora', icon: <ExternalLink className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://zora.co/@fcbcc', keys: 10 },
+  { id: 'follow-base', label: 'Follow FCBC on Base App', icon: <ExternalLink className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://base.app/profile/0xD7305c73f62B7713B74316613795C77E814Dea0f', keys: 10 },
+  { id: 'follow-x', label: 'Follow FCBC on X', icon: <ExternalLink className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://x.com/warplette', keys: 10 },
+  { id: 'follow-farcaster', label: 'Follow on Farcaster', icon: <ExternalLink className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://farcaster.xyz/warplette', keys: 10 },
+  { id: 'listen-ama', label: 'Listen to Founders AMA', icon: <Headphones className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://x.com/i/status/2007512266556702973', keys: 10 },
+  { id: 'buy-enzyme', label: 'Buy 100+ Enzyme Consumables', icon: <ShoppingCart className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://opensea.io/collection/fcbrwa-enzyme', keys: 100 },
+  { id: 'buy-dna', label: 'Buy your 1st DNA token', icon: <Coins className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://zora.co/@fcbcc', keys: 100 },
+  { id: 'invite-10', label: 'Invite 10 people to FyreApp 0', icon: <Users className="w-3.5 h-3.5" />, type: 'redirect', url: 'https://fyreapp0.lovable.app/', keys: 250 },
+  { id: 'fyre-posting', label: 'Start #FyreBasePosting!', icon: <Twitter className="w-3.5 h-3.5" />, type: 'share', keys: 10 },
+  { id: 'vote-10', label: 'Vote for 10 species', icon: <Vote className="w-3.5 h-3.5" />, type: 'progress', requirement: 10, progressKey: 'votes', keys: 10 },
+  { id: 'vote-25', label: 'Vote for 25 species', icon: <Vote className="w-3.5 h-3.5" />, type: 'progress', requirement: 25, progressKey: 'votes', keys: 25 },
+  { id: 'vote-50', label: 'Vote for 50 species', icon: <Vote className="w-3.5 h-3.5" />, type: 'progress', requirement: 50, progressKey: 'votes', keys: 50 },
+  { id: 'vote-100', label: 'Vote for 100 species', icon: <Vote className="w-3.5 h-3.5" />, type: 'progress', requirement: 100, progressKey: 'votes', keys: 100 },
+  { id: 'share-5', label: 'Share 5 species', icon: <Share2 className="w-3.5 h-3.5" />, type: 'progress', requirement: 5, progressKey: 'shares', keys: 5 },
+  { id: 'share-25', label: 'Share 25 species', icon: <Share2 className="w-3.5 h-3.5" />, type: 'progress', requirement: 25, progressKey: 'shares', keys: 25 },
+  { id: 'share-50', label: 'Share 50 species', icon: <Share2 className="w-3.5 h-3.5" />, type: 'progress', requirement: 50, progressKey: 'shares', keys: 50 },
+  { id: 'refer-3', label: 'Refer 3 people', icon: <Users className="w-3.5 h-3.5" />, type: 'progress', requirement: 3, progressKey: 'referrals', keys: 30 },
+  { id: 'refer-5', label: 'Refer 5 people', icon: <Users className="w-3.5 h-3.5" />, type: 'progress', requirement: 5, progressKey: 'referrals', keys: 50 },
+  { id: 'genome-10', label: 'Own 10 genomes', icon: <Coins className="w-3.5 h-3.5" />, type: 'progress', requirement: 10, progressKey: 'genomes', keys: 100 },
+  { id: 'genome-25', label: 'Own 25 genomes', icon: <Coins className="w-3.5 h-3.5" />, type: 'progress', requirement: 25, progressKey: 'genomes', keys: 25 },
+  { id: 'genome-50', label: 'Own 50 genomes', icon: <Coins className="w-3.5 h-3.5" />, type: 'progress', requirement: 50, progressKey: 'genomes', keys: 50 },
+  { id: 'genome-100', label: 'Own 100 genomes', icon: <Coins className="w-3.5 h-3.5" />, type: 'progress', requirement: 100, progressKey: 'genomes', keys: 1000 },
+  { id: 'dna-100m', label: '100M DNA units', icon: <Coins className="w-3.5 h-3.5" />, type: 'progress', requirement: 100000000, progressKey: 'dna', keys: 100 },
+  { id: 'dna-500m', label: '500M DNA units', icon: <Coins className="w-3.5 h-3.5" />, type: 'progress', requirement: 500000000, progressKey: 'dna', keys: 500 },
+  { id: 'dna-1b', label: '1B DNA units', icon: <Coins className="w-3.5 h-3.5" />, type: 'progress', requirement: 1000000000, progressKey: 'dna', keys: 1000 },
+  { id: 'dna-10b', label: '10B DNA units', icon: <Coins className="w-3.5 h-3.5" />, type: 'progress', requirement: 10000000000, progressKey: 'dna', keys: 10000 },
+  { id: 'buy-coin', label: 'Buy Creator Coin', icon: <Coins className="w-3.5 h-3.5" />, type: 'copy', keys: 500 },
 ];
 
 interface FyreMissionsDialogProps {
@@ -380,6 +380,9 @@ Join the movement: https://fcbc.fun
                     {progressDisplay}
                   </span>
                 )}
+                <span className="text-[9px] font-sans text-primary/70 flex-shrink-0 whitespace-nowrap">
+                  +{(task as any).keys} 🔑
+                </span>
               </button>
             );
           })}

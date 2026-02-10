@@ -595,22 +595,31 @@ const SpeciesSlideshow = ({
   }, [currentSpecies?.id, address, recordView]);
 
   // Confetti celebration when user holds this species' token
+  const [showOwnerBanner, setShowOwnerBanner] = useState(false);
   useEffect(() => {
     if (!isConnected || !currentSpecies || ownedDnaTickers.length === 0) return;
     const speciesSymbol = currentSpecies.symbol?.toUpperCase() || `FCBC${currentSpecies.id.replace(/\D/g, '')}`;
     const holdsToken = ownedDnaTickers.some(t => t.toUpperCase() === speciesSymbol);
     if (holdsToken) {
-      // Subtle confetti burst
-      confetti({
-        particleCount: 30,
-        spread: 60,
-        origin: { y: 0.2 },
-        colors: ['#a855f7', '#ec4899', '#3b82f6', '#22c55e'],
-        gravity: 1.2,
-        scalar: 0.7,
-        ticks: 100,
-        disableForReducedMotion: true,
-      });
+      setShowOwnerBanner(true);
+      for (let i = 0; i < 3; i++) {
+        setTimeout(() => {
+          confetti({
+            particleCount: 50,
+            spread: 80,
+            origin: { y: 0.15, x: 0.3 + i * 0.2 },
+            colors: ['#a855f7', '#ec4899', '#3b82f6', '#22c55e', '#f59e0b', '#ef4444'],
+            gravity: 1.0,
+            scalar: 0.8,
+            ticks: 150,
+            disableForReducedMotion: true,
+          });
+        }, i * 300);
+      }
+      const timer = setTimeout(() => setShowOwnerBanner(false), 4000);
+      return () => clearTimeout(timer);
+    } else {
+      setShowOwnerBanner(false);
     }
   }, [currentSpecies?.id, isConnected, ownedDnaTickers]);
 
@@ -674,7 +683,7 @@ const SpeciesSlideshow = ({
       if (!arrowsHoverActive) {
         setShowArrows(false);
       }
-    }, 3000);
+    }, 2000);
   }, [arrowsHoverActive]);
 
   const navigate = useCallback((direction: 'prev' | 'next') => {
@@ -863,9 +872,16 @@ const SpeciesSlideshow = ({
           </div>
           
           {/* Species name between play and voice callout */}
-          <span className="text-card/80 text-xs font-sans truncate max-w-[120px] sm:max-w-[200px]">
-            {currentSpecies.name}
-          </span>
+          <div className="flex flex-col items-center">
+            <span className="text-card/80 text-xs font-sans truncate max-w-[120px] sm:max-w-[200px]">
+              {currentSpecies.name}
+            </span>
+            {showOwnerBanner && (
+              <span className="text-[9px] font-sans text-green-400 animate-pulse">
+                ✨ you own part of this genome ✨
+              </span>
+            )}
+          </div>
           
           <div className="flex items-center gap-2 relative">
             <Tooltip>
@@ -903,6 +919,7 @@ const SpeciesSlideshow = ({
                   <span className="text-xs text-card-foreground font-medium">
                     Voice {useFallback && <span className="text-muted-foreground">(fallback)</span>}
                   </span>
+                  <span className="text-[8px] text-amber-400 font-sans">Experimental</span>
                   <button
                     onClick={() => handleIconClick(() => setShowVoiceSelector(false))}
                     className="text-muted-foreground hover:text-foreground p-1"
@@ -958,14 +975,14 @@ const SpeciesSlideshow = ({
         </div>
       </TooltipProvider>
 
-      {/* Navigation arrows - show on hover near edges */}
+      {/* Navigation arrows - at screen edges, no blur, faster hide (2s) */}
       <button
         onClick={() => handleIconClick(() => navigate('prev'))}
         onMouseEnter={() => setArrowsHoverActive(true)}
         onMouseLeave={() => setArrowsHoverActive(false)}
         className={cn(
-          "absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-card/10 backdrop-blur-sm rounded-full hover:bg-card/20 transition-all duration-300",
-          (showArrows || arrowsHoverActive) ? "opacity-100" : "opacity-0"
+          "absolute left-0 top-1/2 -translate-y-1/2 p-2 hover:bg-card/10 transition-all duration-300 rounded-r-full",
+          (showArrows || arrowsHoverActive) ? "opacity-70" : "opacity-0"
         )}
       >
         <ChevronLeft className="w-6 h-6 text-card" />
@@ -975,8 +992,8 @@ const SpeciesSlideshow = ({
         onMouseEnter={() => setArrowsHoverActive(true)}
         onMouseLeave={() => setArrowsHoverActive(false)}
         className={cn(
-          "absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-card/10 backdrop-blur-sm rounded-full hover:bg-card/20 transition-all duration-300",
-          (showArrows || arrowsHoverActive) ? "opacity-100" : "opacity-0"
+          "absolute right-0 top-1/2 -translate-y-1/2 p-2 hover:bg-card/10 transition-all duration-300 rounded-l-full",
+          (showArrows || arrowsHoverActive) ? "opacity-70" : "opacity-0"
         )}
       >
         <ChevronRight className="w-6 h-6 text-card" />

@@ -112,6 +112,25 @@ const WalletGate = () => {
                       <p className="text-white/80 font-mono text-sm">
                         {formatAddressForDisplay(address)}
                       </p>
+                      {/* Quick portfolio details */}
+                      <div className="w-full space-y-1 text-xs font-mono">
+                        <div className="flex justify-between text-white/70">
+                          <span>USDC:</span>
+                          <span className="text-white">${usdcBalance.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-white/70">
+                          <span>ETH:</span>
+                          <span className="text-white">{ethBalance.toFixed(4)} ETH</span>
+                        </div>
+                        <div className="flex justify-between text-white/70">
+                          <span>DNA Tokens:</span>
+                          <span className="text-white">{dnaBalance.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between text-white/70">
+                          <span>Genomes:</span>
+                          <span className="text-white">{ownedGenomes}</span>
+                        </div>
+                      </div>
                       <div className="flex flex-col gap-2">
                         <Button 
                           onClick={() => navigate('/explore')}

@@ -24,7 +24,10 @@ const SpeciesGrid = ({
   viewMode,
   animationEnabled = true,
 }: SpeciesGridProps) => {
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(() => {
+    const saved = sessionStorage.getItem('fyreapp-explore-page');
+    return saved ? parseInt(saved, 10) : 1;
+  });
   const [autoSlideIndex, setAutoSlideIndex] = useState(0);
   const [isIdle, setIsIdle] = useState(false);
   const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -78,9 +81,19 @@ const SpeciesGrid = ({
     };
   }, []);
 
+  // Persist current page to sessionStorage
   useEffect(() => {
-    setCurrentPage(1);
-  }, [species.length, viewMode]);
+    sessionStorage.setItem('fyreapp-explore-page', currentPage.toString());
+  }, [currentPage]);
+
+  useEffect(() => {
+    // Only reset page if species count changes significantly (not on re-sort)
+    const savedPage = parseInt(sessionStorage.getItem('fyreapp-explore-page') || '1', 10);
+    const maxPage = Math.ceil(species.length / itemsPerPage);
+    if (savedPage > maxPage) {
+      setCurrentPage(1);
+    }
+  }, [species.length, viewMode, itemsPerPage]);
 
   const navigatePage = (direction: 'prev' | 'next') => {
     if (direction === 'prev' && currentPage > 1) {
