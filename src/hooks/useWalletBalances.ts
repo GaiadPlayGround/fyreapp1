@@ -32,6 +32,11 @@ interface PortfolioResponse {
   };
 }
 
+export interface DnaHolding {
+  ticker: string;
+  quantity: number;
+}
+
 export interface WalletBalances {
   usdcBalance: number;
   fcbccBalance: number;
@@ -39,6 +44,7 @@ export interface WalletBalances {
   ownedGenomes: number;
   totalDnaTokens: number;
   ownedDnaTickers: string[]; // Array of DNA token tickers (e.g., ["FCBC121", "FCBC123", "FCBC164"])
+  dnaHoldings: DnaHolding[]; // Array with ticker + quantity, sorted largest to smallest
 }
 
 export const useWalletBalances = () => {
@@ -54,6 +60,7 @@ export const useWalletBalances = () => {
         ownedGenomes: 0,
         totalDnaTokens: 0,
         ownedDnaTickers: [],
+        dnaHoldings: [],
       };
     }
 
@@ -65,6 +72,7 @@ export const useWalletBalances = () => {
       ownedGenomes: 0,
       totalDnaTokens: 0,
       ownedDnaTickers: [],
+      dnaHoldings: [],
     };
 
     try {
@@ -155,6 +163,7 @@ export const useWalletBalances = () => {
       let ownedGenomesCount = 0;
       let fcbccBalance = 0;
       const ownedDnaTickers: string[] = [];
+      const dnaHoldings: DnaHolding[] = [];
 
       allBalances.forEach((balanceNode: any) => {
         const coinAddress = balanceNode?.coin?.address;
@@ -201,6 +210,7 @@ export const useWalletBalances = () => {
             // Track the ticker (symbol) of this DNA token
             if (coinSymbol) {
               ownedDnaTickers.push(coinSymbol);
+              dnaHoldings.push({ ticker: coinSymbol, quantity: balanceFormatted });
             }
             console.log(`✓ DNA Token ${coinSymbol || coinAddress}: ${balanceFormatted} (count: ${ownedGenomesCount})`);
           } else {
@@ -220,11 +230,11 @@ export const useWalletBalances = () => {
       balances.fcbccBalance = fcbccBalance;
       balances.totalDnaTokens = totalDnaBalance;
       balances.ownedDnaTickers = ownedDnaTickers.sort((a, b) => {
-        // Sort tickers by number (FCBC121 < FCBC123)
         const numA = parseInt(a.replace(/\D/g, '')) || 0;
         const numB = parseInt(b.replace(/\D/g, '')) || 0;
         return numA - numB;
       });
+      balances.dnaHoldings = dnaHoldings.sort((a, b) => b.quantity - a.quantity);
     } catch (error) {
       console.error('Error fetching wallet balances:', error);
     }

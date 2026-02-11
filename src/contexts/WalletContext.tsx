@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
 import { useAccount, useConnect, useDisconnect, usePublicClient } from 'wagmi';
+import type { DnaHolding } from '@/hooks/useWalletBalances';
 import { base } from 'wagmi/chains';
 import { useWalletDb } from '@/hooks/useWalletDb';
 import { useWalletBalances } from '@/hooks/useWalletBalances';
@@ -19,6 +20,7 @@ interface WalletState {
   ownedGenomes: number;
   totalDnaTokens: number;
   ownedDnaTickers: string[];
+  dnaHoldings: DnaHolding[];
   voteTickets: number;
   invites: number;
   shares: number;
@@ -97,6 +99,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     ownedGenomes: 0,
     totalDnaTokens: 0,
     ownedDnaTickers: [],
+    dnaHoldings: [],
     voteTickets: 0,
     invites: 0,
     shares: 0,
@@ -121,7 +124,8 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
           fcbccBalance: 0,
           ownedGenomes: 0,
           totalDnaTokens: 0,
-          ownedDnaTickers: [],
+           ownedDnaTickers: [],
+           dnaHoldings: [],
         }));
       return;
     }
@@ -143,6 +147,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
           ownedGenomes: balances.ownedGenomes,
           totalDnaTokens: balances.totalDnaTokens || balances.dnaBalance,
           ownedDnaTickers: balances.ownedDnaTickers || [],
+          dnaHoldings: balances.dnaHoldings || [],
         }));
       } catch (error) {
         // Silently handle errors to prevent disconnections
@@ -245,6 +250,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       ownedGenomes: 0,
       totalDnaTokens: 0,
       ownedDnaTickers: [],
+      dnaHoldings: [],
       voteTickets: 0,
       invites: 0,
       shares: 0,

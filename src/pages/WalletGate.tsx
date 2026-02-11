@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '@/contexts/WalletContext';
 import { useAccount, useBalance } from 'wagmi';
@@ -9,6 +9,7 @@ import DecryptedText from '@/components/DecryptedText';
 import { formatAddressForDisplay } from '@/lib/nameResolution';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Loader2 } from 'lucide-react';
+import { useWalletBalances } from '@/hooks/useWalletBalances';
 
 const WalletGate = () => {
   const navigate = useNavigate();
@@ -17,23 +18,53 @@ const WalletGate = () => {
   const [showDecryptedText, setShowDecryptedText] = useState(false);
   const [showConnectingPopup, setShowConnectingPopup] = useState(false);
   const [showConnectedDetails, setShowConnectedDetails] = useState(false);
+  const [realBalances, setRealBalances] = useState<{ usdcBalance: number; dnaBalance: number; ownedGenomes: number } | null>(null);
   const { address: wagmiAddress } = useAccount();
   const { data: ethBalanceData } = useBalance({
     address: isConnected && wagmiAddress ? wagmiAddress : undefined,
   });
   const ethBalance = ethBalanceData ? parseFloat(formatUnits(ethBalanceData.value, 18)) : 0;
+  const { fetchBalances } = useWalletBalances();
+
+  // Fetch real balances when wallet connects
+  useEffect(() => {
+    if (isConnected && wagmiAddress) {
+      fetchBalances().then((balances) => {
+        setRealBalances({
+          usdcBalance: balances.usdcBalance,
+          dnaBalance: balances.dnaBalance,
+          ownedGenomes: balances.ownedGenomes,
+        });
+      });
+    }
+  }, [isConnected, wagmiAddress, fetchBalances]);
+
+  // Use real balances if available, fallback to context
+  const displayUsdc = realBalances?.usdcBalance ?? usdcBalance;
+  const displayDna = realBalances?.dnaBalance ?? dnaBalance;
+  const displayGenomes = realBalances?.ownedGenomes ?? ownedGenomes;
 
   // When wallet connects during the connecting flow, show details
   useEffect(() => {
     if (isConnected && isConnecting && showConnectingPopup) {
       setShowConnectedDetails(true);
-      // Auto-navigate after 5 seconds
+      // Auto-navigate after 10 seconds
       const timer = setTimeout(() => {
         navigate('/explore');
-      }, 5000);
+      }, 10000);
       return () => clearTimeout(timer);
     }
   }, [isConnected, isConnecting, showConnectingPopup, navigate]);
+
+  // Auto-navigate when on connected screen (not connecting flow)
+  useEffect(() => {
+    if (isConnected && address && !isConnecting) {
+      const timer = setTimeout(() => {
+        navigate('/explore');
+      }, 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [isConnected, address, isConnecting, navigate]);
 
   const handleConnect = async () => {
     setIsConnecting(true);
@@ -116,7 +147,7 @@ const WalletGate = () => {
                       <div className="w-full space-y-1 text-xs font-mono">
                         <div className="flex justify-between text-white/70">
                           <span>USDC:</span>
-                          <span className="text-white">${usdcBalance.toFixed(2)}</span>
+                          <span className="text-white">${displayUsdc.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-white/70">
                           <span>ETH:</span>
@@ -124,11 +155,11 @@ const WalletGate = () => {
                         </div>
                         <div className="flex justify-between text-white/70">
                           <span>DNA Tokens:</span>
-                          <span className="text-white">{dnaBalance.toLocaleString()}</span>
+                          <span className="text-white">{displayDna.toLocaleString()}</span>
                         </div>
                         <div className="flex justify-between text-white/70">
                           <span>Genomes:</span>
-                          <span className="text-white">{ownedGenomes}</span>
+                          <span className="text-white">{displayGenomes}</span>
                         </div>
                       </div>
                       <div className="flex flex-col gap-2">
@@ -148,6 +179,7 @@ const WalletGate = () => {
                           DISCONNECT
                         </Button>
                       </div>
+                      <p className="text-white/40 font-mono text-[10px]">Auto-redirecting in 10s...</p>
                     </div>
                   </>
                 ) : (
@@ -208,7 +240,7 @@ const WalletGate = () => {
               <div className="w-full space-y-1.5 mt-2 text-xs font-mono">
                 <div className="flex justify-between text-white/70">
                   <span>USDC:</span>
-                  <span className="text-white">${usdcBalance.toFixed(2)}</span>
+                  <span className="text-white">${displayUsdc.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-white/70">
                   <span>ETH:</span>
@@ -216,11 +248,11 @@ const WalletGate = () => {
                 </div>
                 <div className="flex justify-between text-white/70">
                   <span>DNA Tokens:</span>
-                  <span className="text-white">{dnaBalance.toLocaleString()}</span>
+                  <span className="text-white">{displayDna.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-white/70">
                   <span>Genomes:</span>
-                  <span className="text-white">{ownedGenomes}</span>
+                  <span className="text-white">{displayGenomes}</span>
                 </div>
               </div>
               <button
