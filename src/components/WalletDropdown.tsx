@@ -36,6 +36,7 @@ const WalletDropdown = ({
     fcbccBalance,
     ownedGenomes,
     ownedDnaTickers,
+    dnaHoldings,
     voteTickets,
     votes,
     shares,
@@ -270,18 +271,7 @@ const WalletDropdown = ({
             <div className={cn("p-3 space-y-2 border-b border-border", !isConnected && "opacity-50")}>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-sans text-muted-foreground">Total DNA Tokens:</span>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-sans font-medium text-foreground">{isConnected ? formatBalance(dnaBalance) : '-'}</span>
-                  {isConnected && ownedDnaTickers.length > 0 && (
-                    <button 
-                      onClick={() => setShowHoldingsDialog(true)}
-                      className="p-0.5 hover:bg-muted rounded transition-colors"
-                      title="View holdings breakdown"
-                    >
-                      <BarChart3 className="w-3 h-3 text-primary" />
-                    </button>
-                  )}
-                </div>
+                <span className="text-xs font-sans font-medium text-foreground">{isConnected ? formatBalance(dnaBalance) : '-'}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-sans text-muted-foreground">USDC Balance:</span>
@@ -316,7 +306,18 @@ const WalletDropdown = ({
               )}
               <div className="flex items-center justify-between">
                 <span className="text-xs font-sans text-muted-foreground">Fyre Keys Balance:</span>
-                <span className="text-xs font-sans font-medium text-foreground">{isConnected ? fyreKeys.toLocaleString() : '-'}</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-sans font-medium text-foreground">{isConnected ? fyreKeys.toLocaleString() : '-'}</span>
+                  {isConnected && ownedDnaTickers.length > 0 && (
+                    <button 
+                      onClick={() => setShowHoldingsDialog(true)}
+                      className="p-0.5 hover:bg-muted rounded transition-colors"
+                      title="View holdings breakdown"
+                    >
+                      <BarChart3 className="w-3 h-3 text-primary" />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -511,20 +512,20 @@ const WalletDropdown = ({
             </div>
             <div className="p-2 overflow-y-auto max-h-[50vh]">
               <div className="space-y-1">
-                {ownedDnaTickers.slice(0, holdingsExpanded).map((ticker, idx) => (
+                {dnaHoldings.slice(0, holdingsExpanded).map((holding, idx) => (
                   <div key={idx} className="flex items-center justify-between px-2 py-1 text-[10px] font-mono rounded hover:bg-muted/50">
-                    <span className="text-primary font-medium">{ticker}</span>
-                    <span className="text-muted-foreground">#{idx + 1}</span>
+                    <span className="text-primary font-medium">{holding.ticker}</span>
+                    <span className="text-foreground">{formatBalance(holding.quantity)}</span>
                   </div>
                 ))}
               </div>
-              {ownedDnaTickers.length > holdingsExpanded && (
+              {dnaHoldings.length > holdingsExpanded && (
                 <button
                   onClick={() => setHoldingsExpanded((prev) => prev + 50)}
                   className="w-full mt-2 py-1.5 text-[10px] font-sans text-primary hover:bg-primary/10 rounded transition-colors flex items-center justify-center gap-1"
                 >
                   <ChevronDown className="w-3 h-3" />
-                  Show more ({ownedDnaTickers.length - holdingsExpanded} remaining)
+                  Show more ({dnaHoldings.length - holdingsExpanded} remaining)
                 </button>
               )}
             </div>

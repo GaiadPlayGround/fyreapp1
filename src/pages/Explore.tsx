@@ -222,12 +222,14 @@ const Explore = () => {
       {/* Tap collapsed area to expand */}
       {headerCollapsed && (
         <div 
-          className="fixed top-14 left-0 right-0 h-1 z-40 cursor-pointer"
+          className="fixed top-14 left-0 right-0 h-6 z-40 cursor-pointer flex items-center justify-center"
           onClick={() => {
             setHeaderCollapsed(false);
             setTimeout(() => setHeaderCollapsed(true), 7000);
           }}
-        />
+        >
+          <span className="text-[10px] text-muted-foreground font-sans">Discover, Vote and Buy... ▼</span>
+        </div>
       )}
       
       {/* Filter bar - always fixed, adjusts position based on header collapse */}
@@ -251,7 +253,7 @@ const Explore = () => {
       <main className="w-full overflow-x-hidden pt-6 sm:p-14">
         {/* Species Grid - add top padding to account for fixed filter bar (header h-14 = 56px + filter bar ~48px) */}
         <div className={cn(
-          "w-full overflow-x-hidden px-0 pb-4 transition-all duration-300",
+          "w-full overflow-x-hidden px-0 pb-0 transition-all duration-300",
           headerCollapsed ? "pt-[80px] sm:pt-[90px]" : "pt-[170px] sm:pt-[194px]"
         )}>
           {loading || (statsLoading && sortBy === 'votes') ? (
