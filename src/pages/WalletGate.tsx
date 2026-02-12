@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useWallet } from '@/contexts/WalletContext';
 import { useAccount, useBalance } from 'wagmi';
 import { formatUnits } from 'viem';
@@ -10,9 +10,13 @@ import { formatAddressForDisplay } from '@/lib/nameResolution';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Loader2 } from 'lucide-react';
 import { useWalletBalances } from '@/hooks/useWalletBalances';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 const WalletGate = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const referrerCode = searchParams.get('ref');
   const { connect, disconnect, isConnected, address, usdcBalance, dnaBalance, ownedGenomes } = useWallet();
   const [isConnecting, setIsConnecting] = useState(false);
   const [showDecryptedText, setShowDecryptedText] = useState(false);
@@ -38,6 +42,51 @@ const WalletGate = () => {
       });
     }
   }, [isConnected, wagmiAddress, fetchBalances]);
+
+  // Process referral when wallet connects with ref param
+  useEffect(() => {
+    if (!isConnected || !address || !referrerCode) return;
+    
+    const processReferral = async () => {
+      try {
+        // Check if this wallet already has invited_by set
+        const { data: wallet } = await supabase
+          .from('wallets')
+          .select('invited_by')
+          .eq('address', address)
+          .maybeSingle();
+        
+        if (wallet && !wallet.invited_by) {
+          // First time using invite - assign referral
+          await supabase
+            .from('wallets')
+            .update({ invited_by: referrerCode })
+            .eq('address', address);
+          
+          // Find referrer and increment their referral count
+          const { data: referrer } = await supabase
+            .from('wallets')
+            .select('address')
+            .eq('invite_code', referrerCode)
+            .maybeSingle();
+          
+          if (referrer) {
+            await (supabase as any).rpc('increment_referral_count', { wallet_addr: referrer.address, amount: 1 });
+          }
+          
+          toast({
+            title: "Referral Linked!",
+            description: "You've been linked to your referrer.",
+            duration: 2000,
+          });
+        }
+      } catch (err) {
+        console.error('Referral processing error:', err);
+      }
+    };
+    
+    processReferral();
+  }, [isConnected, address, referrerCode]);
 
   // Use real balances if available, fallback to context
   const displayUsdc = realBalances?.usdcBalance ?? usdcBalance;

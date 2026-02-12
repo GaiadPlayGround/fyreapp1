@@ -1,10 +1,12 @@
 import { useEffect, useState, useMemo } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useSpeciesApi } from '@/hooks/useSpeciesApi';
 import { useSpeciesStats } from '@/hooks/useSpeciesStats';
 import SpeciesSlideshow from '@/components/SpeciesSlideshow';
+import ReferralWalletGatePopup from '@/components/ReferralWalletGatePopup';
 import { SortOption } from '@/components/FilterDrawer';
 import { useMetaTags } from '@/hooks/useMetaTags';
+import { useWallet } from '@/contexts/WalletContext';
 import type { Species } from '@/data/species';
 
 interface LocationState {
@@ -16,7 +18,11 @@ const SpeciesDetail = () => {
   const { speciesId } = useParams<{ speciesId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const state = location.state as LocationState | null;
+  const { isConnected } = useWallet();
+  const referrerCode = searchParams.get('ref');
+  const [showReferralPopup, setShowReferralPopup] = useState(false);
   
   // Use species array from location state if available, otherwise fetch
   const { species: fetchedSpecies, loading: fetchingSpecies } = useSpeciesApi();
@@ -150,6 +156,16 @@ const SpeciesDetail = () => {
     type: 'website',
   });
 
+  // Show referral wallet gate popup after 20s if not connected and ref param exists
+  useEffect(() => {
+    if (referrerCode && !isConnected) {
+      const timer = setTimeout(() => {
+        setShowReferralPopup(true);
+      }, 20000);
+      return () => clearTimeout(timer);
+    }
+  }, [referrerCode, isConnected]);
+
   const handleClose = () => {
     navigate('/explore', { replace: false });
   };
@@ -163,11 +179,20 @@ const SpeciesDetail = () => {
   }
 
   return (
-    <SpeciesSlideshow
-      species={sortedSpecies}
-      initialIndex={initialIndex}
-      onClose={handleClose}
-    />
+    <>
+      <SpeciesSlideshow
+        species={sortedSpecies}
+        initialIndex={initialIndex}
+        onClose={handleClose}
+      />
+      {referrerCode && (
+        <ReferralWalletGatePopup
+          isOpen={showReferralPopup}
+          onClose={() => setShowReferralPopup(false)}
+          referrerCode={referrerCode}
+        />
+      )}
+    </>
   );
 };
 

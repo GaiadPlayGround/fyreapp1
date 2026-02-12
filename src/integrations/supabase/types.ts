@@ -151,9 +151,11 @@ export type Database = {
           id: string
           invite_code: string | null
           invited_by: string | null
+          referral_count: number | null
           total_shares: number | null
           total_votes: number | null
           updated_at: string | null
+          vote_tickets: number | null
         }
         Insert: {
           address: string
@@ -162,9 +164,11 @@ export type Database = {
           id?: string
           invite_code?: string | null
           invited_by?: string | null
+          referral_count?: number | null
           total_shares?: number | null
           total_votes?: number | null
           updated_at?: string | null
+          vote_tickets?: number | null
         }
         Update: {
           address?: string
@@ -173,9 +177,11 @@ export type Database = {
           id?: string
           invite_code?: string | null
           invited_by?: string | null
+          referral_count?: number | null
           total_shares?: number | null
           total_votes?: number | null
           updated_at?: string | null
+          vote_tickets?: number | null
         }
         Relationships: []
       }
@@ -185,6 +191,22 @@ export type Database = {
     }
     Functions: {
       generate_invite_code: { Args: never; Returns: string }
+      increment_fyre_keys: {
+        Args: { amount: number; wallet_addr: string }
+        Returns: undefined
+      }
+      increment_referral_count: {
+        Args: { amount: number; wallet_addr: string }
+        Returns: undefined
+      }
+      increment_total_shares: {
+        Args: { amount: number; wallet_addr: string }
+        Returns: undefined
+      }
+      increment_vote_tickets: {
+        Args: { amount: number; wallet_addr: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

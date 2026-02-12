@@ -302,22 +302,19 @@ const WalletDropdown = ({
                       </span>
                     )}
                   </div>
+                  {/* Holdings Breakdown link */}
+                  <button
+                    onClick={() => setShowHoldingsDialog(true)}
+                    className="flex items-center gap-1.5 mt-1 px-1.5 py-1 hover:bg-muted rounded transition-colors"
+                  >
+                    <BarChart3 className="w-3 h-3 text-primary" />
+                    <span className="text-[10px] font-sans text-primary font-medium">Holdings Breakdown</span>
+                  </button>
                 </div>
               )}
               <div className="flex items-center justify-between">
                 <span className="text-xs font-sans text-muted-foreground">Fyre Keys Balance:</span>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-sans font-medium text-foreground">{isConnected ? fyreKeys.toLocaleString() : '-'}</span>
-                  {isConnected && ownedDnaTickers.length > 0 && (
-                    <button 
-                      onClick={() => setShowHoldingsDialog(true)}
-                      className="p-0.5 hover:bg-muted rounded transition-colors"
-                      title="View holdings breakdown"
-                    >
-                      <BarChart3 className="w-3 h-3 text-primary" />
-                    </button>
-                  )}
-                </div>
+                <span className="text-xs font-sans font-medium text-foreground">{isConnected ? fyreKeys.toLocaleString() : '-'}</span>
               </div>
             </div>
 

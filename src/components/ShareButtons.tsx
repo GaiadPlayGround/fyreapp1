@@ -10,12 +10,15 @@ interface ShareButtonsProps {
 const CONTRACT_ADDRESS = '0xbfca039bbda0bd750c2b83d666810b1bb4d31b38';
 
 const ShareButtons = ({ species }: ShareButtonsProps) => {
-  const { addShare, address } = useWallet();
+  const { addShare, address, isConnected, inviteCode } = useWallet();
   const { recordShare } = useSpeciesStats();
   
-  // Build species URL using symbol
+  // Build species URL using symbol, with referral tracker
   const speciesNumber = species.id.replace(/\D/g, '');
-  const speciesUrl = `https://1.fcbc.fun/explore/fcbc${speciesNumber}`;
+  const baseSpeciesUrl = `https://1.fcbc.fun/explore/fcbc${speciesNumber}`;
+  const speciesUrl = isConnected && inviteCode 
+    ? `${baseSpeciesUrl}?ref=${inviteCode}` 
+    : baseSpeciesUrl;
   
   // Unified share format for all platforms
   const shareText = `The ${species.name} is an endangered animal brought onchain to Base-L2 by @warplette's FCBC Club.
@@ -26,10 +29,13 @@ PS: DNA tokens are the 1st bio-RWAs in web3.
 #FyreBasePosting`;
 
   const handleShare = async (url: string, platform: string) => {
-    addShare();
-    if (address) {
-      await recordShare(species.id, address, platform);
+    // Only track shares for connected wallets
+    if (!isConnected || !address) {
+      window.open(url, '_blank');
+      return;
     }
+    addShare();
+    await recordShare(species.id, address, platform);
     window.open(url, '_blank');
   };
 
@@ -62,17 +68,6 @@ PS: DNA tokens are the 1st bio-RWAs in web3.
         </svg>
       ),
       url: `https://warpcast.com/~/compose?text=${encodeURIComponent(shareText)}`,
-    },
-    {
-      name: 'BaseApp',
-      platform: 'baseapp',
-      icon: (
-        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
-          <rect x="4" y="4" width="16" height="16" rx="3" fill="#0052FF"/>
-          <circle cx="12" cy="12" r="5" stroke="white" strokeWidth="1.5" fill="none"/>
-        </svg>
-      ),
-      url: `https://base.app/share?url=${encodeURIComponent(speciesUrl)}&text=${encodeURIComponent(shareText)}`,
     },
   ];
 
