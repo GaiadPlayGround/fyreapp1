@@ -219,17 +219,15 @@ const Explore = () => {
           <h3 className="text-sm text-muted-foreground font-sans">on Base</h3>
         </div>
       </div>
-      {/* Tap collapsed area to expand */}
+      {/* Tap collapsed area (including blank space beside logo) to expand */}
       {headerCollapsed && (
         <div 
-          className="fixed top-14 left-0 right-0 h-6 z-40 cursor-pointer flex items-center justify-center"
+          className="fixed top-0 left-14 right-14 h-14 z-30 cursor-pointer"
           onClick={() => {
             setHeaderCollapsed(false);
             setTimeout(() => setHeaderCollapsed(true), 7000);
           }}
-        >
-          <span className="text-[10px] text-muted-foreground font-sans">Discover, Vote and Buy... ▼</span>
-        </div>
+        />
       )}
       
       {/* Filter bar - always fixed, adjusts position based on header collapse */}
@@ -251,10 +249,10 @@ const Explore = () => {
       </div>
 
       <main className="w-full overflow-x-hidden pt-6 sm:p-14">
-        {/* Species Grid - add top padding to account for fixed filter bar (header h-14 = 56px + filter bar ~48px) */}
+        {/* Species Grid - reduced padding for footer visibility */}
         <div className={cn(
           "w-full overflow-x-hidden px-0 pb-0 transition-all duration-300",
-          headerCollapsed ? "pt-[80px] sm:pt-[90px]" : "pt-[170px] sm:pt-[194px]"
+          headerCollapsed ? "pt-[72px] sm:pt-[80px]" : "pt-[160px] sm:pt-[180px]"
         )}>
           {loading || (statsLoading && sortBy === 'votes') ? (
             <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">

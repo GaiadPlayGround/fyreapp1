@@ -28,6 +28,7 @@ interface WalletState {
   inviteCode: string | null;
   fyreKeys: number;
   completedTasksCount: number;
+  referralCount: number;
 }
 
 interface WalletContextType extends WalletState {
@@ -107,6 +108,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     inviteCode: null,
     fyreKeys: 0,
     completedTasksCount: 0,
+    referralCount: 0,
   });
 
   // Sync wagmi connection state with local state and fetch balances
@@ -167,6 +169,10 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
           address: wagmiAddress,
           inviteCode: walletData.invite_code || null,
           fyreKeys: walletData.fyre_keys || 0,
+          voteTickets: (walletData as any).vote_tickets || 0,
+          shares: walletData.total_shares || 0,
+          invites: (walletData as any).referral_count || 0,
+          referralCount: (walletData as any).referral_count || 0,
         }));
         // Fetch balances and task completions after wallet data is loaded
         updateBalances();
@@ -182,6 +188,10 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
               address: wagmiAddress,
               inviteCode: newWalletData.invite_code || null,
               fyreKeys: newWalletData.fyre_keys || 0,
+              voteTickets: (newWalletData as any).vote_tickets || 0,
+              shares: newWalletData.total_shares || 0,
+              invites: (newWalletData as any).referral_count || 0,
+              referralCount: (newWalletData as any).referral_count || 0,
             }));
           } else {
             // Fallback if registration fails
@@ -258,11 +268,18 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       inviteCode: null,
       fyreKeys: 0,
       completedTasksCount: 0,
+      referralCount: 0,
     });
   };
 
   const addShare = async () => {
-    // Each share adds 1 Fyre Key
+    if (!state.isConnected || !state.address) return; // Don't count if not connected
+    // Persist to DB
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      await (supabase as any).rpc('increment_total_shares', { wallet_addr: state.address, amount: 1 });
+      await (supabase as any).rpc('increment_fyre_keys', { wallet_addr: state.address, amount: 1 });
+    } catch (e) { console.error('Failed to persist share:', e); }
     setState((prev) => ({
       ...prev,
       shares: prev.shares + 1,
@@ -280,6 +297,14 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const addVote = (speciesId: string, rating: number): boolean => {
     if (!state.isConnected || state.usdcBalance < VOTE_COST) {
       return false;
+    }
+
+    // Persist vote ticket and fyre keys to DB
+    if (state.address) {
+      import('@/integrations/supabase/client').then(({ supabase }) => {
+        (supabase as any).rpc('increment_vote_tickets', { wallet_addr: state.address!, amount: 1 });
+        (supabase as any).rpc('increment_fyre_keys', { wallet_addr: state.address!, amount: 10 });
+      });
     }
 
     // Each successful vote adds 10 Fyre Keys and 1 vote ticket

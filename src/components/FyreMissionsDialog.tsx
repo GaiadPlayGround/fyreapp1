@@ -116,16 +116,19 @@ const FyreMissionsDialog = ({ children }: FyreMissionsDialogProps) => {
         const isMet = progress >= task.requirement!;
         
         if (isMet) {
-          const result = await walletDb.completeTask(address, task.id, 10);
+          const taskKeys = (task as any).keys || 10;
+          const result = await walletDb.completeTask(address, task.id, taskKeys);
           if (result.success) {
             setCompletedTasks(prev => new Set(prev).add(task.id));
             await refreshFyreKeys();
             await refreshCompletedTasksCount();
-            toast({
-              title: "Task Completed!",
-              description: `+10 Fyre Keys awarded for: ${task.label}`,
-              duration: 3000,
-            });
+            if (!result.alreadyCompleted) {
+              toast({
+                title: "Task Completed!",
+                description: `+${taskKeys} Fyre Keys awarded for: ${task.label}`,
+                duration: 2000,
+              });
+            }
           }
         }
       }
@@ -179,7 +182,8 @@ const FyreMissionsDialog = ({ children }: FyreMissionsDialogProps) => {
         setClickedRedirects(prev => new Set(prev).add(task.id));
         
         // Record completion in database
-        const result = await walletDb.completeTask(address, task.id, 10);
+        const taskKeys = (task as any).keys || 10;
+        const result = await walletDb.completeTask(address, task.id, taskKeys);
         if (result.success) {
           setCompletedTasks(prev => new Set(prev).add(task.id));
           await refreshFyreKeys();
@@ -187,17 +191,10 @@ const FyreMissionsDialog = ({ children }: FyreMissionsDialogProps) => {
           if (!result.alreadyCompleted) {
             toast({
               title: "Task Completed!",
-              description: `+10 Fyre Keys awarded for: ${task.label}`,
-              duration: 3000,
+              description: `+${taskKeys} Fyre Keys awarded for: ${task.label}`,
+              duration: 2000,
             });
           }
-        } else {
-          toast({
-            title: "Error Completing Task",
-            description: result.error || "Failed to save task completion. Please try again.",
-            variant: "destructive",
-            duration: 3000,
-          });
         }
       } else if (task.type === 'share') {
         const shareText = `I'm exploring endangered species and bio-RWAs with the FCBC Club! 🧬
@@ -210,8 +207,8 @@ Join the movement: https://fcbc.fun
         window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`, '_blank');
         setClickedRedirects(prev => new Set(prev).add(task.id));
         
-        // Record completion in database
-        const result = await walletDb.completeTask(address, task.id, 10);
+        const taskKeys = (task as any).keys || 10;
+        const result = await walletDb.completeTask(address, task.id, taskKeys);
         if (result.success) {
           setCompletedTasks(prev => new Set(prev).add(task.id));
           await refreshFyreKeys();
@@ -219,17 +216,10 @@ Join the movement: https://fcbc.fun
           if (!result.alreadyCompleted) {
             toast({
               title: "Task Completed!",
-              description: `+10 Fyre Keys awarded for: ${task.label}`,
-              duration: 3000,
+              description: `+${taskKeys} Fyre Keys awarded for: ${task.label}`,
+              duration: 2000,
             });
           }
-        } else {
-          toast({
-            title: "Error Completing Task",
-            description: result.error || "Failed to save task completion. Please try again.",
-            variant: "destructive",
-            duration: 3000,
-          });
         }
       } else if (task.type === 'copy') {
         try {
@@ -241,16 +231,10 @@ Join the movement: https://fcbc.fun
           });
         } catch (clipboardError) {
           console.error('Clipboard error:', clipboardError);
-          toast({
-            title: "Copy Failed",
-            description: "Please copy the address manually: " + CONTRACT_ADDRESS,
-            variant: "destructive",
-            duration: 3000,
-          });
         }
         
-        // Record completion in database
-        const result = await walletDb.completeTask(address, task.id, 10);
+        const taskKeys = (task as any).keys || 10;
+        const result = await walletDb.completeTask(address, task.id, taskKeys);
         if (result.success) {
           setCompletedTasks(prev => new Set(prev).add(task.id));
           await refreshFyreKeys();
@@ -258,17 +242,10 @@ Join the movement: https://fcbc.fun
           if (!result.alreadyCompleted) {
             toast({
               title: "Task Completed!",
-              description: `+10 Fyre Keys awarded for: ${task.label}`,
-              duration: 3000,
+              description: `+${taskKeys} Fyre Keys awarded for: ${task.label}`,
+              duration: 2000,
             });
           }
-        } else {
-          toast({
-            title: "Error Completing Task",
-            description: result.error || "Failed to save task completion. Please try again.",
-            variant: "destructive",
-            duration: 3000,
-          });
         }
       }
     } catch (error: any) {
