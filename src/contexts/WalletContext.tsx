@@ -4,6 +4,7 @@ import type { DnaHolding } from '@/hooks/useWalletBalances';
 import { base } from 'wagmi/chains';
 import { useWalletDb } from '@/hooks/useWalletDb';
 import { useWalletBalances } from '@/hooks/useWalletBalances';
+import WalletSelectDialog from '@/components/WalletSelectDialog';
 
 interface Vote {
   speciesId: string;
@@ -34,6 +35,7 @@ interface WalletState {
 interface WalletContextType extends WalletState {
   connect: () => void;
   disconnect: () => void;
+  showWalletSelect: () => void;
   addVote: (speciesId: string, rating: number) => boolean;
   addShare: () => void;
   addVoteTicket: () => void;
@@ -63,6 +65,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   const { disconnect: wagmiDisconnect } = useDisconnect();
   const walletDb = useWalletDb();
   const { fetchBalances } = useWalletBalances();
+  const [showWalletSelectDialog, setShowWalletSelectDialog] = useState(false);
 
   // Function to refresh Fyre Keys from database
   const refreshFyreKeys = useCallback(async () => {
@@ -226,27 +229,13 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [wagmiIsConnected, wagmiAddress, walletDb.getWalletByAddress, walletDb.registerWallet, refreshCompletedTasksCount]); // Removed fetchBalances from deps
 
+  const showWalletSelect = () => {
+    setShowWalletSelectDialog(true);
+  };
+
   const connect = async () => {
-    try {
-      // Try to connect with injected connector (MetaMask, etc.) on Base network
-      const injectedConnector = connectors.find((c) => c.id === 'injected');
-      if (injectedConnector) {
-        wagmiConnect({ 
-          connector: injectedConnector,
-          chainId: base.id, // Connect to Base network
-        });
-      } else {
-        // Fallback: try first available connector
-        if (connectors.length > 0) {
-          wagmiConnect({ 
-            connector: connectors[0],
-            chainId: base.id, // Connect to Base network
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Failed to connect wallet:', error);
-    }
+    // Show wallet selection dialog instead of auto-connecting
+    showWalletSelect();
   };
 
   const disconnect = () => {
@@ -288,6 +277,15 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addVoteTicket = () => {
+    if (!state.address) return;
+    
+    // Persist to database
+    import('@/integrations/supabase/client').then(({ supabase }) => {
+      (supabase as any).rpc('increment_vote_tickets', { wallet_addr: state.address!, amount: 1 }).catch((err: any) => {
+        console.error('Failed to persist vote ticket:', err);
+      });
+    });
+    
     setState((prev) => ({
       ...prev,
       voteTickets: prev.voteTickets + 1,
@@ -320,6 +318,18 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
 
   // Bulk vote: adds commensurate multiples of tickets and keys
   const addBulkVoteRewards = (numVotes: number) => {
+    if (!state.address) return;
+    
+    // Persist to database
+    import('@/integrations/supabase/client').then(({ supabase }) => {
+      (supabase as any).rpc('increment_vote_tickets', { wallet_addr: state.address!, amount: numVotes }).catch((err: any) => {
+        console.error('Failed to persist bulk vote tickets:', err);
+      });
+      (supabase as any).rpc('increment_fyre_keys', { wallet_addr: state.address!, amount: 100 }).catch((err: any) => {
+        console.error('Failed to persist bulk vote fyre keys:', err);
+      });
+    });
+    
     setState((prev) => ({
       ...prev,
       voteTickets: prev.voteTickets + numVotes,
@@ -350,6 +360,7 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         ...state,
         connect,
         disconnect,
+        showWalletSelect,
         addVote,
         addShare,
         addVoteTicket,
@@ -361,6 +372,12 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
       }}
     >
       {children}
+      {showWalletSelectDialog && (
+        <WalletSelectDialog
+          isOpen={showWalletSelectDialog}
+          onClose={() => setShowWalletSelectDialog(false)}
+        />
+      )}
     </WalletContext.Provider>
   );
 };

@@ -203,7 +203,7 @@ const Footer = () => {
   const quickBuyAmounts = [0.5, 1, 2, 3, 5, 10];
 
   return (
-    <footer className="border-t border-border bg-card/50 backdrop-blur-sm mt-8 w-full overflow-x-hidden">
+    <footer className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card w-full overflow-x-hidden">
       <div className="max-w-6xl mx-auto px-4 py-3 w-full">
         {/* Main Footer Row - Compact */}
         <div className="flex items-center justify-between gap-2">

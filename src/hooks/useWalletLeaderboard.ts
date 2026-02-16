@@ -3,6 +3,7 @@ import { getCoinHolders, setApiKey } from '@zoralabs/coins-sdk';
 import { formatUnits } from 'viem';
 import { supabase } from '@/integrations/supabase/client';
 import { base } from 'wagmi/chains';
+import { getSpeciesTickerMappings } from '@/utils/speciesTickers';
 
 interface WalletLeaderEntry {
   address: string;
@@ -36,19 +37,12 @@ export const useWalletLeaderboard = (limit: number = 25) => {
           setApiKey(zoraApiKey);
         }
 
-        // Fetch top DNA token holders - aggregate across all DNA tokens
+        // Fetch top DNA token holders - use CSV data as source of truth
         try {
-          const speciesResponse = await fetch('https://server.fcbc.fun/api/v1/zora/species?count=1234');
-          const speciesData = await speciesResponse.json();
+          const speciesMappings = getSpeciesTickerMappings();
+          const dnaTokenAddresses: string[] = speciesMappings.map(m => m.contractAddress);
           
-          const dnaTokenAddresses: string[] = [];
-          if (speciesData?.data && Array.isArray(speciesData.data)) {
-            speciesData.data.forEach((species: any) => {
-              if (species.tokenAddress) {
-                dnaTokenAddresses.push(species.tokenAddress);
-              }
-            });
-          }
+          console.log(`Using ${dnaTokenAddresses.length} DNA token addresses from CSV for leaderboard`);
 
           const holderBalances: Record<string, number> = {};
           const batchSize = 10;

@@ -8,8 +8,9 @@ const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || '';
 export const config = createConfig({
   chains: [base, mainnet],
   connectors: [
+    // Generic injected connector (catches MetaMask, Phantom, Coinbase, Rabby, Trust, etc.)
+    // This works for all browser extension wallets
     injected({
-      // Disable auto-connect - only connect when user explicitly clicks
       shimDisconnect: true,
     }),
     ...(projectId ? [walletConnect({ projectId })] : []),

@@ -4,6 +4,7 @@ import { useAccount } from 'wagmi';
 import { Address, erc20Abi, formatUnits } from 'viem';
 import { getProfileBalances, setApiKey } from '@zoralabs/coins-sdk';
 import { base } from 'wagmi/chains';
+import { getAllValidDNAAddresses, getTickerByContractAddress } from '@/utils/speciesTickers';
 
 // Token addresses on Base
 const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' as Address;
@@ -95,27 +96,10 @@ export const useWalletBalances = () => {
         setApiKey(zoraApiKey);
       }
 
-      // Fetch valid DNA token addresses from FCBC species API
-      // This ensures we only count tokens that are actually from the FCBC collection
-      const validDnaTokenAddresses = new Set<string>();
-      try {
-        const speciesResponse = await fetch('https://server.fcbc.fun/api/v1/zora/species?count=1234');
-        const speciesData = await speciesResponse.json();
-        
-        if (speciesData?.data && Array.isArray(speciesData.data)) {
-          speciesData.data.forEach((species: any) => {
-            if (species.tokenAddress) {
-              validDnaTokenAddresses.add(species.tokenAddress.toLowerCase());
-            }
-          });
-        }
-        
-        console.log('=== VALID DNA TOKEN ADDRESSES ===');
-        console.log(`Fetched ${validDnaTokenAddresses.size} valid DNA token addresses from FCBC API`);
-      } catch (error) {
-        console.error('Error fetching species data for validation:', error);
-        // Continue anyway - we'll still filter by symbol pattern as fallback
-      }
+      // Use CSV data for valid DNA token addresses - this is the source of truth
+      const validDnaTokenAddresses = getAllValidDNAAddresses();
+      console.log('=== VALID DNA TOKEN ADDRESSES (from CSV) ===');
+      console.log(`Using ${validDnaTokenAddresses.size} valid DNA token addresses from CSV`);
 
       // Use Zora SDK getProfileBalances with pagination to get ALL actual holdings
       let allBalances: any[] = [];
@@ -158,10 +142,25 @@ export const useWalletBalances = () => {
       console.log('Total balances fetched:', allBalances.length);
       console.log('Raw balances:', allBalances);
 
+      // Fetch FCBCC/Warplette balance directly using balanceOf
+      try {
+        const fcbccBalanceBigInt = (await publicClient.readContract({
+          address: FCBCC_ADDRESS,
+          abi: erc20Abi,
+          functionName: 'balanceOf',
+          args: [walletAddress],
+        } as any)) as bigint;
+        balances.fcbccBalance = parseFloat(formatUnits(fcbccBalanceBigInt, 18));
+        console.log(`✓ FCBCC (via balanceOf): ${balances.fcbccBalance}`);
+      } catch (error) {
+        console.warn('Could not fetch FCBCC balance via balanceOf:', error);
+        // Fallback to 0 if balanceOf fails
+        balances.fcbccBalance = 0;
+      }
+
       // Process balances
       let totalDnaBalance = 0;
       let ownedGenomesCount = 0;
-      let fcbccBalance = 0;
       const ownedDnaTickers: string[] = [];
       const dnaHoldings: DnaHolding[] = [];
 
@@ -177,45 +176,36 @@ export const useWalletBalances = () => {
 
         const balanceFormatted = parseFloat(formatUnits(BigInt(balance), 18));
 
-        // Check if this is FCBCC/warplette (main coin)
+        // Skip FCBCC/Warplette since we're fetching it directly via balanceOf
         const isFcbcc = coinAddress?.toLowerCase() === FCBCC_ADDRESS.toLowerCase() ||
                         coinSymbol?.toLowerCase().includes('fcbcc') ||
                         coinSymbol?.toLowerCase().includes('warplette') ||
                         coinName?.toLowerCase().includes('warplette');
 
-        console.log('Processing balance:', {
-          coinAddress,
-          coinSymbol,
-          coinName,
-          balance: balance.toString(),
-          balanceFormatted,
-          isFcbcc,
-        });
-
         if (isFcbcc) {
-          fcbccBalance = balanceFormatted;
-          console.log(`✓ FCBCC: ${fcbccBalance}`);
-        } else if (balanceFormatted > 0.000001) {
+          // Skip - already fetched via balanceOf
+          return;
+        }
+
+        if (balanceFormatted > 0.000001) {
           // Check if this is a DNA token by verifying:
-          // 1. Token address matches a valid DNA token address from FCBC API
-          // 2. Symbol matches FCBC pattern (as additional validation)
+          // 1. Token address matches a valid DNA token address from CSV
+          // 2. Get ticker from CSV mapping (more reliable than symbol)
           const isValidDnaAddress = coinAddress && validDnaTokenAddresses.has(coinAddress.toLowerCase());
-          const matchesDnaPattern = /^FCBC\d+$/i.test(coinSymbol);
+          const tickerFromCSV = coinAddress ? getTickerByContractAddress(coinAddress) : null;
           
-          // Only count if it's a valid DNA token address from FCBC collection
-          if (isValidDnaAddress && matchesDnaPattern) {
-            // This is a verified DNA token from FCBC collection
+          // Only count if it's a valid DNA token address from CSV
+          if (isValidDnaAddress && tickerFromCSV) {
+            // This is a verified DNA token from FCBC collection (from CSV)
             totalDnaBalance += balanceFormatted;
             ownedGenomesCount++;
-            // Track the ticker (symbol) of this DNA token
-            if (coinSymbol) {
-              ownedDnaTickers.push(coinSymbol);
-              dnaHoldings.push({ ticker: coinSymbol, quantity: balanceFormatted });
-            }
-            console.log(`✓ DNA Token ${coinSymbol || coinAddress}: ${balanceFormatted} (count: ${ownedGenomesCount})`);
+            // Use ticker from CSV (more reliable than symbol from Zora)
+            ownedDnaTickers.push(tickerFromCSV);
+            dnaHoldings.push({ ticker: tickerFromCSV, quantity: balanceFormatted });
+            console.log(`✓ DNA Token ${tickerFromCSV} (${coinAddress}): ${balanceFormatted} (count: ${ownedGenomesCount})`);
           } else {
             // Not a valid DNA token from FCBC collection - skip it
-            console.log(`✗ Skipped (not FCBC DNA token): ${coinSymbol || coinAddress} - ${balanceFormatted} (valid address: ${isValidDnaAddress}, matches pattern: ${matchesDnaPattern})`);
+            console.log(`✗ Skipped (not FCBC DNA token): ${coinSymbol || coinAddress} - ${balanceFormatted} (valid address: ${isValidDnaAddress}, ticker from CSV: ${tickerFromCSV})`);
           }
         }
       });
@@ -223,11 +213,10 @@ export const useWalletBalances = () => {
       console.log('=== FINAL COUNTS ===');
       console.log('Total DNA Balance:', totalDnaBalance);
       console.log('Owned Genomes:', ownedGenomesCount);
-      console.log('FCBCC Balance:', fcbccBalance);
+      console.log('FCBCC Balance:', balances.fcbccBalance);
 
       balances.dnaBalance = totalDnaBalance;
       balances.ownedGenomes = ownedGenomesCount;
-      balances.fcbccBalance = fcbccBalance;
       balances.totalDnaTokens = totalDnaBalance;
       balances.ownedDnaTickers = ownedDnaTickers.sort((a, b) => {
         const numA = parseInt(a.replace(/\D/g, '')) || 0;

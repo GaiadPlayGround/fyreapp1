@@ -62,22 +62,11 @@ interface FyreMissionsDialogProps {
 const FyreMissionsDialog = ({ children }: FyreMissionsDialogProps) => {
   const [clickedRedirects, setClickedRedirects] = useState<Set<string>>(new Set());
   const [completedTasks, setCompletedTasks] = useState<Set<string>>(new Set());
-  const { votes, shares, ownedGenomes, totalDnaTokens, address, isConnected, refreshFyreKeys, refreshCompletedTasksCount, fyreKeys } = useWallet();
+  const { votes, shares, ownedGenomes, totalDnaTokens, address, isConnected, refreshFyreKeys, refreshCompletedTasksCount, fyreKeys, referralCount } = useWallet();
   const walletDb = useWalletDb();
   
-  // Get referrals from localStorage (invited users)
-  const getReferralCount = (): number => {
-    try {
-      const inviteCode = localStorage.getItem('fyreapp-invite-code');
-      if (!inviteCode) return 0;
-      // In a real app, this would query the database for users invited by this code
-      return 0;
-    } catch {
-      return 0;
-    }
-  };
-  
-  const referrals = getReferralCount();
+  // Get referrals from wallet context (invited users)
+  const referrals = referralCount || 0;
   const genomes = ownedGenomes || 0;
   const dna = totalDnaTokens || 0;
 
@@ -136,7 +125,7 @@ const FyreMissionsDialog = ({ children }: FyreMissionsDialogProps) => {
 
     checkProgressTasks();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [votes.length, shares, genomes, dna, isConnected, address]);
+  }, [votes.length, shares, genomes, dna, referrals, isConnected, address]);
 
   const isTaskCompleted = (task: Task): boolean => {
     // First check database for permanent completion

@@ -31,7 +31,7 @@ const USDC_DECIMALS = 6;
 const VOTE_COST = 0.01; // USDC (1 cent per vote)
 
 const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactionEnd, onPanelOpen, onPanelClose }: VoteSquaresProps) => {
-  const { isConnected, address, usdcBalance, connect, addVoteTicket, addBulkVoteRewards } = useWallet();
+  const { isConnected, address, usdcBalance, connect, addVoteTicket, addBulkVoteRewards, refreshFyreKeys } = useWallet();
   const { address: wagmiAddress, connector } = useAccount();
   const connectors = useConnectors();
   const publicClient = usePublicClient();
@@ -300,6 +300,9 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
                 // Add bulk vote rewards (tickets + keys)
                 addBulkVoteRewards(bulkVoteAmount);
                 
+                // Refresh Fyre Keys from database
+                await refreshFyreKeys();
+                
                 toast({
                   title: "Batch Vote Complete!",
                   description: `${bulkVoteAmount} vote${bulkVoteAmount > 1 ? 's' : ''} confirmed • -${(bulkVoteAmount * VOTE_COST).toFixed(2)}¢ • +${totalBaseSquares} Base Squares • +${bulkVoteAmount} Vote Tickets • +100 Fyre Keys`,
@@ -514,6 +517,18 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
           
           if (success) {
             addVoteTicket();
+            
+            // Add Fyre Keys for single vote (10 keys per vote)
+            if (address || wagmiAddress) {
+              import('@/integrations/supabase/client').then(async ({ supabase }) => {
+                try {
+                  await (supabase as any).rpc('increment_fyre_keys', { wallet_addr: address || wagmiAddress || '', amount: 10 });
+                  await refreshFyreKeys();
+                } catch (err: any) {
+                  console.error('Failed to persist fyre keys:', err);
+                }
+              });
+            }
 
             // Clear optimistic votes since database now has the real value
             setOptimisticVotes(0);

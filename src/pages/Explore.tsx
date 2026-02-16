@@ -189,7 +189,7 @@ const Explore = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
+    <div className="h-screen bg-background text-foreground overflow-hidden flex flex-col pt-14">
       <Header 
         animationEnabled={animationEnabled}
         soundEnabled={soundEnabled}
@@ -201,7 +201,7 @@ const Explore = () => {
       {/* Header text - collapsible, expandable on click */}
       <div 
         className={cn(
-          "fixed top-14 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border w-full max-w-full overflow-x-hidden transition-all duration-300 cursor-pointer",
+          "flex-shrink-0 bg-background/95 backdrop-blur-sm border-b border-border w-full overflow-x-hidden transition-all duration-300 cursor-pointer",
           headerCollapsed && "max-h-0 overflow-hidden border-b-0 py-0"
         )}
         onClick={() => { if (!headerCollapsed) { setHeaderCollapsed(true); } }}
@@ -219,22 +219,9 @@ const Explore = () => {
           <h3 className="text-sm text-muted-foreground font-sans">on Base</h3>
         </div>
       </div>
-      {/* Tap collapsed area (including blank space beside logo) to expand */}
-      {headerCollapsed && (
-        <div 
-          className="fixed top-0 left-14 right-14 h-14 z-30 cursor-pointer"
-          onClick={() => {
-            setHeaderCollapsed(false);
-            setTimeout(() => setHeaderCollapsed(true), 7000);
-          }}
-        />
-      )}
       
-      {/* Filter bar - always fixed, adjusts position based on header collapse */}
-      <div className={cn(
-        "fixed left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border w-full max-w-full overflow-x-hidden transition-all duration-300",
-        headerCollapsed ? "top-14" : "top-[7.5rem]"
-      )}>
+      {/* Filter bar */}
+      <div className="flex-shrink-0 bg-background/95 backdrop-blur-sm border-b border-border w-full overflow-x-hidden">
         <InlineFilterBar
           viewMode={viewMode}
           onViewModeChange={setViewMode}
@@ -248,12 +235,9 @@ const Explore = () => {
         />
       </div>
 
-      <main className="w-full overflow-x-hidden pt-6 sm:p-14">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden w-full min-h-0">
         {/* Species Grid - reduced padding for footer visibility */}
-        <div className={cn(
-          "w-full overflow-x-hidden px-0 pb-0 transition-all duration-300",
-          headerCollapsed ? "pt-[72px] sm:pt-[80px]" : "pt-[160px] sm:pt-[180px]"
-        )}>
+        <div className="w-full overflow-x-hidden px-2 sm:px-4 py-2 pb-[5em]">
           {loading || (statsLoading && sortBy === 'votes') ? (
             <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
