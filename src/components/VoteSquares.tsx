@@ -297,11 +297,30 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
               chainId: base.id,
             });
           } catch (batchSizeError: any) {
-            // If batch is too large, the wallet will reject with error code 5740 or similar
-            // Check if it's a batch size error and retry with smaller batches
+            // Check if wallet doesn't support wallet_sendCalls
             const errorMessage = batchSizeError?.message || '';
             const errorDetails = batchSizeError?.details || '';
+            const errorCode = batchSizeError?.code;
             
+            if (
+              errorMessage.includes('wallet_sendCalls') ||
+              errorMessage.includes('does not exist') ||
+              errorMessage.includes('not available') ||
+              errorMessage.includes('doesn\'t has corresponding handler') ||
+              errorMessage.includes('method') && errorMessage.includes('not found') ||
+              errorCode === -32601 // Method not found
+            ) {
+              // Wallet doesn't support EIP-5792 wallet_sendCalls
+              const walletName = connector?.name || 'your wallet';
+              throw new Error(
+                `Your wallet (${walletName}) doesn't support batch transactions. ` +
+                `Please use a wallet that supports EIP-5792 (like MetaMask, Coinbase Wallet, or Base Account) ` +
+                `or vote individually using single votes.`
+              );
+            }
+            
+            // If batch is too large, the wallet will reject with error code 5740 or similar
+            // Check if it's a batch size error and retry with smaller batches
             if (
               errorMessage.includes('too large') ||
               errorMessage.includes('batch size') ||
@@ -403,28 +422,69 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
           }
           
           // Extract the transaction hash or batch ID from the result
-          let transactionHash: `0x${string}`;
+          let transactionHash: string;
           if (typeof result === 'string') {
-            transactionHash = result as `0x${string}`;
+            transactionHash = result;
           } else if (result && typeof result === 'object') {
             if ('id' in result) {
-              transactionHash = (result as { id: string }).id as `0x${string}`;
+              transactionHash = String((result as { id: string }).id);
             } else if ('hash' in result) {
-              transactionHash = (result as { hash: string }).hash as `0x${string}`;
+              transactionHash = String((result as { hash: string }).hash);
             } else {
-              throw new Error(`Unexpected sendCalls return type: ${JSON.stringify(result)}`);
+              // Try to extract any hex-like string from the object
+              const resultStr = JSON.stringify(result);
+              const hexMatch = resultStr.match(/0x[a-fA-F0-9]{32,}/);
+              if (hexMatch) {
+                transactionHash = hexMatch[0];
+              } else {
+                throw new Error(`Unexpected sendCalls return type: ${JSON.stringify(result)}`);
+              }
             }
           } else {
             throw new Error(`Unexpected sendCalls return type: ${typeof result}`);
           }
 
-          // Validate and normalize the hash
-          if (!transactionHash.startsWith('0x')) {
-            transactionHash = ('0x' + transactionHash) as `0x${string}`;
+          // Normalize the hash - handle Base App and other wallet formats
+          // Base App might return: "fc 0x700b84d6930b650e19998b0cede81273e8da9" or similar
+          // Extract just the hex part
+          transactionHash = transactionHash.trim();
+          
+          // Remove any non-hex prefixes (like "fc", "0xfc", etc.) and extract the actual hash
+          const hexMatch = transactionHash.match(/0x[a-fA-F0-9]+/i);
+          if (hexMatch) {
+            transactionHash = hexMatch[0];
+          } else if (!transactionHash.startsWith('0x')) {
+            // If no 0x found, add it
+            transactionHash = '0x' + transactionHash.replace(/^[^a-fA-F0-9]+/, '');
           }
+          
+          // Validate length - transaction hashes are 66 chars (0x + 64 hex), batch IDs are typically 34-65 chars
+          // Base App might return longer strings, so we'll be more lenient
+          if (transactionHash.length < 34) {
+            throw new Error(`Invalid transaction hash/batch ID: ${transactionHash} (length: ${transactionHash.length}). Expected at least 34 characters.`);
+          }
+          
+          // If it's too long, try to extract a valid hash from it
+          if (transactionHash.length > 66) {
+            // Try to find a 66-char hash within the string
+            const fullHashMatch = transactionHash.match(/0x[a-fA-F0-9]{64}/i);
+            if (fullHashMatch) {
+              transactionHash = fullHashMatch[0];
+            } else {
+              // If no full hash found, take the first 66 chars if it starts with 0x
+              if (transactionHash.startsWith('0x') && transactionHash.length >= 66) {
+                transactionHash = transactionHash.substring(0, 66);
+              } else {
+                // Last resort: log warning but continue with what we have
+                console.warn(`Transaction hash seems unusually long (${transactionHash.length} chars): ${transactionHash.substring(0, 50)}...`);
+              }
+            }
+          }
+          
+          const normalizedHash = transactionHash as `0x${string}`;
 
-          console.log(`📨 Batch ${batchIdx + 1}/${numBatches} submitted: ${transactionHash.length === 66 ? 'Full hash' : 'Batch ID'} (${transactionHash.substring(0, 20)}...)`);
-          batchHashes.push(transactionHash);
+          console.log(`📨 Batch ${batchIdx + 1}/${numBatches} submitted: ${normalizedHash.length === 66 ? 'Full hash' : 'Batch ID'} (${normalizedHash.substring(0, 20)}...)`);
+          batchHashes.push(normalizedHash);
           setBatchVoteTxHashes([...batchHashes]);
 
           toast({
@@ -438,14 +498,14 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
           let receipt: any = null;
           let transactionSucceeded = false;
           
-          if (transactionHash.length === 66 && /^0x[a-fA-F0-9]{64}$/.test(transactionHash)) {
+          if (normalizedHash.length === 66 && /^0x[a-fA-F0-9]{64}$/i.test(normalizedHash)) {
             // Full transaction hash - wait directly
             receipt = await publicClient.waitForTransactionReceipt({
-              hash: transactionHash,
+              hash: normalizedHash,
               timeout: 120_000, // 2 minute timeout
             });
             transactionSucceeded = receipt.status === 'success';
-          } else if (transactionHash.length >= 34 && transactionHash.length < 66) {
+          } else if (normalizedHash.length >= 34 && normalizedHash.length <= 66) {
             // Batch ID - check batch status to verify transaction succeeded
             const provider = await connector.getProvider();
             if (provider && typeof provider === 'object' && 'request' in provider) {
@@ -460,7 +520,7 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
                   try {
                     const status = await (provider as any).request({
                       method: 'wallet_getCallsStatus',
-                      params: [transactionHash],
+                      params: [normalizedHash],
                     });
                     
                     // Check if batch is confirmed/succeeded
@@ -586,7 +646,8 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
               transactionSucceeded = true;
             }
           } else {
-            throw new Error(`Invalid transaction hash/batch ID format: ${transactionHash} (length: ${transactionHash.length})`);
+            // Hash format is invalid - this shouldn't happen after normalization, but handle it gracefully
+            throw new Error(`Invalid transaction hash/batch ID format: ${normalizedHash} (length: ${normalizedHash.length}). Please try again or contact support.`);
           }
 
           if (!transactionSucceeded) {
