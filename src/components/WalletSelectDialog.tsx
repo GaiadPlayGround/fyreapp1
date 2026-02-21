@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Wallet, Loader2 } from 'lucide-react';
-import { useConnect } from 'wagmi';
+import { useConnect, useAccount } from 'wagmi';
 import { base } from 'wagmi/chains';
 import { cn } from '@/lib/utils';
 
@@ -24,6 +24,7 @@ const getWalletIcon = (name: string) => {
 
 const WalletSelectDialog = ({ isOpen, onClose }: WalletSelectDialogProps) => {
   const { connect, connectors, isPending, error } = useConnect();
+  const { connector: activeConnector, isConnected } = useAccount();
   const [connectingId, setConnectingId] = useState<string | null>(null);
 
   // Check for wallet providers directly in window
@@ -54,6 +55,19 @@ const WalletSelectDialog = ({ isOpen, onClose }: WalletSelectDialogProps) => {
 
   const handleConnect = async (connector: any) => {
     try {
+      // Check if this connector is already connected
+      if (isConnected && activeConnector?.id === connector.id) {
+        console.log('Connector already connected, closing dialog');
+        onClose();
+        return;
+      }
+      
+      // Check if connector is already connecting
+      if (connector.status === 'connecting') {
+        console.log('Connector already connecting, please wait');
+        return;
+      }
+      
       setConnectingId(connector.id || 'injected');
       
       // If it's a fallback injected connector, try direct connection
@@ -184,18 +198,20 @@ const WalletSelectDialog = ({ isOpen, onClose }: WalletSelectDialogProps) => {
           ) : (
             availableConnectors.map((connector: any) => {
               const isConnecting = connectingId === connector.id || (isPending && connectingId === connector.id);
+              const isAlreadyConnected = isConnected && activeConnector?.id === connector.id;
               const walletName = connector.name || 'Unknown Wallet';
               
               return (
                 <button
                   key={connector.id || 'injected'}
                   onClick={() => handleConnect(connector)}
-                  disabled={isConnecting || isPending}
+                  disabled={isConnecting || isPending || isAlreadyConnected}
                   className={cn(
                     "w-full flex items-center gap-3 p-3 rounded-xl border transition-all text-left",
                     "hover:bg-muted/50 active:scale-[0.98]",
                     isConnecting && "border-primary bg-primary/10",
-                    !isConnecting && "border-border/50 bg-background/50",
+                    isAlreadyConnected && "border-green-500/50 bg-green-500/10 opacity-75",
+                    !isConnecting && !isAlreadyConnected && "border-border/50 bg-background/50",
                     !connector.ready && "opacity-75"
                   )}
                 >
@@ -205,8 +221,11 @@ const WalletSelectDialog = ({ isOpen, onClose }: WalletSelectDialogProps) => {
                   <div className="flex-1 min-w-0">
                     <div className="font-sans font-medium text-sm text-foreground truncate">
                       {walletName}
+                      {isAlreadyConnected && (
+                        <span className="ml-2 text-xs text-green-600 dark:text-green-400">✓ Connected</span>
+                      )}
                     </div>
-                    {(connector.id === 'injected' || !connector.ready) && (
+                    {(connector.id === 'injected' || !connector.ready) && !isAlreadyConnected && (
                       <div className="text-[10px] text-muted-foreground font-sans">
                         {connector.ready ? 'Browser extension' : 'May require refresh'}
                       </div>

@@ -32,7 +32,7 @@ const VOTE_COST = 0.01; // USDC (1 cent per vote)
 
 const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactionEnd, onPanelOpen, onPanelClose }: VoteSquaresProps) => {
   const { isConnected, address, usdcBalance, connect, addVoteTicket, addBulkVoteRewards, refreshFyreKeys } = useWallet();
-  const { address: wagmiAddress, connector } = useAccount();
+  const { address: wagmiAddress, connector, isConnected: wagmiIsConnected } = useAccount();
   const connectors = useConnectors();
   const publicClient = usePublicClient();
   const { writeContract, data: hash, isPending: isSubmitting } = useWriteContract();
@@ -135,14 +135,23 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
   // Each vote = max 5 base squares = 1 transaction = 1 cent
   // Split amount into votes: e.g., 9 base squares = 2 votes (5+4), 11 = 3 votes (5+5+1)
   const handleBulkVote = async (baseSquaresAmount: number) => {
-    if (!isConnected || !wagmiAddress) {
-      // Auto-connect wallet
-      connect();
-      toast({
-        title: "Connecting Wallet...",
-        description: "Please approve the connection to vote.",
-        duration: 2000,
-      });
+    // Check if wallet is connected
+    if (!wagmiIsConnected || !wagmiAddress) {
+      // Only connect if connector is not already connected or connecting
+      if (!connector || connector.status === 'disconnected') {
+        connect();
+        toast({
+          title: "Connecting Wallet...",
+          description: "Please approve the connection to vote.",
+          duration: 2000,
+        });
+      } else if (connector.status === 'connecting') {
+        toast({
+          title: "Wallet Connecting...",
+          description: "Please wait for wallet connection to complete.",
+          duration: 2000,
+        });
+      }
       setShowBulkDialog(false);
       onPanelClose?.();
       return;
@@ -798,14 +807,23 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
   };
 
   const handleVote = async (rating: number) => {
-    if (!isConnected || !wagmiAddress) {
-      // Auto-connect wallet
-      connect();
-      toast({
-        title: "Connecting Wallet...",
-        description: "Please approve the connection to vote.",
-        duration: 2000,
-      });
+    // Check if wallet is connected
+    if (!wagmiIsConnected || !wagmiAddress) {
+      // Only connect if connector is not already connected or connecting
+      if (!connector || connector.status === 'disconnected') {
+        connect();
+        toast({
+          title: "Connecting Wallet...",
+          description: "Please approve the connection to vote.",
+          duration: 2000,
+        });
+      } else if (connector.status === 'connecting') {
+        toast({
+          title: "Wallet Connecting...",
+          description: "Please wait for wallet connection to complete.",
+          duration: 2000,
+        });
+      }
       return;
     }
 

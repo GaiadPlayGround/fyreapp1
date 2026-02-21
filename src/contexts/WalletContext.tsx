@@ -280,10 +280,15 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     if (!state.address) return;
     
     // Persist to database
-    import('@/integrations/supabase/client').then(({ supabase }) => {
-      (supabase as any).rpc('increment_vote_tickets', { wallet_addr: state.address!, amount: 1 }).catch((err: any) => {
+    import('@/integrations/supabase/client').then(async ({ supabase }) => {
+      try {
+        const result = await supabase.rpc('increment_vote_tickets', { wallet_addr: state.address!, amount: 1 });
+        if (result.error) {
+          console.error('Failed to persist vote ticket:', result.error);
+        }
+      } catch (err: any) {
         console.error('Failed to persist vote ticket:', err);
-      });
+      }
     });
     
     setState((prev) => ({
@@ -299,9 +304,24 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
 
     // Persist vote ticket and fyre keys to DB
     if (state.address) {
-      import('@/integrations/supabase/client').then(({ supabase }) => {
-        (supabase as any).rpc('increment_vote_tickets', { wallet_addr: state.address!, amount: 1 });
-        (supabase as any).rpc('increment_fyre_keys', { wallet_addr: state.address!, amount: 10 });
+      import('@/integrations/supabase/client').then(async ({ supabase }) => {
+        try {
+          const ticketsResult = await supabase.rpc('increment_vote_tickets', { wallet_addr: state.address!, amount: 1 });
+          if (ticketsResult.error) {
+            console.error('Failed to persist vote ticket:', ticketsResult.error);
+          }
+        } catch (err: any) {
+          console.error('Failed to persist vote ticket:', err);
+        }
+        
+        try {
+          const keysResult = await supabase.rpc('increment_fyre_keys', { wallet_addr: state.address!, amount: 10 });
+          if (keysResult.error) {
+            console.error('Failed to persist fyre keys:', keysResult.error);
+          }
+        } catch (err: any) {
+          console.error('Failed to persist fyre keys:', err);
+        }
       });
     }
 
@@ -321,13 +341,24 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     if (!state.address) return;
     
     // Persist to database
-    import('@/integrations/supabase/client').then(({ supabase }) => {
-      (supabase as any).rpc('increment_vote_tickets', { wallet_addr: state.address!, amount: numVotes }).catch((err: any) => {
+    import('@/integrations/supabase/client').then(async ({ supabase }) => {
+      try {
+        const ticketsResult = await supabase.rpc('increment_vote_tickets', { wallet_addr: state.address!, amount: numVotes });
+        if (ticketsResult.error) {
+          console.error('Failed to persist bulk vote tickets:', ticketsResult.error);
+        }
+      } catch (err: any) {
         console.error('Failed to persist bulk vote tickets:', err);
-      });
-      (supabase as any).rpc('increment_fyre_keys', { wallet_addr: state.address!, amount: 100 }).catch((err: any) => {
+      }
+      
+      try {
+        const keysResult = await supabase.rpc('increment_fyre_keys', { wallet_addr: state.address!, amount: 100 });
+        if (keysResult.error) {
+          console.error('Failed to persist bulk vote fyre keys:', keysResult.error);
+        }
+      } catch (err: any) {
         console.error('Failed to persist bulk vote fyre keys:', err);
-      });
+      }
     });
     
     setState((prev) => ({
