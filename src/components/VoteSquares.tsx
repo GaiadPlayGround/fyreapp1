@@ -52,15 +52,17 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const voteRatingsRef = useRef<number[]>([]); // Store vote ratings in ref instead of sessionStorage
+  const processedHashesRef = useRef<Set<string>>(new Set()); // Track processed transaction hashes to prevent duplicate processing
 
   useEffect(() => {
     const baseSquares = getBaseSquares(speciesId);
     setTotalVotes(baseSquares + optimisticVotes);
   }, [speciesId, getBaseSquares, optimisticVotes]);
 
-  // Reset optimistic votes when speciesId changes
+  // Reset optimistic votes and processed hashes when speciesId changes
   useEffect(() => {
     setOptimisticVotes(0);
+    processedHashesRef.current.clear();
   }, [speciesId]);
 
   // Long press handler for bulk voting
@@ -765,8 +767,8 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
         duration: 4000,
       });
       
-      // Refresh stats to get updated base_squares from database
-      refetch();
+      // recordVote already calls fetchStats() internally for each batch, so we don't need to refetch again
+      // This prevents duplicate state updates
       onTransactionEnd?.();
     } catch (err: any) {
       setIsBatchSubmitting(false);
@@ -900,11 +902,25 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
 
   // Handle transaction confirmation for single votes (rating 1-5)
   useEffect(() => {
+    // Only process if: confirmed, has hash, is single vote (1-5), no batch votes, and hash not already processed
     if (isConfirmed && hash && bulkVoteAmount > 0 && bulkVoteAmount <= 5 && batchVoteTxHashes.length === 0) {
+      const hashStr = String(hash);
+      
+      // Prevent duplicate processing of the same transaction
+      if (processedHashesRef.current.has(hashStr)) {
+        console.log('Transaction already processed, skipping:', hashStr);
+        return;
+      }
+      
+      // Mark this hash as being processed
+      processedHashesRef.current.add(hashStr);
+      
       // Single vote: bulkVoteAmount stores the rating (1-5 base squares)
       const recordVoteAsync = async () => {
         try {
           const rating = bulkVoteAmount; // Rating = base squares for this vote (1-5)
+          
+          console.log(`Recording single vote: rating=${rating}, hash=${hashStr}`);
           
           // Clear optimistic votes BEFORE recording to database to prevent double counting
           // recordVote will call fetchStats() which updates the stats, so we need to clear optimistic first
@@ -913,9 +929,8 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
           const success = await recordVote(speciesId, address || wagmiAddress || '', rating);
           
           if (success) {
-            // Explicitly refetch stats to ensure UI updates with latest base_squares from database
-            // This ensures totalVotes = baseSquares + optimisticVotes (where optimisticVotes = 0)
-            await refetch();
+            // recordVote already calls fetchStats() internally, no need to refetch again
+            // This prevents double updates
             
             addVoteTicket();
             
@@ -944,7 +959,8 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
               onVoteSubmit?.();
             }, 500);
           } else {
-            // Rollback optimistic update on failure (but we already cleared it, so add it back)
+            // Rollback: remove hash from processed set and restore optimistic vote
+            processedHashesRef.current.delete(hashStr);
             setOptimisticVotes(prev => prev + rating);
             setUserVote(0);
             setBulkVoteAmount(0);
@@ -956,7 +972,8 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
           }
         } catch (err) {
           console.error('Error recording vote:', err);
-          // Rollback optimistic update on error
+          // Rollback: remove hash from processed set and restore optimistic vote
+          processedHashesRef.current.delete(hashStr);
           setOptimisticVotes(prev => prev + bulkVoteAmount);
           setUserVote(0);
           setBulkVoteAmount(0);
@@ -972,7 +989,9 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
 
       recordVoteAsync();
     }
-  }, [isConfirmed, hash, userVote, bulkVoteAmount, batchVoteTxHashes.length, speciesId, address, wagmiAddress, recordVote, addVoteTicket, onVoteSubmit, onTransactionEnd]);
+    // Only depend on the actual values that should trigger the effect, not function references
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isConfirmed, hash, bulkVoteAmount, batchVoteTxHashes.length, speciesId]);
 
 
   // Show confirmation status
