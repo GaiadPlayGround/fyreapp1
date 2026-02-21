@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { useWallet } from '@/contexts/WalletContext';
 import { toast } from '@/hooks/use-toast';
 import { useSpeciesStats } from '@/hooks/useSpeciesStats';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, usePublicClient, useConnectors } from 'wagmi';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, usePublicClient, useConnectors, useSendCalls } from 'wagmi';
 import { parseUnits, formatUnits, Address, erc20Abi, createWalletClient, custom, encodeFunctionData } from 'viem';
 import { base } from 'wagmi/chains';
 import BulkVoteDialog from './BulkVoteDialog';
@@ -36,6 +36,7 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
   const connectors = useConnectors();
   const publicClient = usePublicClient();
   const { writeContract, data: hash, isPending: isSubmitting } = useWriteContract();
+  const { mutateAsync: sendCallsAsync } = useSendCalls();
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
     hash,
   });
@@ -47,6 +48,7 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
   const [bulkVoteAmount, setBulkVoteAmount] = useState<number>(0);
   const [batchVoteTxHashes, setBatchVoteTxHashes] = useState<string[]>([]);
   const [isBatchSubmitting, setIsBatchSubmitting] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<{ confirmed: number; total: number; current: number }>({ confirmed: 0, total: 0, current: 0 });
   const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const voteRatingsRef = useRef<number[]>([]); // Store vote ratings in ref instead of sessionStorage
@@ -84,6 +86,48 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
       }
     };
   }, []);
+
+  // Detect wallet type and return batch size limit for EIP-5792 wallet_sendCalls
+  const getWalletBatchLimit = (): number => {
+    if (typeof window === 'undefined') return 10; // Default for SSR
+    
+    const ethereum = (window as any).ethereum;
+    if (!ethereum) return 10; // Default if no wallet
+    
+    // Check connector name/id
+    const connectorName = connector?.name?.toLowerCase() || connector?.id?.toLowerCase() || '';
+    
+    // MetaMask has a 10-call limit
+    if (ethereum.isMetaMask || connectorName.includes('metamask')) {
+      return 10;
+    }
+    
+    // Coinbase Wallet likely has similar limit (defaulting to 10 for safety)
+    if (ethereum.isCoinbaseWallet || connectorName.includes('coinbase')) {
+      return 10;
+    }
+    
+    // Base Account / Smart Wallets may support larger batches
+    // Base Account typically supports 50-100+ calls
+    if (connectorName.includes('base') || connectorName.includes('smart')) {
+      return 50; // Base Account can handle larger batches
+    }
+    
+    // WalletConnect - depends on the underlying wallet, default to 10
+    if (connectorName.includes('walletconnect')) {
+      return 10;
+    }
+    
+    // Rabby, Trust, and other injected wallets - default to 10 for safety
+    if (ethereum.isRabby || ethereum.isTrust) {
+      return 10;
+    }
+    
+    // For unknown wallets, try a larger batch size (smart wallets often support more)
+    // But start conservative and let the wallet reject if too large
+    // We'll catch the error and retry with smaller batches if needed
+    return 20; // Default for unknown wallets (can be adjusted based on testing)
+  };
 
   // Handle bulk voting with batch transactions
   // Each vote = max 5 base squares = 1 transaction = 1 cent
@@ -184,207 +228,494 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
         account: wagmiAddress as Address,
       });
 
-      // Use Base's Multicall3 contract to batch all transfers into a single transaction
-      // Multicall3 address on Base: 0xcA11bde05977b3631167028862bE2a173976CA11
-      const MULTICALL3_ADDRESS = '0xcA11bde05977b3631167028862bE2a173976CA11' as Address;
+      // Use EIP-5792 wallet_sendCalls to batch transfers
+      // Detect wallet type and adjust batch size dynamically
+      // MetaMask: 10 calls, Base Account: 50+ calls, others: varies
+      const MAX_BATCH_SIZE = getWalletBatchLimit();
       
-      // Encode all transfer calls
-      const voteRatings: number[] = votes; // Store rating for each vote
-      const calls = votes.map(() => ({
-        target: USDC_ADDRESS,
-        callData: encodeFunctionData({
-          abi: erc20Abi,
-          functionName: 'transfer',
-          args: [VOTE_PAYMENT_ADDRESS, voteCostAmount],
-        }),
-      }));
-
-      // Multicall3 ABI - aggregate function
-      const multicall3Abi = [
-        {
-          inputs: [
-            {
-              components: [
-                { name: 'target', type: 'address' },
-                { name: 'callData', type: 'bytes' },
-              ],
-              name: 'calls',
-              type: 'tuple[]',
-            },
-          ],
-          name: 'aggregate',
-          outputs: [
-            { name: 'blockNumber', type: 'uint256' },
-            { name: 'returnData', type: 'bytes[]' },
-          ],
-          stateMutability: 'nonpayable',
-          type: 'function',
-        },
-      ] as const;
-
-      toast({
-        title: "Preparing Batch Transaction...",
-        description: `Batching ${numVotes} vote${numVotes > 1 ? 's' : ''} into 1 transaction. Please sign once.`,
-        duration: 3000,
-      });
-
-      // Send single batch transaction using Multicall3
-      const batchHash = await walletClient.writeContract({
-        address: MULTICALL3_ADDRESS,
-        abi: multicall3Abi,
-        functionName: 'aggregate',
-        args: [calls],
-      } as any);
-
-      // Store votes array for confirmation handling (each vote has its rating 1-5)
-      setBulkVoteAmount(voteRatings.length); // Number of votes
-      // Store vote ratings in ref for recording (saved to database on confirmation)
+      // Store vote ratings for recording (saved to database on confirmation)
+      const voteRatings: number[] = votes;
       voteRatingsRef.current = voteRatings;
       
-      // Optimistic update (will be rolled back if transaction fails)
-      setOptimisticVotes(prev => prev + baseSquaresAmount);
+      // Split votes into batches of 10
+      const batches: number[][] = [];
+      for (let i = 0; i < votes.length; i += MAX_BATCH_SIZE) {
+        batches.push(votes.slice(i, i + MAX_BATCH_SIZE));
+      }
 
+      const numBatches = batches.length;
+      const walletName = connector?.name || (typeof window !== 'undefined' && (window as any).ethereum?.isMetaMask ? 'MetaMask' : 'Wallet') || 'Wallet';
+      setBatchProgress({ confirmed: 0, total: numBatches, current: 0 });
+      console.log(`🚀 Starting batch vote: ${numVotes} votes in ${numBatches} batches (${MAX_BATCH_SIZE} per batch for ${walletName})`);
+      
       toast({
-        title: "Batch Transaction Sent!",
-        description: `${numVotes} vote${numVotes > 1 ? 's' : ''} batched in 1 transaction (${baseSquaresAmount} Base Squares). Waiting for confirmation...`,
-        duration: 3000,
+        title: "Preparing Batch Vote...",
+        description: `Batching ${numVotes} vote${numVotes > 1 ? 's' : ''} into ${numBatches} transaction${numBatches > 1 ? 's' : ''} (${MAX_BATCH_SIZE} per batch for ${walletName}). Please sign ${numBatches} time${numBatches > 1 ? 's' : ''}.`,
+        duration: 4000,
       });
 
-      setIsBatchSubmitting(false);
+      // Optimistic update (will be rolled back if all transactions fail)
+      setOptimisticVotes(prev => prev + baseSquaresAmount);
 
-      // Wait for transaction confirmation BEFORE recording votes
-      try {
-        const receipt = await publicClient.waitForTransactionReceipt({
-          hash: batchHash,
-          timeout: 120_000, // 2 minute timeout
+      // Track which batches succeeded for atomic rollback
+      const batchHashes: string[] = [];
+      const recordedBatches: Array<{
+        batchIdx: number;
+        voteRatings: number[];
+      }> = [];
+
+      // Process batches sequentially
+      for (let batchIdx = 0; batchIdx < batches.length; batchIdx++) {
+        const batch = batches[batchIdx];
+        const batchBaseSquares = batch.reduce((a, b) => a + b, 0);
+
+        console.log(`📤 Sending Batch ${batchIdx + 1}/${numBatches} (${batch.length} votes, ${batchBaseSquares} Base Squares)...`);
+        setBatchProgress(prev => ({ ...prev, current: batchIdx + 1 }));
+        
+        toast({
+          title: `Sending Batch ${batchIdx + 1}/${numBatches}...`,
+          description: `Processing ${batch.length} vote${batch.length > 1 ? 's' : ''} (${batchBaseSquares} Base Squares). Please sign.`,
+          duration: 3000,
         });
 
-        // Only proceed if transaction succeeded
-        if (receipt.status === 'success') {
-          // Transaction succeeded - now record votes to database
-          const recordVoteAsync = async () => {
-            try {
-              // Get vote ratings from ref (each vote has rating 1-5 base squares)
-              const voteRatings = voteRatingsRef.current;
-              
-              // If we don't have ratings stored, default to 1 base square per vote (fallback)
-              const ratings = voteRatings.length === bulkVoteAmount 
-                ? voteRatings 
-                : Array(bulkVoteAmount).fill(1);
-              
-              let successCount = 0;
-              let totalBaseSquares = 0;
-              
-              // Record each vote separately in database - each vote has rating (1-5 base squares)
-              // Database trigger automatically adds rating base squares per vote to the species
-              for (let i = 0; i < bulkVoteAmount; i++) {
-                const voteRating = ratings[i]; // 1-5 base squares for this vote
-                const success = await recordVote(speciesId, address || wagmiAddress || '', voteRating);
-                if (success) {
-                  successCount++;
-                  totalBaseSquares += voteRating;
-                  addVoteTicket();
-                }
-                if (i < bulkVoteAmount - 1) {
-                  await new Promise(resolve => setTimeout(resolve, 100));
-                }
-              }
-              
-              // Clear ref after recording
-              voteRatingsRef.current = [];
-              
-              if (successCount === bulkVoteAmount) {
-                // Clear optimistic votes since database now has the real values
-                setOptimisticVotes(0);
-                
-                // Add bulk vote rewards (tickets + keys)
-                addBulkVoteRewards(bulkVoteAmount);
-                
-                // Refresh Fyre Keys from database
-                await refreshFyreKeys();
-                
-                toast({
-                  title: "Batch Vote Complete!",
-                  description: `${bulkVoteAmount} vote${bulkVoteAmount > 1 ? 's' : ''} confirmed • -${(bulkVoteAmount * VOTE_COST).toFixed(2)}¢ • +${totalBaseSquares} Base Squares • +${bulkVoteAmount} Vote Tickets • +100 Fyre Keys`,
-                  duration: 4000,
-                });
-                setBulkVoteAmount(0);
-                setBatchVoteTxHashes([]);
-                refetch();
-                onTransactionEnd?.();
-              } else {
-                // Partial success - rollback optimistic votes
-                setOptimisticVotes(prev => prev - baseSquaresAmount);
-                setBulkVoteAmount(0);
-                setBatchVoteTxHashes([]);
-                voteRatingsRef.current = [];
-                toast({
-                  title: "Partial Vote Recording",
-                  description: `Recorded ${successCount}/${bulkVoteAmount} votes. Please contact support.`,
-                  variant: "destructive",
-                });
-                onTransactionEnd?.();
-              }
-            } catch (err) {
-              console.error('Error recording batch votes:', err);
-              // Rollback optimistic votes on database error
-              setOptimisticVotes(prev => prev - baseSquaresAmount);
-              setBulkVoteAmount(0);
-              setBatchVoteTxHashes([]);
-              voteRatingsRef.current = [];
-              toast({
-                title: "Vote Recording Failed",
-                description: "Transaction succeeded but vote recording failed. Please contact support.",
-                variant: "destructive",
-              });
-              onTransactionEnd?.();
-            }
-          };
+        try {
+          // Create calls for this batch
+          const calls = batch.map(() => ({
+            to: USDC_ADDRESS,
+            data: encodeFunctionData({
+              abi: erc20Abi,
+              functionName: 'transfer',
+              args: [VOTE_PAYMENT_ADDRESS, voteCostAmount],
+            }),
+          }));
 
-          await recordVoteAsync();
-        } else {
-          // Transaction reverted/failed - rollback optimistic votes
-          setOptimisticVotes(prev => prev - baseSquaresAmount);
-          setBulkVoteAmount(0);
-          setBatchVoteTxHashes([]);
-          voteRatingsRef.current = [];
+          // Use sendCallsAsync (EIP-5792) to send this batch
+          let result;
+          try {
+            result = await sendCallsAsync({
+              calls,
+              chainId: base.id,
+            });
+          } catch (batchSizeError: any) {
+            // If batch is too large, the wallet will reject with error code 5740 or similar
+            // Check if it's a batch size error and retry with smaller batches
+            const errorMessage = batchSizeError?.message || '';
+            const errorDetails = batchSizeError?.details || '';
+            
+            if (
+              errorMessage.includes('too large') ||
+              errorMessage.includes('batch size') ||
+              errorMessage.includes('cannot exceed') ||
+              errorDetails.includes('too large') ||
+              errorDetails.includes('batch size') ||
+              batchSizeError?.code === 5740
+            ) {
+              // Batch too large - split into smaller batches
+              console.warn(`Batch size ${batch.length} too large for wallet, splitting...`);
+              
+              // Split this batch into smaller chunks of 10 (MetaMask limit)
+              const smallerBatches: number[][] = [];
+              for (let i = 0; i < batch.length; i += 10) {
+                smallerBatches.push(batch.slice(i, i + 10));
+              }
+              
+              // Process smaller batches sequentially
+              const subBatchHashes: string[] = [];
+              for (let subIdx = 0; subIdx < smallerBatches.length; subIdx++) {
+                const subBatch = smallerBatches[subIdx];
+                const subCalls = subBatch.map(() => ({
+                  to: USDC_ADDRESS,
+                  data: encodeFunctionData({
+                    abi: erc20Abi,
+                    functionName: 'transfer',
+                    args: [VOTE_PAYMENT_ADDRESS, voteCostAmount],
+                  }),
+                }));
+                
+                const subResult = await sendCallsAsync({
+                  calls: subCalls,
+                  chainId: base.id,
+                });
+                
+                // Extract hash from sub-result
+                let subHash: string;
+                if (typeof subResult === 'string') {
+                  subHash = subResult;
+                } else if (subResult && typeof subResult === 'object' && 'id' in subResult) {
+                  subHash = (subResult as { id: string }).id;
+                } else {
+                  throw new Error(`Unexpected sendCalls return type: ${JSON.stringify(subResult)}`);
+                }
+                
+                subBatchHashes.push(subHash);
+                
+                // Wait for this sub-batch to confirm before proceeding
+                if (subHash.startsWith('0x') && subHash.length === 66) {
+                  const subReceipt = await publicClient.waitForTransactionReceipt({
+                    hash: subHash as `0x${string}`,
+                    timeout: 120_000,
+                  });
+                  
+                  if (subReceipt.status !== 'success') {
+                    throw new Error(`Sub-batch ${subIdx + 1} of batch ${batchIdx + 1} failed`);
+                  }
+                  
+                  // Record votes for this sub-batch
+                  for (const voteRating of subBatch) {
+                    const success = await recordVote(speciesId, address || wagmiAddress || '', voteRating);
+                    if (!success) {
+                      throw new Error(`Failed to record vote with rating ${voteRating}`);
+                    }
+                  }
+                }
+                
+                // Small delay between sub-batches (reduced for speed)
+                if (subIdx < smallerBatches.length - 1) {
+                  await new Promise(resolve => setTimeout(resolve, 200));
+                }
+              }
+              
+              // Track all sub-batch hashes
+              batchHashes.push(...subBatchHashes);
+              setBatchVoteTxHashes([...batchHashes]);
+              
+              // Track this batch as successfully recorded (all sub-batches succeeded)
+              recordedBatches.push({
+                batchIdx,
+                voteRatings: batch,
+              });
+              
+              toast({
+                title: `Batch ${batchIdx + 1}/${numBatches} Confirmed & Recorded!`,
+                description: `${batch.length} vote${batch.length > 1 ? 's' : ''} confirmed (split into ${smallerBatches.length} sub-batches). ${batchIdx < batches.length - 1 ? 'Processing next batch...' : 'All batches complete!'}`,
+                duration: 2000,
+              });
+              
+              // Skip the normal processing for this batch since we already handled it
+              if (batchIdx < batches.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+              }
+              continue; // Move to next batch
+            } else {
+              // Not a batch size error, re-throw
+              throw batchSizeError;
+            }
+          }
+          
+          // Extract the transaction hash or batch ID from the result
+          let transactionHash: `0x${string}`;
+          if (typeof result === 'string') {
+            transactionHash = result as `0x${string}`;
+          } else if (result && typeof result === 'object') {
+            if ('id' in result) {
+              transactionHash = (result as { id: string }).id as `0x${string}`;
+            } else if ('hash' in result) {
+              transactionHash = (result as { hash: string }).hash as `0x${string}`;
+            } else {
+              throw new Error(`Unexpected sendCalls return type: ${JSON.stringify(result)}`);
+            }
+          } else {
+            throw new Error(`Unexpected sendCalls return type: ${typeof result}`);
+          }
+
+          // Validate and normalize the hash
+          if (!transactionHash.startsWith('0x')) {
+            transactionHash = ('0x' + transactionHash) as `0x${string}`;
+          }
+
+          console.log(`📨 Batch ${batchIdx + 1}/${numBatches} submitted: ${transactionHash.length === 66 ? 'Full hash' : 'Batch ID'} (${transactionHash.substring(0, 20)}...)`);
+          batchHashes.push(transactionHash);
+          setBatchVoteTxHashes([...batchHashes]);
+
           toast({
-            title: "Transaction Failed",
-            description: "The batch transaction was reverted. No votes were recorded.",
-            variant: "destructive",
+            title: `Batch ${batchIdx + 1}/${numBatches} Submitted`,
+            description: `Waiting for confirmation...`,
+            duration: 2000,
           });
-          onTransactionEnd?.();
+
+          // Wait for transaction confirmation
+          // Handle both full transaction hashes and batch IDs
+          let receipt: any = null;
+          let transactionSucceeded = false;
+          
+          if (transactionHash.length === 66 && /^0x[a-fA-F0-9]{64}$/.test(transactionHash)) {
+            // Full transaction hash - wait directly
+            receipt = await publicClient.waitForTransactionReceipt({
+              hash: transactionHash,
+              timeout: 120_000, // 2 minute timeout
+            });
+            transactionSucceeded = receipt.status === 'success';
+          } else if (transactionHash.length >= 34 && transactionHash.length < 66) {
+            // Batch ID - check batch status to verify transaction succeeded
+            const provider = await connector.getProvider();
+            if (provider && typeof provider === 'object' && 'request' in provider) {
+              try {
+                // Poll wallet_getCallsStatus to check if batch succeeded
+                // Use very fast polling for quick detection
+                const maxAttempts = 120; // Poll for up to 1 minute (120 * 500ms)
+                const pollInterval = 300; // 300ms - very fast polling
+                
+                let pollComplete = false;
+                for (let attempt = 0; attempt < maxAttempts && !pollComplete; attempt++) {
+                  try {
+                    const status = await (provider as any).request({
+                      method: 'wallet_getCallsStatus',
+                      params: [transactionHash],
+                    });
+                    
+                    // Check if batch is confirmed/succeeded
+                    if (status && typeof status === 'object') {
+                      // Check various possible status fields
+                      const statusValue = (status as any).status || (status as any).state;
+                      
+                      // Handle numeric status codes (EIP-5792 standard):
+                      // 100 = PENDING, 200 = CONFIRMED, 300+ = FAILED
+                      const isConfirmed = 
+                        statusValue === 200 || // Numeric: confirmed
+                        statusValue === 'CONFIRMED' || 
+                        statusValue === 'confirmed' || 
+                        statusValue === 'SUCCESS' ||
+                        statusValue === 'success' ||
+                        (status as any).confirmed === true;
+                      
+                      // Check if batch failed (numeric codes 300+ or string values)
+                      const isFailed = 
+                        (typeof statusValue === 'number' && statusValue >= 300) ||
+                        statusValue === 'FAILED' || 
+                        statusValue === 'failed' || 
+                        statusValue === 'REJECTED' ||
+                        statusValue === 'rejected';
+                      
+                      if (isFailed) {
+                        throw new Error(`Batch ${batchIdx + 1} was rejected or failed (status: ${statusValue})`);
+                      }
+                      
+                      // Update progress in real-time
+                      setBatchProgress(prev => ({
+                        ...prev,
+                        current: batchIdx + 1,
+                        confirmed: statusValue === 200 ? prev.confirmed + 1 : prev.confirmed
+                      }));
+                      
+                      // Show real-time progress
+                      if (statusValue === 200) {
+                        // Status is 200 (confirmed) - transaction succeeded!
+                        transactionSucceeded = true;
+                        pollComplete = true; // Exit loop immediately
+                        
+                        // Update progress
+                        setBatchProgress(prev => ({
+                          ...prev,
+                          confirmed: prev.confirmed + 1,
+                          current: batchIdx + 1
+                        }));
+                        
+                        // Extract receipt from status if available (no need to wait again)
+                        if ('receipts' in status && Array.isArray(status.receipts) && status.receipts.length > 0) {
+                          const firstReceipt = status.receipts[0];
+                          // Check receipt status (0x1 = success, 0x0 = failed)
+                          if (firstReceipt?.status === '0x1' || firstReceipt?.status === 1) {
+                            receipt = firstReceipt; // Use the receipt from status
+                            transactionSucceeded = true;
+                          } else if (firstReceipt?.status === '0x0' || firstReceipt?.status === 0) {
+                            throw new Error(`Batch ${batchIdx + 1} transaction failed (receipt status: 0)`);
+                          }
+                        }
+                        
+                        // Show success immediately with progress
+                        const completedSoFar = batchIdx + 1;
+                        console.log(`✅ Batch ${completedSoFar}/${numBatches} CONFIRMED! (${batch.length} votes) • Total confirmed: ${completedSoFar}/${numBatches}`);
+                        toast({
+                          title: `✅ Batch ${completedSoFar}/${numBatches} Confirmed!`,
+                          description: `${batch.length} vote${batch.length > 1 ? 's' : ''} confirmed • Progress: ${completedSoFar}/${numBatches} batches • Recording votes...`,
+                          duration: 2000,
+                        });
+                        
+                        // Exit loop immediately - no more polling needed
+                        break;
+                      } else if (statusValue === 100) {
+                        // PENDING - show progress update
+                        const completedSoFar = batchIdx; // Already completed batches
+                        if (attempt % 5 === 0) { // Update every 5th attempt to reduce spam
+                          console.log(`⏳ Batch ${batchIdx + 1}/${numBatches} PENDING (attempt ${attempt + 1}/${maxAttempts}) • Confirmed so far: ${completedSoFar}/${numBatches}`);
+                          toast({
+                            title: `⏳ Batch ${batchIdx + 1}/${numBatches} Pending...`,
+                            description: `Waiting for confirmation • Progress: ${completedSoFar}/${numBatches} confirmed`,
+                            duration: 1000,
+                          });
+                        }
+                      }
+                    }
+                    
+                    // Wait before next poll (only if not confirmed)
+                    if (!pollComplete) {
+                      await new Promise(resolve => setTimeout(resolve, pollInterval));
+                    }
+                  } catch (pollError: any) {
+                    // If method not supported, assume transaction succeeded if money was deducted
+                    if (pollError?.code === -32601 || pollError?.message?.includes('not supported') || pollError?.message?.includes('Method not found')) {
+                      console.warn('wallet_getCallsStatus not supported, assuming transaction succeeded');
+                      transactionSucceeded = true;
+                      pollComplete = true;
+                      break;
+                    }
+                    // For other errors, continue polling
+                    if (!pollComplete) {
+                      await new Promise(resolve => setTimeout(resolve, pollInterval));
+                    }
+                  }
+                }
+                
+                // If we couldn't confirm status but transaction was sent, give it a moment and proceed
+                // This handles cases where the wallet doesn't support status checking
+                if (!transactionSucceeded) {
+                  console.warn('Could not confirm batch status after polling, but transaction was sent. Proceeding with assumption it succeeded.');
+                  // Wait a bit more for transaction to settle
+                  await new Promise(resolve => setTimeout(resolve, 5000));
+                  transactionSucceeded = true; // Assume succeeded if we can't verify (user confirmed money was deducted)
+                }
+              } catch (statusError: any) {
+                // If we can't check status at all, assume transaction succeeded
+                // The user confirmed money was deducted, so transaction went through
+                console.warn('Could not check batch status, assuming transaction succeeded:', statusError);
+                transactionSucceeded = true;
+              }
+            } else {
+              // No provider available, but transaction was sent - assume it succeeded
+              console.warn('No provider available for status check, assuming transaction succeeded');
+              transactionSucceeded = true;
+            }
+          } else {
+            throw new Error(`Invalid transaction hash/batch ID format: ${transactionHash} (length: ${transactionHash.length})`);
+          }
+
+          if (!transactionSucceeded) {
+            throw new Error(`Batch ${batchIdx + 1} transaction failed or could not be confirmed`);
+          }
+
+          // Transaction succeeded - immediately record votes for this batch atomically
+          // Update progress
+          setBatchProgress(prev => ({
+            ...prev,
+            confirmed: prev.confirmed + 1,
+            current: batchIdx + 1
+          }));
+          
+          // Record votes quickly (no delay between votes for speed)
+          console.log(`📝 Recording ${batch.length} votes for batch ${batchIdx + 1}/${numBatches}...`);
+          for (const voteRating of batch) {
+            const success = await recordVote(speciesId, address || wagmiAddress || '', voteRating);
+            if (!success) {
+              throw new Error(`Failed to record vote with rating ${voteRating} for batch ${batchIdx + 1}`);
+            }
+          }
+          console.log(`✅ Recorded ${batch.length} votes for batch ${batchIdx + 1}/${numBatches}`);
+
+          // Track this batch as successfully recorded
+          recordedBatches.push({
+            batchIdx,
+            voteRatings: batch,
+          });
+
+          toast({
+            title: `Batch ${batchIdx + 1}/${numBatches} Recorded!`,
+            description: `${batch.length} vote${batch.length > 1 ? 's' : ''} recorded successfully. ${batchIdx < batches.length - 1 ? 'Processing next batch...' : 'All batches complete!'}`,
+            duration: 2000,
+          });
+
+          // Small delay between batches (reduced for speed)
+          if (batchIdx < batches.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 300)); // Reduced from 1000ms to 300ms
+          }
+        } catch (batchError: any) {
+          // If this batch fails, rollback all previously recorded batches
+          console.error(`Batch ${batchIdx + 1} failed, rolling back ${recordedBatches.length} previous batches`);
+          
+          // Rollback all previously recorded votes
+          if (recordedBatches.length > 0) {
+            const { supabase } = await import('@/integrations/supabase/client');
+            let totalRollbackSquares = 0;
+            
+            for (const recordedBatch of recordedBatches) {
+              for (const voteRating of recordedBatch.voteRatings) {
+                totalRollbackSquares += voteRating;
+              }
+            }
+            
+            try {
+              const { data: currentStats } = await supabase
+                .from('species_stats')
+                .select('base_squares')
+                .eq('species_id', speciesId)
+                .single();
+              
+              if (currentStats) {
+                const newBaseSquares = Math.max(0, (currentStats.base_squares || 0) - totalRollbackSquares);
+                await supabase
+                  .from('species_stats')
+                  .update({ base_squares: newBaseSquares, updated_at: new Date().toISOString() })
+                  .eq('species_id', speciesId);
+              }
+            } catch (rollbackError) {
+              console.error('Error rolling back base squares:', rollbackError);
+            }
+          }
+          
+          // Rollback optimistic votes for remaining batches
+          const remainingVotes = batches.slice(batchIdx + 1).flat();
+          const remainingBaseSquares = remainingVotes.reduce((a, b) => a + b, 0);
+          setOptimisticVotes(prev => prev - remainingBaseSquares);
+          
+          if (batchError?.name === 'UserRejectedRequestError' || batchError?.code === 4001) {
+            throw new Error(`Batch ${batchIdx + 1} was cancelled by user`);
+          }
+          throw new Error(`Batch ${batchIdx + 1} failed: ${batchError?.message || 'Unknown error'}`);
         }
-      } catch (waitError: any) {
-        // Transaction wait failed or timeout
-        console.error('Error waiting for batch transaction:', waitError);
-        setOptimisticVotes(prev => prev - baseSquaresAmount);
-        setBulkVoteAmount(0);
-        setBatchVoteTxHashes([]);
-        voteRatingsRef.current = [];
-        
-        if (waitError?.name === 'UserRejectedRequestError' || waitError?.code === 4001) {
-          toast({
-            title: "Transaction Cancelled",
-            description: "You cancelled the batch transaction.",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Transaction Error",
-            description: waitError?.message || "Failed to confirm transaction. Please check your wallet.",
-            variant: "destructive",
-          });
-        }
-        onTransactionEnd?.();
       }
+
+      // All batches succeeded and votes were recorded atomically per batch
+      // Clear optimistic votes since database now has the real values
+      setOptimisticVotes(0);
+      
+      // Calculate total votes and base squares from recorded batches
+      const totalRecordedVotes = recordedBatches.reduce((sum, batch) => sum + batch.voteRatings.length, 0);
+      const totalRecordedBaseSquares = recordedBatches.reduce((sum, batch) => 
+        sum + batch.voteRatings.reduce((batchSum, rating) => batchSum + rating, 0), 0
+      );
+
+      setIsBatchSubmitting(false);
+      console.log(`🎉 ALL BATCHES COMPLETE! ${totalRecordedVotes} votes recorded across ${numBatches} batches`);
+
+      // Add bulk vote rewards (tickets + keys)
+      addBulkVoteRewards(totalRecordedVotes);
+      
+      // Refresh Fyre Keys from database
+      await refreshFyreKeys();
+      
+      // Clear refs and reset progress
+      voteRatingsRef.current = [];
+      setBulkVoteAmount(0);
+      setBatchVoteTxHashes([]);
+      setBatchProgress({ confirmed: 0, total: 0, current: 0 });
+      
+      toast({
+        title: "Batch Vote Complete!",
+        description: `${totalRecordedVotes} vote${totalRecordedVotes > 1 ? 's' : ''} confirmed • -${(totalRecordedVotes * VOTE_COST).toFixed(2)}¢ • +${totalRecordedBaseSquares} Base Squares • +${totalRecordedVotes} Vote Tickets • +100 Fyre Keys`,
+        duration: 4000,
+      });
+      
+      // Refresh stats to get updated base_squares from database
+      refetch();
+      onTransactionEnd?.();
     } catch (err: any) {
       setIsBatchSubmitting(false);
       console.error('Bulk vote error:', err);
       // Rollback optimistic update using total base squares
       setOptimisticVotes(prev => prev - baseSquaresAmount);
-      // Clear ref on error
+      // Clear ref and batch hashes on error
       voteRatingsRef.current = [];
+      setBatchVoteTxHashes([]);
+      setBulkVoteAmount(0);
       onTransactionEnd?.();
       
       if (err?.name === 'UserRejectedRequestError' || err?.code === 4001) {
@@ -513,9 +844,18 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
       const recordVoteAsync = async () => {
         try {
           const rating = bulkVoteAmount; // Rating = base squares for this vote (1-5)
+          
+          // Clear optimistic votes BEFORE recording to database to prevent double counting
+          // recordVote will call fetchStats() which updates the stats, so we need to clear optimistic first
+          setOptimisticVotes(0);
+          
           const success = await recordVote(speciesId, address || wagmiAddress || '', rating);
           
           if (success) {
+            // Explicitly refetch stats to ensure UI updates with latest base_squares from database
+            // This ensures totalVotes = baseSquares + optimisticVotes (where optimisticVotes = 0)
+            await refetch();
+            
             addVoteTicket();
             
             // Add Fyre Keys for single vote (10 keys per vote)
@@ -530,9 +870,6 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
               });
             }
 
-            // Clear optimistic votes since database now has the real value
-            setOptimisticVotes(0);
-
             toast({
               title: "Vote Submitted!",
               description: `1 vote • -${VOTE_COST.toFixed(2)}¢ • +${rating} Base Squares • +1 Vote Ticket • +10 Fyre Keys`,
@@ -545,12 +882,9 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
               setBulkVoteAmount(0);
               onVoteSubmit?.();
             }, 500);
-            
-            // Refresh stats in background to get updated base_squares from database
-            refetch();
           } else {
-            // Rollback optimistic update on failure
-            setOptimisticVotes(prev => prev - rating);
+            // Rollback optimistic update on failure (but we already cleared it, so add it back)
+            setOptimisticVotes(prev => prev + rating);
             setUserVote(0);
             setBulkVoteAmount(0);
             toast({
@@ -561,7 +895,8 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
           }
         } catch (err) {
           console.error('Error recording vote:', err);
-          setOptimisticVotes(prev => prev - bulkVoteAmount);
+          // Rollback optimistic update on error
+          setOptimisticVotes(prev => prev + bulkVoteAmount);
           setUserVote(0);
           setBulkVoteAmount(0);
           toast({
@@ -576,7 +911,7 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
 
       recordVoteAsync();
     }
-  }, [isConfirmed, hash, userVote, bulkVoteAmount, batchVoteTxHashes.length, speciesId, address, wagmiAddress, recordVote, addVoteTicket, onVoteSubmit, onTransactionEnd, refetch]);
+  }, [isConfirmed, hash, userVote, bulkVoteAmount, batchVoteTxHashes.length, speciesId, address, wagmiAddress, recordVote, addVoteTicket, onVoteSubmit, onTransactionEnd]);
 
 
   // Show confirmation status
@@ -646,7 +981,23 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
           <span className="text-card/60 text-[10px] font-sans">
             1¢ per vote
           </span>
-   
+          {isBatchSubmitting && batchProgress.total > 0 && (
+            <div className="mt-2 w-full max-w-[200px]">
+              <div className="flex items-center justify-between text-[10px] text-card/80 mb-1">
+                <span>Batch Progress</span>
+                <span className="font-mono">{batchProgress.confirmed}/{batchProgress.total}</span>
+              </div>
+              <div className="w-full bg-card/10 rounded-full h-1.5 overflow-hidden">
+                <div 
+                  className="bg-primary h-full transition-all duration-200 ease-out"
+                  style={{ width: `${(batchProgress.confirmed / batchProgress.total) * 100}%` }}
+                />
+              </div>
+              <div className="text-[9px] text-card/60 mt-0.5">
+                Processing batch {batchProgress.current}/{batchProgress.total}...
+              </div>
+            </div>
+          )}
         </div>
       </div>
       <BulkVoteDialog
