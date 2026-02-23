@@ -38,8 +38,8 @@ interface WalletContextType extends WalletState {
   showWalletSelect: () => void;
   addVote: (speciesId: string, rating: number) => boolean;
   addShare: () => void;
-  addVoteTicket: () => void;
-  addBulkVoteRewards: (numVotes: number) => void;
+  addVoteTicket: (walletAddress?: string) => void;
+  addBulkVoteRewards: (numVotes: number, walletAddress?: string) => void;
   hasVoted: (speciesId: string) => boolean;
   getVoteCount: (speciesId: string) => number;
   refreshFyreKeys: () => Promise<void>;
@@ -276,15 +276,21 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
     }));
   };
 
-  const addVoteTicket = () => {
-    if (!state.address) return;
+  const addVoteTicket = (walletAddress?: string) => {
+    const addressToUse = walletAddress || state.address;
+    if (!addressToUse) {
+      console.warn('addVoteTicket: No wallet address available');
+      return;
+    }
     
     // Persist to database
     import('@/integrations/supabase/client').then(async ({ supabase }) => {
       try {
-        const result = await supabase.rpc('increment_vote_tickets', { wallet_addr: state.address!, amount: 1 });
+        const result = await supabase.rpc('increment_vote_tickets', { wallet_addr: addressToUse, amount: 1 });
         if (result.error) {
           console.error('Failed to persist vote ticket:', result.error);
+        } else {
+          console.log('Vote ticket persisted successfully for', addressToUse);
         }
       } catch (err: any) {
         console.error('Failed to persist vote ticket:', err);
@@ -337,24 +343,32 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Bulk vote: adds commensurate multiples of tickets and keys
-  const addBulkVoteRewards = (numVotes: number) => {
-    if (!state.address) return;
+  const addBulkVoteRewards = (numVotes: number, walletAddress?: string) => {
+    const addressToUse = walletAddress || state.address;
+    if (!addressToUse) {
+      console.warn('addBulkVoteRewards: No wallet address available');
+      return;
+    }
     
     // Persist to database
     import('@/integrations/supabase/client').then(async ({ supabase }) => {
       try {
-        const ticketsResult = await supabase.rpc('increment_vote_tickets', { wallet_addr: state.address!, amount: numVotes });
+        const ticketsResult = await supabase.rpc('increment_vote_tickets', { wallet_addr: addressToUse, amount: numVotes });
         if (ticketsResult.error) {
           console.error('Failed to persist bulk vote tickets:', ticketsResult.error);
+        } else {
+          console.log(`Bulk vote tickets persisted successfully for ${addressToUse}: ${numVotes} tickets`);
         }
       } catch (err: any) {
         console.error('Failed to persist bulk vote tickets:', err);
       }
       
       try {
-        const keysResult = await supabase.rpc('increment_fyre_keys', { wallet_addr: state.address!, amount: 100 });
+        const keysResult = await supabase.rpc('increment_fyre_keys', { wallet_addr: addressToUse, amount: 100 });
         if (keysResult.error) {
           console.error('Failed to persist bulk vote fyre keys:', keysResult.error);
+        } else {
+          console.log(`Bulk vote fyre keys persisted successfully for ${addressToUse}: 100 keys`);
         }
       } catch (err: any) {
         console.error('Failed to persist bulk vote fyre keys:', err);

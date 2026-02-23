@@ -759,7 +759,7 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
       console.log(`🎉 ALL BATCHES COMPLETE! ${totalRecordedVotes} votes recorded across ${numBatches} batches`);
 
       // Add bulk vote rewards (tickets + keys)
-      addBulkVoteRewards(totalRecordedVotes);
+      addBulkVoteRewards(totalRecordedVotes, address || wagmiAddress || undefined);
       
       // Refresh Fyre Keys from database
       await refreshFyreKeys();
@@ -950,7 +950,7 @@ const VoteSquares = ({ speciesId, onVoteSubmit, onTransactionStart, onTransactio
             // recordVote already calls fetchStats() internally, no need to refetch again
             // This prevents double updates
             
-            addVoteTicket();
+            addVoteTicket(address || wagmiAddress || undefined);
             
             // Add Fyre Keys for single vote (10 keys per vote)
             if (address || wagmiAddress) {

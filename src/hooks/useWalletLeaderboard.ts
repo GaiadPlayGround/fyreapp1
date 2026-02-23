@@ -4,6 +4,7 @@ import { formatUnits } from 'viem';
 import { supabase } from '@/integrations/supabase/client';
 import { base } from 'wagmi/chains';
 import { getSpeciesTickerMappings } from '@/utils/speciesTickers';
+import { useDnaBalances } from './useDnaBalances';
 
 interface WalletLeaderEntry {
   address: string;
@@ -27,6 +28,7 @@ export const useWalletLeaderboard = (limit: number = 25) => {
   const [topDnaHolders, setTopDnaHolders] = useState<DnaHolderEntry[]>([]);
   const [topReferrers, setTopReferrers] = useState<ReferrerEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const { fetchAndUpdateDnaBalances, getTopDnaHolders } = useDnaBalances();
 
   useEffect(() => {
     const fetchLeaderboards = async () => {
@@ -37,69 +39,29 @@ export const useWalletLeaderboard = (limit: number = 25) => {
           setApiKey(zoraApiKey);
         }
 
-        // Fetch top DNA token holders - use CSV data as source of truth
+        // Fetch and update DNA balances from blockchain, then get top holders from database
         try {
-          const speciesMappings = getSpeciesTickerMappings();
-          const dnaTokenAddresses: string[] = speciesMappings.map(m => m.contractAddress);
+          console.log('Fetching and updating DNA balances from blockchain...');
+          const updateResult = await fetchAndUpdateDnaBalances();
           
-          console.log(`Using ${dnaTokenAddresses.length} DNA token addresses from CSV for leaderboard`);
-
-          const holderBalances: Record<string, number> = {};
-          const batchSize = 10;
-          const maxTokens = 50;
-          for (let i = 0; i < Math.min(dnaTokenAddresses.length, maxTokens); i += batchSize) {
-            const batch = dnaTokenAddresses.slice(i, i + batchSize);
-            
-            await Promise.all(
-              batch.map(async (tokenAddress) => {
-                try {
-                  let cursor: string | undefined = undefined;
-                  let hasMore = true;
-
-                  while (hasMore) {
-                    const holdersResponse = await getCoinHolders({
-                      address: tokenAddress,
-                      chainId: base.id,
-                      count: 100,
-                      after: cursor,
-                    });
-
-                    const tokenBalances = holdersResponse.data?.zora20Token?.tokenBalances;
-                    const edges = tokenBalances?.edges || [];
-                    const pageInfo = tokenBalances?.pageInfo;
-
-                    edges.forEach((edge: any) => {
-                      const node = edge.node;
-                      const holderAddress = node?.ownerAddress || node?.address || '';
-                      const balance = node?.balance || '0';
-                      
-                      if (holderAddress && balance) {
-                        const balanceFormatted = parseFloat(formatUnits(BigInt(balance), 18));
-                        if (balanceFormatted > 0.000001) {
-                          holderBalances[holderAddress.toLowerCase()] = 
-                            (holderBalances[holderAddress.toLowerCase()] || 0) + balanceFormatted;
-                        }
-                      }
-                    });
-
-                    cursor = pageInfo?.endCursor;
-                    hasMore = pageInfo?.hasNextPage || false;
-                  }
-                } catch (error) {
-                  console.error(`Error fetching holders for token ${tokenAddress}:`, error);
-                }
-              })
-            );
+          if (updateResult.success) {
+            console.log(`Successfully updated DNA balances for ${updateResult.updatedCount} wallets`);
+          } else {
+            console.warn('DNA balance update failed, falling back to database data:', updateResult.error);
           }
-
-          const topHolders = Object.entries(holderBalances)
-            .map(([address, totalDnaBalance]) => ({ address, totalDnaBalance }))
-            .sort((a, b) => b.totalDnaBalance - a.totalDnaBalance)
-            .slice(0, 15);
-
+          
+          // Get top DNA holders from database (which now has updated balances)
+          const topHolders = await getTopDnaHolders(limit);
           setTopDnaHolders(topHolders);
         } catch (error) {
           console.error('Error fetching DNA holders leaderboard:', error);
+          // Fallback: try to get DNA holders from database even if update failed
+          try {
+            const topHolders = await getTopDnaHolders(limit);
+            setTopDnaHolders(topHolders);
+          } catch (dbError) {
+            console.error('Error fetching DNA holders from database:', dbError);
+          }
         }
 
         // Fetch top voters from Supabase
@@ -166,3 +128,5 @@ export const useWalletLeaderboard = (limit: number = 25) => {
 
   return { topVoters, topSharers, topDnaHolders, topReferrers, loading };
 };
+
+export default useWalletLeaderboard;
