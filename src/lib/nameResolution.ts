@@ -1,6 +1,11 @@
 import { createPublicClient, http, isAddress, getAddress } from 'viem';
 import { base, mainnet } from 'viem/chains';
 
+// Known address mappings (contracts, pools, etc.)
+const KNOWN_ADDRESSES: Record<string, string> = {
+  '0x498581ff718922c3f8e6a244956af099b2652b2b': 'Uniswap V4: Pool Manager',
+};
+
 // Create public clients for both chains
 const baseClient = createPublicClient({
   chain: base,
@@ -158,6 +163,15 @@ export async function getPrimaryName(address: string): Promise<{
 }
 
 /**
+ * Gets known address name synchronously (for contracts, pools, etc.)
+ */
+export function getKnownAddressName(address: string | null): string | null {
+  if (!address) return null;
+  const normalizedAddress = address.toLowerCase();
+  return KNOWN_ADDRESSES[normalizedAddress] || null;
+}
+
+/**
  * Formats an address for display (truncated)
  */
 export function formatAddressForDisplay(address: string): string {
@@ -176,7 +190,7 @@ export function formatAddressForDisplay(address: string): string {
 }
 
 /**
- * Gets display name with priority: Base name > ENS name > truncated address
+ * Gets display name with priority: Known address > Base name > ENS name > truncated address
  */
 export async function getDisplayName(address: string | null): Promise<{
   displayName: string;
@@ -184,6 +198,16 @@ export async function getDisplayName(address: string | null): Promise<{
 }> {
   if (!address) {
     return { displayName: 'Not Connected', type: 'address' };
+  }
+
+  const normalizedAddress = address.toLowerCase();
+  
+  // Check known addresses first (highest priority)
+  if (KNOWN_ADDRESSES[normalizedAddress]) {
+    return {
+      displayName: KNOWN_ADDRESSES[normalizedAddress],
+      type: 'address', // Treat as address type but with custom label
+    };
   }
 
   const primaryName = await getPrimaryName(address);

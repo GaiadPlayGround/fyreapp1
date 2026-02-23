@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useWalletLeaderboard } from '@/hooks/useWalletLeaderboard';
 import { motion, AnimatePresence } from 'motion/react';
+import { getDisplayName, getKnownAddressName } from '@/lib/nameResolution';
 import {
   Dialog,
   DialogContent,
@@ -15,11 +16,51 @@ const LeaderboardDialog = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [tab, setTab] = useState<'votes' | 'shares' | 'dna' | 'referrers'>('dna'); // DNA holders default
   const { topVoters, topSharers, topDnaHolders, topReferrers, loading } = useWalletLeaderboard(50);
+  const [addressNames, setAddressNames] = useState<Record<string, string>>({});
 
-
-  const truncateAddress = (address: string) => {
+  // Get display name for an address (with known addresses checked first)
+  const getAddressDisplay = (address: string): string => {
+    // Check known addresses first (synchronous)
+    const knownName = getKnownAddressName(address);
+    if (knownName) return knownName;
+    
+    // Check async loaded names
+    if (addressNames[address]) return addressNames[address];
+    
+    // Fallback to truncated address
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
+
+  // Load display names for all addresses when data changes
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    const loadNames = async () => {
+      const allAddresses = [
+        ...topVoters.map(v => v.address),
+        ...topSharers.map(s => s.address),
+        ...topDnaHolders.map(h => h.address),
+        ...topReferrers.map(r => r.address),
+      ];
+      
+      const uniqueAddresses = Array.from(new Set(allAddresses));
+      const names: Record<string, string> = {};
+      
+      await Promise.all(
+        uniqueAddresses.map(async (address) => {
+          // Skip if it's a known address (already handled synchronously)
+          if (getKnownAddressName(address)) return;
+          
+          const result = await getDisplayName(address);
+          names[address] = result.displayName;
+        })
+      );
+      
+      setAddressNames(names);
+    };
+    
+    loadNames();
+  }, [isOpen, topVoters, topSharers, topDnaHolders, topReferrers]);
 
   const formatBalance = (num: number): string => {
     if (num >= 1000000000) return `${(num / 1000000000).toFixed(1)}B`;
@@ -165,8 +206,13 @@ const LeaderboardDialog = () => {
                     >
                       {item.rank}
                     </motion.span>
-                    <span className="font-mono text-sm text-foreground">
-                      {truncateAddress(item.address)}
+                    <span className={cn(
+                      "text-sm text-foreground",
+                      getKnownAddressName(item.address) || (addressNames[item.address] && !addressNames[item.address].includes('...'))
+                        ? "font-sans" // Use sans font for known names
+                        : "font-mono" // Use mono font for addresses
+                    )}>
+                      {getAddressDisplay(item.address)}
                     </span>
                   </div>
                   <motion.span
