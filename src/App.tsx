@@ -27,7 +27,7 @@ const App = () => {
   }, []);
 
   return (
-    <WagmiProvider config={config} reconnectOnMount={false}>
+    <WagmiProvider config={config} reconnectOnMount={true}>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <WalletProvider>

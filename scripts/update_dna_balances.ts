@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
+import { createPublicClient, http, formatUnits, Address, erc20Abi } from 'viem';
 import { getCoinHolders, setApiKey } from '@zoralabs/coins-sdk';
-import { formatUnits } from 'viem';
 import { base } from 'wagmi/chains';
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
@@ -25,6 +25,36 @@ if (!supabaseUrl || !supabaseKey) {
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Create public client for Base chain
+const publicClient = createPublicClient({
+  chain: base,
+  transport: http(),
+});
+
+// Retry helper function
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  initialDelay: number = 1000
+): Promise<T> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      
+      if (attempt < maxRetries - 1) {
+        const delay = initialDelay * Math.pow(2, attempt); // Exponential backoff
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  
+  throw lastError || new Error('Unknown error after retries');
+}
 
 // Parse CSV file directly
 function parseSpeciesTickersCSV(): Array<{ ticker: string; contractAddress: string }> {
@@ -53,56 +83,152 @@ async function fetchAndUpdateDnaBalances() {
       setApiKey(zoraApiKey);
     }
 
-    // Fetch top DNA token holders - use CSV data as source of truth
+    // Get all DNA token addresses from CSV
     const speciesMappings = parseSpeciesTickersCSV();
     const dnaTokenAddresses: string[] = speciesMappings.map(m => m.contractAddress);
 
-    console.log(`Using ${dnaTokenAddresses.length} DNA token addresses from CSV for leaderboard`);
+    console.log(`Using ${dnaTokenAddresses.length} DNA token addresses from CSV`);
 
-    const holderBalances: Record<string, number> = {};
+    // Step 1: Discover all wallet addresses by checking holders of each token
+    console.log('\nStep 1: Discovering all wallet addresses from token holders...');
+    const discoveredWallets = new Set<string>();
     const batchSize = 10;
-    const maxTokens = 50;
-    
-    for (let i = 0; i < Math.min(dnaTokenAddresses.length, maxTokens); i += batchSize) {
+    const totalTokens = dnaTokenAddresses.length;
+
+    for (let i = 0; i < dnaTokenAddresses.length; i += batchSize) {
       const batch = dnaTokenAddresses.slice(i, i + batchSize);
+      const batchNum = Math.floor(i / batchSize) + 1;
+      const totalBatches = Math.ceil(totalTokens / batchSize);
+      
+      console.log(`  Processing batch ${batchNum}/${totalBatches} (tokens ${i + 1}-${Math.min(i + batchSize, totalTokens)} of ${totalTokens})...`);
 
       await Promise.all(
         batch.map(async (tokenAddress) => {
           try {
             let cursor: string | undefined = undefined;
             let hasMore = true;
+            const ticker = speciesMappings.find(m => m.contractAddress.toLowerCase() === tokenAddress.toLowerCase())?.ticker || 'Unknown';
 
             while (hasMore) {
-              const holdersResponse = await getCoinHolders({
-                address: tokenAddress,
-                chainId: base.id,
-                count: 100,
-                after: cursor,
-              });
+              try {
+                const holdersResponse = await retryWithBackoff(async () => {
+                  return await getCoinHolders({
+                    address: tokenAddress,
+                    chainId: base.id,
+                    count: 100,
+                    after: cursor,
+                  });
+                }, 3, 1000); // 3 retries with exponential backoff
 
-              const tokenBalances = holdersResponse.data?.zora20Token?.tokenBalances;
-              const edges = tokenBalances?.edges || [];
-              const pageInfo = tokenBalances?.pageInfo;
+                const tokenBalances = holdersResponse.data?.zora20Token?.tokenBalances;
+                const edges = tokenBalances?.edges || [];
+                const pageInfo = tokenBalances?.pageInfo;
 
-              edges.forEach((edge: any) => {
-                const node = edge.node;
-                const holderAddress = node?.ownerAddress || node?.address || '';
-                const balance = node?.balance || '0';
-
-                if (holderAddress && balance) {
-                  const balanceFormatted = parseFloat(formatUnits(BigInt(balance), 18));
-                  if (balanceFormatted > 0.000001) {
-                    holderBalances[holderAddress.toLowerCase()] = 
-                      (holderBalances[holderAddress.toLowerCase()] || 0) + balanceFormatted;
-                  }
+                if (edges.length === 0 && !cursor) {
+                  break;
                 }
-              });
 
-              cursor = pageInfo?.endCursor;
-              hasMore = pageInfo?.hasNextPage || false;
+                // Collect all wallet addresses from this token
+                edges.forEach((edge: any) => {
+                  const node = edge.node;
+                  const holderAddress = node?.ownerAddress || node?.address || '';
+                  if (holderAddress) {
+                    discoveredWallets.add(holderAddress.toLowerCase());
+                  }
+                });
+
+                cursor = pageInfo?.endCursor;
+                hasMore = pageInfo?.hasNextPage || false;
+                
+                if (hasMore) {
+                  await new Promise(resolve => setTimeout(resolve, 100));
+                }
+              } catch (error) {
+                const ticker = speciesMappings.find(m => m.contractAddress.toLowerCase() === tokenAddress.toLowerCase())?.ticker || 'Unknown';
+                console.error(`  ⚠️  Failed to fetch holders for token ${ticker} (${tokenAddress}) after retries:`, error instanceof Error ? error.message : String(error));
+                // Break the while loop for this token and continue with next token
+                break;
+              }
             }
           } catch (error) {
-            console.error(`Error fetching holders for token ${tokenAddress}:`, error);
+            const ticker = speciesMappings.find(m => m.contractAddress.toLowerCase() === tokenAddress.toLowerCase())?.ticker || 'Unknown';
+            console.error(`  ⚠️  Error processing token ${ticker} (${tokenAddress}):`, error instanceof Error ? error.message : String(error));
+          }
+        })
+      );
+    }
+
+    const walletAddresses = Array.from(discoveredWallets);
+    console.log(`\nDiscovered ${walletAddresses.length} unique wallet addresses from token holders`);
+
+    // Step 2: For each discovered wallet, call balanceOf on all tokens to get accurate balances
+    console.log('\nStep 2: Calculating accurate balances using balanceOf for each wallet...');
+    const holderBalances: Record<string, number> = {};
+    const holderTokenCounts: Record<string, Set<string>> = {};
+    const walletBatchSize = 20; // Process wallets in batches
+    const tokenBatchSize = 20; // Process tokens in batches per wallet
+
+    // Process wallets in batches
+    for (let walletIdx = 0; walletIdx < walletAddresses.length; walletIdx += walletBatchSize) {
+      const walletBatch = walletAddresses.slice(walletIdx, walletIdx + walletBatchSize);
+      const batchNum = Math.floor(walletIdx / walletBatchSize) + 1;
+      const totalBatches = Math.ceil(walletAddresses.length / walletBatchSize);
+      
+      console.log(`  Processing wallet batch ${batchNum}/${totalBatches} (wallets ${walletIdx + 1}-${Math.min(walletIdx + walletBatchSize, walletAddresses.length)} of ${walletAddresses.length})...`);
+
+      // Process each wallet in the batch
+      await Promise.all(
+        walletBatch.map(async (walletAddress, walletBatchIdx) => {
+          try {
+            const normalizedAddress = walletAddress.toLowerCase();
+            let walletTotalBalance = 0;
+            const walletTokens = new Set<string>();
+
+            // Process tokens in batches for each wallet
+            for (let tokenIdx = 0; tokenIdx < dnaTokenAddresses.length; tokenIdx += tokenBatchSize) {
+              const tokenBatch = dnaTokenAddresses.slice(tokenIdx, tokenIdx + tokenBatchSize);
+              
+              // Call balanceOf for all tokens in this batch with retry logic
+              await Promise.all(
+                tokenBatch.map(async (tokenAddress) => {
+                  const ticker = speciesMappings.find(m => m.contractAddress.toLowerCase() === tokenAddress.toLowerCase())?.ticker || 'Unknown';
+                  
+                  try {
+                    const balance = await retryWithBackoff(async () => {
+                      return await publicClient.readContract({
+                        address: tokenAddress as Address,
+                        abi: erc20Abi,
+                        functionName: 'balanceOf',
+                        args: [walletAddress as Address],
+                      }) as bigint;
+                    }, 3, 1000); // 3 retries with 1s, 2s, 4s delays
+
+                    const balanceFormatted = parseFloat(formatUnits(balance, 18));
+                    
+                    if (balanceFormatted > 0.000001) {
+                      walletTotalBalance += balanceFormatted;
+                      walletTokens.add(ticker);
+                    }
+                  } catch (error) {
+                    // Log error but don't fail the entire process
+                    console.error(`  ⚠️  Failed to get balance for ${walletAddress.slice(0, 10)}... on ${ticker} after retries:`, error instanceof Error ? error.message : String(error));
+                    // Continue processing other tokens
+                  }
+                })
+              );
+            }
+
+            if (walletTotalBalance > 0) {
+              holderBalances[normalizedAddress] = walletTotalBalance;
+              holderTokenCounts[normalizedAddress] = walletTokens;
+              
+              // Log progress for wallets with significant balances
+              if (walletTotalBalance > 1000000) {
+                console.log(`  ✓ ${walletAddress.slice(0, 10)}...: ${walletTotalBalance.toLocaleString(undefined, { maximumFractionDigits: 0 })} DNA (${walletTokens.size} tokens)`);
+              }
+            }
+          } catch (error) {
+            console.error(`Error processing wallet ${walletAddress}:`, error);
           }
         })
       );
@@ -112,11 +238,33 @@ async function fetchAndUpdateDnaBalances() {
     const addresses = Object.keys(holderBalances);
     let updatedCount = 0;
 
-    console.log(`Found ${addresses.length} wallets with DNA balances`);
-    console.log('Top 10 balances:', Object.entries(holderBalances)
+    console.log(`\nFound ${addresses.length} wallets with DNA balances`);
+    console.log('\nTop 10 balances:');
+    const top10 = Object.entries(holderBalances)
       .sort((a, b) => b[1] - a[1])
-      .slice(0, 10)
-    );
+      .slice(0, 10);
+    top10.forEach(([address, balance], index) => {
+      console.log(`  ${index + 1}. ${address}: ${balance.toLocaleString(undefined, { maximumFractionDigits: 2 })}`);
+    });
+    
+    // Check specific wallet if provided
+    const checkWallet = '0x57bcd9147d9d9507be65ccceabab6c47002a7dd0';
+    const checkWalletLower = checkWallet.toLowerCase();
+    if (holderBalances[checkWalletLower]) {
+      const calculatedBalance = holderBalances[checkWalletLower];
+      const tokenCount = holderTokenCounts[checkWalletLower]?.size || 0;
+      console.log(`\n✅ Wallet ${checkWallet} (using balanceOf):`);
+      console.log(`   Calculated balance: ${calculatedBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })}`);
+      console.log(`   Expected: 427,034,930`);
+      const difference = Math.abs(427034930 - calculatedBalance);
+      console.log(`   Difference: ${difference.toLocaleString(undefined, { maximumFractionDigits: 2 })} (${((difference / 427034930) * 100).toFixed(4)}%)`);
+      console.log(`   Tokens found: ${tokenCount} (expected: 29)`);
+      if (holderTokenCounts[checkWalletLower]) {
+        console.log(`   Token tickers found: ${Array.from(holderTokenCounts[checkWalletLower]).sort().join(', ')}`);
+      }
+    } else {
+      console.log(`\n⚠️  Wallet ${checkWallet} not found in database or has no DNA balance!`);
+    }
 
     for (const address of addresses) {
       const dnaBalance = holderBalances[address];

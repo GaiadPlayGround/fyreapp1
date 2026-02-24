@@ -4,6 +4,7 @@ import { base, mainnet } from 'viem/chains';
 // Known address mappings (contracts, pools, etc.)
 const KNOWN_ADDRESSES: Record<string, string> = {
   '0x498581ff718922c3f8e6a244956af099b2652b2b': 'Uniswap V4: Pool Manager',
+  '0xae28916f0bc703fccbaf9502d15f838a1caa01b3': 'Warplette',
 };
 
 // Create public clients for both chains
